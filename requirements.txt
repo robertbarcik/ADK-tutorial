@@ -1,0 +1,14 @@
+# Google Agent Development Kit (ADK) - Lesson 1 Requirements
+# This file contains all dependencies needed for the first ADK tutorial
+
+# Core ADK framework for building AI agents
+google-adk>=1.0.0
+
+# Google Generative AI SDK for Gemini models
+google-genai>=0.3.0
+
+# Python dotenv for environment variable management (optional, for local development)
+python-dotenv>=1.0.0
+
+# Nest asyncio for handling async in Jupyter/Colab notebooks
+nest-asyncio>=1.5.0
