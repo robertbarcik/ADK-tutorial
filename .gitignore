@@ -26,7 +26,7 @@ venv.bak/
 .DS_Store
 
 # Claude Code
-.claude/settings.local.json
+.claude/
 
 # Environment variables
 .env
