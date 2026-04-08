@@ -70,3 +70,6 @@ htmlcov/
 *.db
 *.sqlite
 *.sqlite3
+
+# Notebook guidelines (internal only)
+NOTEBOOK_GUIDELINES.md

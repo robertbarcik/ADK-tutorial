@@ -2,22 +2,25 @@
 # This file contains all dependencies needed for the ADK tutorials
 
 # Core ADK framework for building AI agents
-google-adk>=1.0.0
+google-adk==1.28.0
 
 # LiteLLM for using OpenAI and other LLM providers with ADK
-litellm>=1.0.0
+litellm==1.83.4
 
 # OpenAI Python client library
-openai>=1.0.0
+openai==2.30.0
 
 # Python dotenv for environment variable management (optional, for local development)
-python-dotenv>=1.0.0
+python-dotenv==1.0.1
 
 # Nest asyncio for handling async in Jupyter/Colab notebooks
-nest-asyncio>=1.5.0
+nest-asyncio==1.6.0
+
+# Deprecated decorator (ADK dependency)
+deprecated==1.2.18
 
 # Model Context Protocol (MCP) for connecting to data sources
-mcp>=1.2.0
+mcp==1.2.0
 
 # HTTP client for MCP server communication
-httpx>=0.27.0
+httpx==0.27.0
