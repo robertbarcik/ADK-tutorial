@@ -1,0 +1,8 @@
+{
+    "email": {"status": "operational", "uptime": "99.9%", "last_incident": "2025-09-28"},
+    "portal": {"status": "degraded", "uptime": "95.2%", "last_incident": "2025-10-06"},
+    "wifi": {"status": "operational", "uptime": "99.5%", "last_incident": "2025-10-01"},
+    "printing": {"status": "operational", "uptime": "98.8%", "last_incident": "2025-10-03"},
+    "vpn": {"status": "operational", "uptime": "99.7%", "last_incident": "2025-09-15"},
+    "library": {"status": "operational", "uptime": "99.9%", "last_incident": "2025-09-20"}
+}

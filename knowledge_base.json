@@ -1,0 +1,32 @@
+[
+    {
+        "id": "KB-001",
+        "title": "How to Reset Your Password",
+        "content": "To reset your password: 1) Go to portal.university.edu 2) Click 'Forgot Password' 3) Enter your student ID 4) Check your email for reset link 5) Create a new password (min 8 characters, include numbers and symbols)",
+        "tags": ["password", "login", "account", "reset"]
+    },
+    {
+        "id": "KB-002",
+        "title": "Connecting to University Wi-Fi",
+        "content": "To connect to eduroam: 1) Select 'eduroam' network 2) Username: studentid@university.edu 3) Password: your portal password 4) Accept security certificate 5) If issues persist, forget the network and reconnect",
+        "tags": ["wifi", "network", "eduroam", "connection"]
+    },
+    {
+        "id": "KB-003",
+        "title": "Printing from Library Computers",
+        "content": "To print: 1) Send document to 'University-Print' queue 2) Go to any library printer 3) Tap your student ID card 4) Select your document 5) Choose print options 6) Print credit will be deducted automatically",
+        "tags": ["printing", "library", "printer", "documents"]
+    },
+    {
+        "id": "KB-004",
+        "title": "Email Not Working - Common Solutions",
+        "content": "Email issues? Try: 1) Clear browser cache and cookies 2) Try different browser 3) Check if caps lock is on 4) Verify username format (firstname.lastname@university.edu) 5) Reset password if needed 6) Check if account is active",
+        "tags": ["email", "outlook", "gmail", "login", "troubleshooting"]
+    },
+    {
+        "id": "KB-005",
+        "title": "VPN Setup for Off-Campus Access",
+        "content": "Setting up VPN: 1) Download Cisco AnyConnect from IT portal 2) Install the application 3) Server address: vpn.university.edu 4) Login with university credentials 5) Accept connection 6) You can now access library resources",
+        "tags": ["vpn", "remote", "access", "cisco", "anyconnect"]
+    }
+]

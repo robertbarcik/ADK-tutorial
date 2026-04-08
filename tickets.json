@@ -1,0 +1,43 @@
+{
+    "T-1001": {
+        "id": "T-1001",
+        "status": "open",
+        "priority": "high",
+        "subject": "Cannot access email",
+        "description": "User reports unable to login to university email system",
+        "assigned_to": "tech_jane",
+        "created_at": "2025-10-05 09:30:00",
+        "updated_at": "2025-10-05 14:20:00"
+    },
+    "T-1002": {
+        "id": "T-1002",
+        "status": "in_progress",
+        "priority": "medium",
+        "subject": "Printer not working",
+        "description": "Library printer 2B not responding",
+        "assigned_to": "tech_mike",
+        "created_at": "2025-10-04 11:15:00",
+        "updated_at": "2025-10-06 08:00:00"
+    },
+    "T-1003": {
+        "id": "T-1003",
+        "status": "resolved",
+        "priority": "low",
+        "subject": "Wi-Fi connection issues",
+        "description": "Intermittent connection drops in Building A",
+        "assigned_to": "tech_sarah",
+        "created_at": "2025-10-03 14:00:00",
+        "updated_at": "2025-10-05 16:30:00",
+        "resolved_at": "2025-10-05 16:30:00"
+    },
+    "T-1004": {
+        "id": "T-1004",
+        "status": "open",
+        "priority": "critical",
+        "subject": "Campus portal down",
+        "description": "Students cannot access course materials",
+        "assigned_to": null,
+        "created_at": "2025-10-06 07:00:00",
+        "updated_at": "2025-10-06 07:00:00"
+    }
+}
