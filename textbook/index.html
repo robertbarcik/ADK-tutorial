@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google ADK — A Practical Course</title>
+    <style>
+:root {
+    --navy: #1e3a5f;
+    --navy-light: #2a5280;
+    --accent: #1e3a5f;
+    --amber: #f59e0b;
+    --amber-dark: #b45309;
+    --bg: #ffffff;
+    --bg-sidebar: #f8fafc;
+    --text: #1e293b;
+    --text-light: #64748b;
+    --border: #e2e8f0;
+    --code-bg: #f1f5f9;
+    --code-block-bg: #0f172a;
+    --code-block-text: #e2e8f0;
+    --sidebar-width: 300px;
+    --progress-height: 3px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Georgia', 'Times New Roman', serif;
+    font-size: 17px;
+    line-height: 1.75;
+    color: var(--text);
+    background: var(--bg);
+}
+
+#progress-bar {
+    position: fixed;
+    top: 0; left: 0;
+    width: 0%;
+    height: var(--progress-height);
+    background: var(--amber);
+    z-index: 1000;
+    transition: width 0.1s;
+}
+
+#sidebar {
+    position: fixed;
+    top: 0; left: 0;
+    width: var(--sidebar-width);
+    height: 100vh;
+    background: var(--bg-sidebar);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    padding: 2rem 0;
+    z-index: 100;
+    transition: transform 0.3s;
+}
+
+#sidebar-header {
+    padding: 0 1.5rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 1rem;
+}
+
+#sidebar-header h2 {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--navy);
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+}
+
+#sidebar-header p {
+    font-size: 0.78rem;
+    color: var(--text-light);
+    margin-top: 0.3rem;
+    line-height: 1.4;
+}
+
+#sidebar nav ul {
+    list-style: none;
+    padding: 0;
+}
+
+#sidebar nav ul li a {
+    display: block;
+    padding: 0.55rem 1.5rem;
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-size: 0.85rem;
+    color: var(--text-light);
+    text-decoration: none;
+    border-left: 3px solid transparent;
+    transition: all 0.2s;
+    line-height: 1.4;
+}
+
+#sidebar nav ul li a:hover {
+    color: var(--navy);
+    background: rgba(30, 58, 95, 0.04);
+}
+
+#sidebar nav ul li a.active {
+    color: var(--navy);
+    font-weight: 600;
+    border-left-color: var(--amber);
+    background: rgba(245, 158, 11, 0.06);
+}
+
+#menu-toggle {
+    display: none;
+    position: fixed;
+    top: 1rem; left: 1rem;
+    z-index: 200;
+    background: var(--navy);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 0.5rem 0.75rem;
+    font-size: 1.2rem;
+    cursor: pointer;
+}
+
+#content-wrapper {
+    margin-left: var(--sidebar-width);
+    display: flex;
+    justify-content: center;
+    padding: 0 2rem;
+}
+
+#content {
+    max-width: 780px;
+    width: 100%;
+    padding: 3rem 1rem 6rem;
+}
+
+.chapter {
+    margin-bottom: 5rem;
+    padding-top: 1rem;
+}
+
+.chapter:first-child {
+    margin-bottom: 4rem;
+    padding-bottom: 2rem;
+    border-bottom: 2px solid var(--border);
+}
+
+.chapter-number {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--amber-dark);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 0.5rem;
+}
+
+h1 {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-size: 2.2rem;
+    font-weight: 700;
+    color: var(--navy);
+    line-height: 1.2;
+    margin-bottom: 1.5rem;
+}
+
+h2 {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--navy);
+    margin-top: 2.5rem;
+    margin-bottom: 1rem;
+    line-height: 1.3;
+}
+
+h3 {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--navy-light);
+    margin-top: 2rem;
+    margin-bottom: 0.75rem;
+}
+
+p { margin-bottom: 1.1rem; }
+
+ul, ol { margin-bottom: 1.1rem; padding-left: 1.8rem; }
+li { margin-bottom: 0.4rem; }
+
+strong { font-weight: 700; }
+em { font-style: italic; }
+
+code {
+    font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+    font-size: 0.88em;
+    background: var(--code-bg);
+    padding: 0.15em 0.4em;
+    border-radius: 4px;
+    color: var(--navy);
+}
+
+pre {
+    background: var(--code-block-bg);
+    color: var(--code-block-text);
+    border-radius: 8px;
+    padding: 1.2rem;
+    overflow-x: auto;
+    margin-bottom: 1.5rem;
+    font-size: 0.86rem;
+    line-height: 1.6;
+}
+
+pre code {
+    background: none;
+    padding: 0;
+    border-radius: 0;
+    color: inherit;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1.5rem 0;
+    font-size: 0.92rem;
+    line-height: 1.5;
+}
+
+thead { background: var(--navy); color: white; }
+
+th {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-weight: 600;
+    padding: 0.75rem 1rem;
+    text-align: left;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+td {
+    padding: 0.7rem 1rem;
+    border-bottom: 1px solid var(--border);
+}
+
+tbody tr:nth-child(even) { background: var(--bg-sidebar); }
+tbody tr:hover { background: rgba(245, 158, 11, 0.04); }
+
+blockquote {
+    border-left: 4px solid var(--amber);
+    background: rgba(245, 158, 11, 0.06);
+    padding: 1rem 1.5rem;
+    margin: 1.5rem 0;
+    border-radius: 0 8px 8px 0;
+}
+
+blockquote p:last-child { margin-bottom: 0; }
+
+.diagram, pre.diagram {
+    background: var(--code-block-bg);
+    color: var(--code-block-text);
+    font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+    font-size: 0.82rem;
+    line-height: 1.4;
+    white-space: pre;
+    padding: 1rem 1.3rem;
+    border-radius: 6px;
+    overflow-x: auto;
+    margin: 1.2rem 0;
+}
+
+hr {
+    border: none;
+    border-top: 2px solid var(--border);
+    margin: 4rem 0;
+}
+
+@media (max-width: 900px) {
+    #sidebar { transform: translateX(-100%); }
+    #sidebar.open { transform: translateX(0); box-shadow: 4px 0 20px rgba(0,0,0,0.15); }
+    #menu-toggle { display: block; }
+    #content-wrapper { margin-left: 0; padding: 0 1rem; }
+    #content { padding: 2rem 0.5rem 4rem; }
+    h1 { font-size: 1.7rem; }
+    h2 { font-size: 1.3rem; }
+}
+
+@media (max-width: 600px) {
+    #content { padding: 1.5rem 1rem 3rem; }
+    body { font-size: 15.5px; }
+}
+
+@media print {
+    #sidebar, #menu-toggle, #progress-bar { display: none !important; }
+    #content-wrapper { margin-left: 0; padding: 0; }
+    #content { max-width: 100%; }
+    .chapter { page-break-before: always; }
+    .chapter:first-child { page-break-before: auto; }
+}
+</style>
+</head>
+<body>
+    <div id="progress-bar"></div>
+
+    <button id="menu-toggle" aria-label="Toggle navigation">&#9776;</button>
+
+    <aside id="sidebar">
+        <div id="sidebar-header">
+            <h2>Google ADK — A Practical Course</h2>
+            <p>Vendor-agnostic agent development with the Google Agent Development Kit</p>
+        </div>
+        <nav>
+            <ul>
+                <li><a href="#introduction">Introduction</a></li>
+<li><a href="#why-agents-why-adk">1. Why agents, why ADK</a></li>
+            </ul>
+        </nav>
+    </aside>
+
+    <div id="content-wrapper">
+        <main id="content">
+            
+        <section class="chapter" id="introduction">
+            
+            <h1>Introduction</h1>
+<p>This is a course on Google&rsquo;s Agent Development Kit, and it is going to work hard to earn your time.</p>
+<p>Most agent tutorials you&rsquo;ll find online teach one of two things. Either they teach a framework&rsquo;s surface — &ldquo;here&rsquo;s how to spell <code>tool_calling</code> in LangChain, here&rsquo;s how to spell it in CrewAI, here&rsquo;s how to spell it in ADK&rdquo; — and leave you with a file full of pastable snippets and no mental model. Or they teach a walled-garden demo that only works with one vendor&rsquo;s model, one vendor&rsquo;s cloud, and one vendor&rsquo;s billing dashboard, and the moment you try to deploy against anything else, nothing translates.</p>
+<p>This course does neither.</p>
+<h2>What you&rsquo;ll build</h2>
+<p>Fourteen modules, each shipping four aligned artifacts — slides, speaker notes, a textbook chapter, and a runnable Jupyter notebook. The modules are not independent. Module one builds the mental model. Module two puts tools on it. Module three adds sessions. Every module after that composes on the primitives of the first three. By module ten you have an agent that calls tools, holds state, writes its own critiques in a loop, delegates to specialists, short-circuits itself in a callback, remembers across conversations, passes an evaluation suite, and ships to production — and it does so while running on any model you can route through LiteLLM.</p>
+<p>Modules eleven through thirteen are the Gemini-specific part of the course. Search grounding with citations. Long context with caching. Thinking budgets. The Live voice API. Three hours of material you can&rsquo;t replicate with Claude or GPT. These modules are honest about the trade: you get real capability and real lock-in, in that order.</p>
+<p>Module fourteen is thirty minutes on A2A — the agent-to-agent protocol that Google launched in April 2025 and handed over to the Linux Foundation two months later. It is nowhere near infrastructure-grade yet, but the shape of the protocol is already settling, and being ahead of it by thirty minutes is worth the investment.</p>
+<h2>Why ADK, honestly</h2>
+<p>ADK is not the most popular agent framework. LangGraph has four times the community, CrewAI has twice the stars, the OpenAI Agents SDK has more marketing money behind it. If you&rsquo;re picking a framework for political reasons — &ldquo;nobody got fired for choosing LangChain&rdquo; — ADK is not the safe pick.</p>
+<p>But there are three things ADK does genuinely better than the competition.</p>
+<p>The first is <strong>observability</strong>. Every communication inside an agent run is an Event — a tool call, a tool response, a state change, a sub-agent handoff — and the event stream is the primary object you work with. Read the events, see what the agent did. No framework gets this as cleanly as ADK does. Not LangGraph, where nodes and edges obscure what the model actually emitted. Not CrewAI, where the role metaphor hides the underlying call sequence. If you have ever shipped an agent to production and spent three hours trying to figure out why it made a particular decision, you will feel the difference in the first five minutes.</p>
+<p>The second is <strong>workflow agents as first-class primitives</strong>. ADK ships three of them out of the box — Sequential, Parallel, and Loop — and they behave exactly the way their names suggest. A Sequential agent runs its children like a shell pipeline. A Parallel agent fans out like <code>asyncio.gather</code>. A Loop agent repeats until a child calls <code>exit_loop</code> or the iteration limit is reached. No graph DSL, no nodes-and-edges vocabulary. You write Python that looks like Python.</p>
+<p>The third is <strong>vendor-neutrality that actually works</strong>. The <code>LiteLlm</code> wrapper turns any OpenRouter-routable model into an ADK model in one line. We&rsquo;ll use this from module one onward. By module four you will have swapped Claude, GPT, and a locally-hosted Qwen into the same agent without changing anything else.</p>
+<p>Everything else — deployment, evaluation, memory services, A2A — is competitive but not differentiating. ADK&rsquo;s case lives in those three.</p>
+<h2>Who this course is for</h2>
+<p>Software engineers who have written Python before, who have used at least one LLM API (OpenAI or Anthropic is enough), and who want to build agents as real software rather than as prompt strings glued together with regex.</p>
+<p>If you&rsquo;ve been writing agents for a year, you&rsquo;ll find module one too slow and module seven — on callbacks as middleware — surprisingly dense. If this is your first agent framework, every module earns its thirty minutes. If you&rsquo;re coming from LangGraph or CrewAI, pay attention to the vocabulary: we&rsquo;ll call the same things by different names, and getting the mapping right early saves confusion later.</p>
+<h2>How to use this course</h2>
+<p>Read the textbook chapter first — this one, and the matching one for every module. It is designed to be readable on a train without a computer. Then open the slide deck for the module, which compresses the chapter into a lecture you can follow passively. Then run the notebook, which is the material made concrete. Three passes at the same content, in three shapes. Each one reinforces what the others taught.</p>
+<p>If you only have time for one pass, pick the notebook — because the thing you actually want to leave this course with is the ability to build an agent, not the ability to describe one.</p>
+<h2>What you&rsquo;ll need</h2>
+<p>A Python 3.10 or newer environment. An API key from OpenRouter for Part 1 (sign up at openrouter.ai, pay-as-you-go, typically under five cents per module if you stick to the defaults). An API key from Google AI Studio for Part 2 (aistudio.google.com, free tier is enough for the demos we&rsquo;ll run). And roughly six to eight hours of focused time across all fourteen modules.</p>
+<p>That&rsquo;s it. Let&rsquo;s build something.</p>
+        </section>
+
+        <section class="chapter" id="why-agents-why-adk">
+            <div class="chapter-number">Chapter 1</div>
+            <h1>Why agents, why ADK</h1>
+<p>The first time anyone builds an agent by hand, they end up writing roughly the same sixty lines of code. A retry loop around the LLM call because the API occasionally times out. A JSON-output parser that crashes on the fourth edge case and needs a try-except wrapper. A manual conversation-history list that outgrows the context window after twelve turns and starts costing money in ways that surprise the billing department. A switch statement that dispatches tool calls to Python functions, because the model keeps emitting structured tool requests and somebody has to execute them. Error handling for the day the model hallucinates a tool that doesn&rsquo;t exist, and the handler that prompts it to try again without the hallucination.</p>
+<p>Sixty lines. Every time.</p>
+<p>A framework earns its keep when it stops you writing that boilerplate. You write the things that are actually yours — your instruction, your tools, your business logic — and the framework handles the plumbing. That&rsquo;s the deal ADK is offering.</p>
+<p>This chapter establishes the mental model that every later chapter builds on. Four primitives. Agent, Runner, Event, Session. Write them on a sticky note. Say them out loud. They will show up in every subsequent chapter, and by the end of the course you will have added dozens of concepts on top of them, but none of those concepts require you to forget the four.</p>
+<h2>What ADK is, and what it isn&rsquo;t</h2>
+<p>ADK is Google&rsquo;s open-source Python framework for building LLM-driven agents. The 1.0 release shipped in May 2025; as of April 2026 it sits at v1.31, with biweekly releases. The Python implementation is the reference; there are Java, Go, and TypeScript SDKs if you need them, but features land in Python first and this course lives there.</p>
+<p>Four things ADK is not, because these matter:</p>
+<p><strong>It is not a model.</strong> You bring your own. Gemini, Claude, GPT, Qwen, Gemma — it doesn&rsquo;t care. This is the single point people miss when they hear &ldquo;Google&rsquo;s agent framework&rdquo; and assume Gemini is bundled in. It isn&rsquo;t. We&rsquo;ll prove this by module four, at which point the same agent from module one will be running on Claude and on a locally-hosted open-weight model without a line of logic changing.</p>
+<p><strong>It is not a cloud.</strong> It runs on your laptop today, and on Google Cloud Run, AWS Fargate, Azure Container Apps, or a Raspberry Pi tomorrow. The deployment story is a Dockerfile, and the Dockerfile is yours to write. ADK ships a <code>deploy cloud_run</code> command because it lives in Google&rsquo;s ecosystem, but it is a convenience, not a requirement.</p>
+<p><strong>It is not a UI.</strong> It ships a development UI (<code>adk web</code>), which we&rsquo;ll see in a minute, but the output of an ADK project is code you deploy, not a dashboard you sell. The dev UI exists for the same reason any framework ships a dev server: to make the developer experience survivable.</p>
+<p><strong>It is not a graph DSL.</strong> You write typed Python. Not JSON, not YAML, not a node-and-edges diagram. When you want a loop, you use a loop construct. When you want control flow to run in parallel, you say so. This is probably the single largest difference between ADK and LangGraph, and it matters if you write Python for a living.</p>
+<h2>The agent equation</h2>
+<p>Before the primitives, the picture.</p>
+<p>An agent is an LLM, plus an instruction telling it how to behave, plus some tools it can call, plus some memory of what has happened so far, plus a loop that ties it all together. That is the whole equation.</p>
+<p>ADK supplies the loop and the plumbing around it. You supply the other four. Keep this picture in your head as we go through the primitives — every one of them is a concrete piece of this equation.</p>
+<h2>The four primitives</h2>
+<h3>Agent</h3>
+<p>An <code>Agent</code> is a configuration object. Four required fields — name, model, description, instruction — and one optional field that matters: <code>tools</code>.</p>
+<pre><code class="language-python">from google.adk.agents import Agent
+from google.adk.models.lite_llm import LiteLlm
+
+greeter = Agent(
+    name=&quot;greeter&quot;,
+    model=LiteLlm(model=&quot;openrouter/google/gemini-2.5-flash-lite&quot;),
+    description=&quot;Greets the user in a friendly way.&quot;,
+    instruction=&quot;You are a friendly greeter. Respond in one short sentence.&quot;,
+)
+</code></pre>
+<p>The name is how ADK refers to this agent internally, and how other agents refer to it if they need to delegate work to it. The model is wrapped in the <code>LiteLlm</code> helper, which is what makes ADK model-agnostic: we&rsquo;ll swap the model string three ways in module four and the rest of the code won&rsquo;t change. The description matters when this agent is a child of another agent — the parent&rsquo;s LLM reads the description to decide whether to route a task here. And the instruction is, for our purposes, the system prompt.</p>
+<p>If you add <code>tools=[get_weather, lookup_ticket]</code>, the agent can call those Python functions. We&rsquo;ll do exactly that in the next few paragraphs.</p>
+<h3>Runner</h3>
+<p>An <code>Agent</code> on its own does nothing. It is inert. The <code>Runner</code> is what wires the agent to a session service and turns it into a working conversation.</p>
+<pre><code class="language-python">runner = Runner(
+    agent=greeter,
+    app_name=&quot;demo&quot;,
+    session_service=InMemorySessionService(),
+)
+
+async for event in runner.run_async(
+    user_id=&quot;student&quot;,
+    session_id=&quot;s1&quot;,
+    new_message=types.Content(role=&quot;user&quot;, parts=[types.Part(text=&quot;hi&quot;)]),
+):
+    print(event)
+</code></pre>
+<p>The mental model: the Runner is a game engine&rsquo;s main loop, and your agent is the entity being ticked on each frame. The Runner sends the current conversation state into the model, reads the response, dispatches tool calls if there are any, and emits events for everything it observes. You iterate over those events with a Python <code>async for</code> and make decisions based on what you see.</p>
+<p>If you have used Express.js or Django middleware, the shape is familiar. Something external drives requests through a pipeline, and you observe or intervene at well-defined points along the way.</p>
+<h3>Event</h3>
+<p><code>Event</code> is the primitive that sets ADK apart from most agent frameworks, and it is the one worth paying the most attention to.</p>
+<p>Every communication inside an agent run produces an Event. The user&rsquo;s message is an event. The model&rsquo;s text response is an event. The model&rsquo;s decision to call a tool is an event, distinct from the tool&rsquo;s actual execution, which is a different event. A state-dictionary change is an event. An agent handing off to a sub-agent is an event.</p>
+<p>You don&rsquo;t have to do anything special to see events — they are what <code>run_async</code> yields. You iterate over them, read what happened, and act accordingly.</p>
+<pre><code>USER: What's the weather in Prague?
+
+[tool_call] get_weather({'city': 'Prague'})
+[tool_resp] {'city': 'Prague', 'report': 'Cloudy, 14°C'}
+[FINAL]     weather_agent: Prague is cloudy and 14°C.
+</code></pre>
+<p>Three events, each one inspectable. If the model had called the wrong tool, you would see it in the first event. If the tool had returned a different shape than expected, you would see it in the second. If the model had misread the tool&rsquo;s output, you would see it in the third. The gap between &ldquo;the agent did something weird&rdquo; and &ldquo;I know exactly why&rdquo; is almost always a matter of reading one more event.</p>
+<p>This is the debugger for agent work. When someone asks me how to debug an ADK agent, the honest answer is: print the events. Everything else is a special case of that.</p>
+<h3>Session</h3>
+<p>The fourth primitive. A <code>Session</code> holds the event history and a state dictionary for one conversation, keyed by the triple <code>(app_name, user_id, session_id)</code>.</p>
+<p>Three session services ship with ADK.</p>
+<ul>
+<li><strong><code>InMemorySessionService</code></strong> — a Python dict. Loses everything on process restart. Appropriate for demos, tests, and notebooks. This is what we&rsquo;ll use from module one through module seven.</li>
+<li><strong><code>DatabaseSessionService</code></strong> — SQLAlchemy-backed, runs against Postgres, MySQL, or SQLite. Appropriate for self-hosted production. We&rsquo;ll swap to this in module eight, when memory becomes the point of the chapter.</li>
+<li><strong><code>VertexAiSessionService</code></strong> — managed, Google-Cloud-only. Mentioned in this course, not taught — the pattern is the same, only the backing store changes.</li>
+</ul>
+<p>State is a dict that lives inside the session. Module three will be entirely about what you can and should put in it, and how the prefixes (<code>user:</code>, <code>app:</code>, <code>temp:</code>) work. For now, it is enough to know that every session has one.</p>
+<h2>Event stream as debugger</h2>
+<p>The single best development habit you can build with ADK is reading the event stream as the agent runs. Other frameworks make you reach for a separate tracing tool to see what the model is doing. ADK puts it in front of you by default.</p>
+<p>When an agent does something unexpected — returns the wrong answer, calls a tool with the wrong argument, refuses to do a thing it should have done — the reason is almost always visible in the event stream. A tool returned the wrong shape. An instruction was ambiguous. A state key was stale. A sub-agent was routed to when it shouldn&rsquo;t have been. You don&rsquo;t need to guess; you read the events.</p>
+<p>There is also a visual version of this. Run <code>adk web</code> from a folder containing your agent, and it opens a browser chat UI with the event stream rendered as a clickable timeline beside the conversation. Same data, friendlier to explore. Keep <code>adk web</code> open while you&rsquo;re developing an agent — the time savings are substantial. For the rest of this course we&rsquo;ll rely on text printouts because they drop into recorded video cleanly, but in your own work, the web UI is the default.</p>
+<h2>Why not LangGraph, why not CrewAI</h2>
+<p>These are fair comparisons and worth being honest about.</p>
+<p><strong>LangGraph</strong> is the current market leader. Thirty-four million monthly downloads, strong documentation, large community, an explicit graph-DSL approach where you declare nodes and edges. If your control flow is complex — conditional branches, multiple fan-out/fan-in points, cycles — LangGraph&rsquo;s graph model is a good fit, because it forces you to make the control flow legible. For anything simpler, the ceremony outweighs the benefit.</p>
+<p><strong>CrewAI</strong> is at the other end of the spectrum. Forty-four thousand stars, role-playing DSL — you declare a Researcher, a Writer, an Editor, and let the framework orchestrate them. Demos beautifully. The metaphor gets in the way once your use case is something that doesn&rsquo;t map to &ldquo;team of human specialists collaborating.&rdquo;</p>
+<p><strong>ADK</strong> sits in the middle. Smaller community — about eighteen thousand GitHub stars, two hundred contributors, under three thousand dependent projects — but the case for it rests on three things the others don&rsquo;t do as well: explicit event-level observability, workflow agents as first-class typed primitives, and the cleanest vendor-neutrality story via LiteLLM.</p>
+<p>If you&rsquo;re choosing a framework for a team, the right answer depends on your control-flow complexity and the vocabulary your team already uses. If you&rsquo;re choosing one to learn, ADK teaches you concepts that transfer cleanly to the others, which makes it an unusually good teaching vehicle.</p>
+<h2>&ldquo;But ADK is a Google framework&rdquo;</h2>
+<p>This is the single most common objection, and it&rsquo;s fair to name it here rather than hiding it. Google wrote ADK, Google maintains it, and Google has commercial incentives — it wants you to use Gemini and deploy on Vertex AI.</p>
+<p>The model question is settled in one line of code. <code>LlmAgent(model="gemini-2.5-flash")</code> is Gemini. <code>LlmAgent(model=LiteLlm(model="openrouter/anthropic/claude-haiku-4-5"))</code> is Claude. <code>LlmAgent(model=LiteLlm(model="ollama_chat/qwen3:8b"))</code> is a locally-hosted Qwen3. The rest of the code — the tools, the instruction, the session, the runner — does not change.</p>
+<p>Part 1 of this course uses OpenRouter with LiteLLM the whole way. Ten modules&rsquo; worth of material, running against whatever model you pick, with the code unchanged. When we get to Part 2 in module eleven, we switch to Gemini directly because the features we teach then — Google Search grounding, long-context caching, thinking budgets, the Live voice API — only exist on Gemini, and swapping that out for Claude would break the chapter. Until then, ADK is as vendor-neutral as you want it to be.</p>
+<p>The deployment question is the same shape. <code>adk deploy cloud_run</code> is a convenience. The container that command produces is a regular Docker container that runs on any cloud that runs Docker containers. We&rsquo;ll build one in module ten and deploy the same image two ways to prove the point.</p>
+<h2>What to leave this chapter with</h2>
+<p>Four words. Agent, Runner, Event, Session.</p>
+<p>If you can say them out loud without looking at your notes, you&rsquo;re ready for the next module. If any of the four is still fuzzy, re-read this chapter, and then open the notebook and watch the event stream of the weather agent. Every concept in this chapter corresponds to something visible in that notebook&rsquo;s output, and the mapping between the concepts and the output is what makes the mental model real.</p>
+<p>Module two picks up tools as a first-class topic. You saw one flavor — a plain Python function — in the demo. ADK has three more: an OpenAPI specification consumed wholesale, an MCP server connected as a tool source, and another agent wrapped to look like a tool. Each of the four has a time it&rsquo;s the right answer. That&rsquo;s next.</p>
+        </section>
+        </main>
+    </div>
+
+    <script>
+document.addEventListener('DOMContentLoaded', function() {
+    const progressBar = document.getElementById('progress-bar');
+    window.addEventListener('scroll', function() {
+        const scrollTop = window.scrollY;
+        const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+        const progress = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+        progressBar.style.width = progress + '%';
+    });
+
+    const chapters = document.querySelectorAll('.chapter');
+    const navLinks = document.querySelectorAll('#sidebar nav a');
+
+    const observer = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+            if (entry.isIntersecting) {
+                const id = entry.target.id;
+                navLinks.forEach(function(link) {
+                    link.classList.remove('active');
+                    if (link.getAttribute('href') === '#' + id) {
+                        link.classList.add('active');
+                    }
+                });
+            }
+        });
+    }, { rootMargin: '-20% 0px -70% 0px' });
+
+    chapters.forEach(function(ch) { observer.observe(ch); });
+
+    navLinks.forEach(function(link) {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            const target = document.querySelector(this.getAttribute('href'));
+            if (target) {
+                target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                document.getElementById('sidebar').classList.remove('open');
+            }
+        });
+    });
+
+    const menuToggle = document.getElementById('menu-toggle');
+    const sidebar = document.getElementById('sidebar');
+    menuToggle.addEventListener('click', function() { sidebar.classList.toggle('open'); });
+
+    document.addEventListener('click', function(e) {
+        if (window.innerWidth <= 900 &&
+            !sidebar.contains(e.target) &&
+            e.target !== menuToggle) {
+            sidebar.classList.remove('open');
+        }
+    });
+
+    if (navLinks.length > 0) navLinks[0].classList.add('active');
+});
+</script>
+</body>
+</html>

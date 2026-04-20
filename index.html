@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Google ADK — A Practical Course</title>
+  <style>
+    :root {
+      --navy: #1E3A5F;
+      --navy-light: #2A5280;
+      --navy-dark: #122542;
+      --amber: #F59E0B;
+      --amber-dark: #B45309;
+      --bg: #ffffff;
+      --bg-card: #f8fafc;
+      --border: #e2e8f0;
+      --text: #1e293b;
+      --text-light: #64748b;
+      --text-muted: #94a3b8;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      color: var(--text);
+      background: var(--bg);
+      line-height: 1.6;
+    }
+
+    header {
+      background: linear-gradient(135deg, var(--navy-dark) 0%, var(--navy) 50%, var(--navy-light) 100%);
+      color: white;
+      padding: 4rem 2rem 3rem;
+      text-align: center;
+    }
+    header .badge {
+      display: inline-block;
+      background: var(--amber);
+      color: var(--navy-dark);
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      padding: 0.3rem 0.9rem;
+      border-radius: 9999px;
+      margin-bottom: 1rem;
+    }
+    header h1 {
+      font-size: 2.6rem;
+      font-weight: 800;
+      line-height: 1.1;
+      margin-bottom: 0.8rem;
+    }
+    header p.tagline {
+      font-size: 1.05rem;
+      color: rgba(255,255,255,0.82);
+      max-width: 620px;
+      margin: 0 auto 0.6rem;
+    }
+    header p.meta {
+      font-size: 0.85rem;
+      color: rgba(255,255,255,0.55);
+    }
+
+    main {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 3rem 1.5rem 5rem;
+    }
+
+    h2 {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: var(--navy);
+      margin-top: 2.8rem;
+      margin-bottom: 1rem;
+      padding-bottom: 0.4rem;
+      border-bottom: 3px solid var(--amber);
+    }
+
+    .intro-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-top: 1.5rem;
+    }
+    .intro-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--amber);
+      border-radius: 8px;
+      padding: 1rem 1.2rem;
+    }
+    .intro-card strong { color: var(--navy); display: block; margin-bottom: 0.25rem; font-size: 0.95rem; }
+    .intro-card span { font-size: 0.85rem; color: var(--text-light); }
+
+    .modules {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 0.6rem;
+      margin-top: 1rem;
+    }
+    .module {
+      display: grid;
+      grid-template-columns: 60px 1fr auto;
+      align-items: center;
+      gap: 1rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.85rem 1.2rem;
+      transition: all 0.15s;
+      text-decoration: none;
+      color: inherit;
+    }
+    .module:hover {
+      border-color: var(--navy);
+      box-shadow: 0 4px 10px rgba(0,0,0,0.06);
+      transform: translateY(-1px);
+    }
+    .module .num {
+      font-family: 'SF Mono', 'Cascadia Code', monospace;
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--amber-dark);
+      letter-spacing: 0.05em;
+    }
+    .module .title { font-weight: 600; color: var(--navy); font-size: 1rem; line-height: 1.3; }
+    .module .desc { font-size: 0.85rem; color: var(--text-light); margin-top: 0.15rem; }
+    .module .status {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      padding: 0.25rem 0.6rem;
+      border-radius: 9999px;
+    }
+    .module .status.ready { background: #d1fae5; color: #065f46; }
+    .module .status.soon { background: #f1f5f9; color: #64748b; }
+
+    .module.soon { opacity: 0.65; cursor: default; pointer-events: none; }
+
+    .section-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      margin-top: 2rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .resources {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+    .resource {
+      display: block;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.1rem 1.3rem;
+      text-decoration: none;
+      color: inherit;
+      transition: all 0.15s;
+    }
+    .resource:hover {
+      border-color: var(--amber);
+      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    }
+    .resource strong { color: var(--navy); display: block; margin-bottom: 0.35rem; }
+    .resource span { font-size: 0.85rem; color: var(--text-light); }
+
+    footer {
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.82rem;
+      padding: 2rem 1rem 3rem;
+      border-top: 1px solid var(--border);
+      margin-top: 3rem;
+    }
+    footer a { color: var(--navy-light); text-decoration: none; }
+    footer a:hover { color: var(--amber-dark); }
+
+    @media (max-width: 600px) {
+      header h1 { font-size: 1.9rem; }
+      .module { grid-template-columns: 50px 1fr; }
+      .module .status { grid-column: 1 / -1; justify-self: start; margin-top: 0.3rem; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="badge">Course &middot; Part of barcik.training</div>
+  <h1>Google ADK — A Practical Course</h1>
+  <p class="tagline">Build real agents with Google's Agent Development Kit. Vendor-agnostic by default; Gemini-specific only where it earns it.</p>
+  <p class="meta">14 modules &middot; 6–8 hours &middot; English &middot; Apache 2.0 code samples</p>
+</header>
+
+<main>
+
+<section>
+  <h2>What this course gives you</h2>
+  <div class="intro-grid">
+    <div class="intro-card"><strong>Slides</strong><span>One HTML deck per module, keyboard + touch navigation.</span></div>
+    <div class="intro-card"><strong>Speaker notes</strong><span>Spoken-delivery scripts for each slide. Record or read.</span></div>
+    <div class="intro-card"><strong>Textbook</strong><span>Long-form chapter per module. Readable without a computer.</span></div>
+    <div class="intro-card"><strong>Notebooks</strong><span>Runnable code, Colab-first, tested end-to-end.</span></div>
+  </div>
+</section>
+
+<section>
+  <div class="section-label">Part 1 — Vendor-agnostic spine (OpenRouter)</div>
+  <h2>Modules 01 – 10</h2>
+  <div class="modules">
+
+    <a class="module" href="slides/module-01-mental-model/index.html">
+      <div class="num">M01</div>
+      <div>
+        <div class="title">Why agents, why ADK</div>
+        <div class="desc">The four primitives: Agent, Runner, Event, Session.</div>
+      </div>
+      <div class="status ready">Ready</div>
+    </a>
+
+    <a class="module" href="slides/module-02-tools/index.html">
+      <div class="num">M02</div>
+      <div>
+        <div class="title">Tools as verbs</div>
+        <div class="desc">FunctionTool, OpenAPI, MCP, AgentTool — and risk-based design.</div>
+      </div>
+      <div class="status ready">Ready</div>
+    </a>
+
+    <div class="module soon">
+      <div class="num">M03</div>
+      <div>
+        <div class="title">Sessions, State, Events, Artifacts</div>
+        <div class="desc">Where the conversation's memory actually lives.</div>
+      </div>
+      <div class="status soon">Soon</div>
+    </div>
+
+    <div class="module soon">
+      <div class="num">M04</div>
+      <div>
+        <div class="title">The one-line model swap</div>
+        <div class="desc">LiteLLM, OpenRouter, local models via Ollama.</div>
+      </div>
+      <div class="status soon">Soon</div>
+    </div>
+
+    <div class="module soon">
+      <div class="num">M05</div>
+      <div>
+        <div class="title">Workflow agents</div>
+        <div class="desc">Sequential, Parallel, Loop as first-class primitives.</div>
+      </div>
+      <div class="status soon">Soon</div>
+    </div>
+
+    <div class="module soon">
+      <div class="num">M06</div>
+      <div>
+        <div class="title">Multi-agent hierarchies</div>
+        <div class="desc"><code>sub_agents</code> versus <code>AgentTool</code>.</div>
+      </div>
+      <div class="status soon">Soon</div>
+    </div>
+
+    <div class="module soon">
+      <div class="num">M07</div>
+      <div>
+        <div class="title">Callbacks as middleware</div>
+        <div class="desc">Six lifecycle hooks, return-to-override semantics.</div>
+      </div>
+      <div class="status soon">Soon</div>
+    </div>
+
+    <div class="module soon">
+      <div class="num">M08</div>
+      <div>
+        <div class="title">Memory</div>
+        <div class="desc">Sessions vs long-term memory, <code>load_memory</code>.</div>
+      </div>
+      <div class="status soon">Soon</div>
+    </div>
+
+    <div class="module soon">
+      <div class="num">M09</div>
+      <div>
+        <div class="title">Evaluation</div>
+        <div class="desc">Trajectory tests, EvalSets, <code>AgentEvaluator</code>.</div>
+      </div>
+      <div class="status soon">Soon</div>
+    </div>
+
+    <div class="module soon">
+      <div class="num">M10</div>
+      <div>
+        <div class="title">Deployment</div>
+        <div class="desc">Cloud Run, vanilla Docker, the production edge.</div>
+      </div>
+      <div class="status soon">Soon</div>
+    </div>
+
+  </div>
+</section>
+
+<section>
+  <div class="section-label">Part 2 — Gemini unlocks (Google AI Studio)</div>
+  <h2>Modules 11 – 13</h2>
+  <div class="modules">
+
+    <div class="module soon">
+      <div class="num">M11</div>
+      <div>
+        <div class="title">Search grounding, long context, caching</div>
+        <div class="desc">Citations, 2M context window, 90% cache discount.</div>
+      </div>
+      <div class="status soon">Soon</div>
+    </div>
+
+    <div class="module soon">
+      <div class="num">M12</div>
+      <div>
+        <div class="title">Thinking budgets</div>
+        <div class="desc"><code>ThinkingConfig</code> MIN/LOW/MED/HIGH.</div>
+      </div>
+      <div class="status soon">Soon</div>
+    </div>
+
+    <div class="module soon">
+      <div class="num">M13</div>
+      <div>
+        <div class="title">Live API — voice agent</div>
+        <div class="desc">Bidirectional audio, VAD, interruption.</div>
+      </div>
+      <div class="status soon">Soon</div>
+    </div>
+
+  </div>
+</section>
+
+<section>
+  <div class="section-label">Side step</div>
+  <h2>Module 14</h2>
+  <div class="modules">
+
+    <div class="module soon">
+      <div class="num">M14</div>
+      <div>
+        <div class="title">A2A protocol</div>
+        <div class="desc">Agent-to-agent communication: Agent Cards, Tasks, <code>RemoteA2aAgent</code>.</div>
+      </div>
+      <div class="status soon">Soon</div>
+    </div>
+
+  </div>
+</section>
+
+<section>
+  <h2>Other resources</h2>
+  <div class="resources">
+    <a class="resource" href="textbook/index.html">
+      <strong>Textbook</strong>
+      <span>Long-form chapters, built from the markdown sources.</span>
+    </a>
+    <a class="resource" href="notebooks/">
+      <strong>Notebooks folder</strong>
+      <span>All runnable exercises. Open in Jupyter or Colab.</span>
+    </a>
+    <a class="resource" href="https://github.com/robertbarcik/ADK-tutorial">
+      <strong>GitHub repo</strong>
+      <span>Source, issues, CLAUDE.md conventions.</span>
+    </a>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  Part of <a href="https://barcik.training">barcik.training</a>.
+  Materials © Robert Barcík / LearningDoe s.r.o. Code samples Apache 2.0.
+</footer>
+
+</body>
+</html>

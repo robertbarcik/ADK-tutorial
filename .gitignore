@@ -73,3 +73,12 @@ htmlcov/
 
 # Notebook guidelines (internal only)
 NOTEBOOK_GUIDELINES.md
+
+# Textbook build scratch
+textbook/_sources/output/
+
+# Notebook smoke-test scratch
+/tmp/adk-smoke/
+
+# ADK runtime caches
+.adk/

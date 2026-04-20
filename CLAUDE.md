@@ -1,0 +1,113 @@
+# ADK Course — Claude instructions
+
+A full course on Google's Agent Development Kit (ADK). Four aligned components per module: slides, speaker notes, textbook chapter, Jupyter notebook.
+
+## Course shape
+
+- **Part 1 — Vendor-agnostic spine (M01–M10).** ADK as a generic agent framework. Tested against **OpenRouter** so students can use Claude / GPT / Qwen / Gemma via LiteLLM.
+- **Part 2 — Gemini unlocks (M11–M13).** What you lose if you don't use Gemini. Tested against **Google AI Studio**.
+- **Side step — A2A protocol (M14).** 30 min on agent-to-agent communication. Tested against OpenRouter.
+- **Agentic Design Patterns interludes.** Selected concepts from `barcik-training-publications/_sources/agentic-design-patterns/` appear as 1–2 slide interludes embedded in relevant modules, not standalone.
+
+## Folder conventions
+
+```
+slides/shared/              # shared.css + slides.css + slides.js, referenced by every module deck
+slides/module-NN-slug/      # index.html + speaker_notes.md, per module
+textbook/_sources/chapters/ # NN-slug.md — markdown canonical
+textbook/_sources/tools/    # build_html.py
+textbook/index.html         # generated output — do NOT hand-edit
+notebooks/                  # NN_slug.ipynb — one per module, plus legacy/ for the pre-course version
+mcp_servers/                # reusable MCP servers for M02 tools demos
+scripts/                    # python helpers loaded by notebooks when inline code would be too long
+```
+
+## Writing voice — read this before writing content
+
+Two voices. Use the right one for the artifact.
+
+### Slides + speaker notes + textbook → Token Economics voice
+Reference: `barcik-training-publications/_sources/token-economics/chapters/01_genai_moment.md`.
+
+- Short declarative sentences. Reversals as one-line paragraphs.
+- Specific over generic: "~18K GitHub stars" not "popular", "$2 per million tokens" not "cheap".
+- Skeptical of hype. Name gotchas out loud.
+- Analogies to known domains (HTTP, middleware, databases) — not abstract metaphors.
+- No "it's important to note", no "let's explore", no "in this module we will learn about". Open with the content, not the meta.
+- **No emojis in slides, speaker notes, or textbook.**
+- Speaker notes are spoken delivery — readable straight into a microphone. No "let's take a look at...". Just say the thing.
+
+### Notebooks → hybrid voice
+Reference: the existing `notebooks/legacy/*.ipynb` — particularly after the
+April 2026 "notebook guidelines" updates — for the target tone.
+
+- **Colab-first.** `!pip install -q` at the top, `userdata.get(...)` + `getpass` fallback + optional `.env` load. Notebooks must run unchanged on Colab and on a local Jupyter.
+- **Use `LlmAgent`** (the user-facing class name), not `Agent` (which is an alias).
+- **Friendly "Your Turn" framing for exercises** — keep this.
+- **Status emojis are fine and encouraged in code output**: ✅ for success, ❌ for error, 💡 for tips, 🔑 for key-setup. They aid visual parsing in a scrolling notebook. *Do not* use decorative emojis in markdown headings (no 🎯, 🛠️ in an `## Our Agent Goals` header).
+- **Verbose, use-case-framed docstrings** on tool functions are a strength — keep them.
+- **Markdown-cell content** still leans Token Economics in voice (direct, specific, no filler) — the friendly structure is in the scaffolding, not in padded prose.
+- **Pinned dependencies at install**: match `requirements.txt` versions exactly in `!pip install` lines, so Colab and local get identical environments.
+
+### Slides + speaker notes + textbook → Token Economics voice
+*(unchanged — no emojis, no filler, no "let's explore")*
+
+## Keys and model choice
+
+Two environment variables students (and Claude) load from `.env` (copy from `.env.example`):
+
+| Variable | Powers | Cost strategy |
+|---|---|---|
+| `OPENROUTER_API_KEY` | M01–M10 + M14 via `LiteLlm("openrouter/<provider>/<model>")` | Default to cheap models when testing: `openrouter/google/gemini-2.5-flash-lite` or `openrouter/openai/gpt-4o-mini`. |
+| `GOOGLE_API_KEY` | M11–M13 via direct `google-genai` / ADK Gemini | Default to `gemini-2.5-flash` for text, `gemini-live-2.5-flash-native-audio` only where the Live API is the point. |
+
+`GOOGLE_GENAI_USE_VERTEXAI=FALSE` in `.env` keeps ADK on the AI Studio path (no GCP billing).
+
+## Running and testing notebooks
+
+Before merging any module PR, the notebook must run top-to-bottom against a fresh kernel:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate  # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+cp .env.example .env  # then fill in keys
+jupyter nbconvert --to notebook --execute notebooks/NN_slug.ipynb --output-dir /tmp/adk-smoke
+```
+
+If a demo cannot be made to run, do not skip the material — write the slides / chapter / notebook against the intended design, and log the failure in `DEMOS_BROKEN.md` with reproduction steps and a workaround for students.
+
+## Known gotchas (pre-empt these in code)
+
+- **LiteLLM + streaming + tool calls** is flaky on non-Gemini models. Default all OpenRouter demos to `stream=False`.
+- **Ollama**: use `ollama_chat/` prefix, not `ollama/` — the plain prefix causes infinite tool-call loops.
+- **Structured output** breaks when `google-adk` and `litellm` versions drift. Pin them together; bump as a pair.
+- **Google Search / code execution / Vertex Search** can't coexist with other tools in the same agent. Split via `bypass_multi_tools_limit=True` (ADK ≥ 1.16) or wrap each in its own sub-agent.
+- **`adk eval`** hits PermissionError on read-only filesystems. Flag in M09; not a classroom blocker.
+- **A2A on ADK is `@a2a_experimental`.** Pin `a2a-sdk 0.3.24`, use `RemoteA2aAgent(..., use_legacy=False)`.
+- **Windows**: `PYTHONUTF8=1` — documented in `.env.example`.
+
+## Building the textbook
+
+```bash
+python3 textbook/_sources/tools/build_html.py
+# writes textbook/index.html
+```
+
+`textbook/_sources/chapters/*.md` are canonical. Never hand-edit `textbook/index.html`.
+
+## Git workflow
+
+- One branch + one PR per module (after the scaffolding PR). Title format: `course(MNN): <module name>`.
+- All via `gh` CLI. No force-pushes, no `--no-verify`, no amending published commits.
+- Do not auto-merge — user reviews and merges each PR.
+
+## Reference repos (style only — do not modify from here)
+
+- Slide format: `/Users/robertbarcik/git-repos/barcik-training-exin-ai-foundation/slides/`
+- Textbook build + voice: `/Users/robertbarcik/git-repos/barcik-training-publications/_sources/token-economics/`
+- Agentic Design Patterns source: `/Users/robertbarcik/git-repos/barcik-training-publications/_sources/agentic-design-patterns/chapters/`
+
+## Deployment (deferred)
+
+Materials are static. When ready, wire up like `barcik-training-publications`: S3 bucket + CloudFront distribution, `aws s3 sync` + invalidation. Not in scope yet — ship content first.
