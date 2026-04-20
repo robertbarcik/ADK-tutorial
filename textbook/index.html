@@ -320,6 +320,7 @@ hr {
 <li><a href="#multi-agent-hierarchies">6. Multi-agent hierarchies</a></li>
 <li><a href="#callbacks-as-middleware">7. Callbacks as middleware</a></li>
 <li><a href="#memory">8. Memory</a></li>
+<li><a href="#evaluation">9. Evaluation</a></li>
             </ul>
         </nav>
     </aside>
@@ -1672,6 +1673,181 @@ memory_agent = LlmAgent(
 <li><strong>The framing to carry</strong>: long-term memory is a journal, not a cache.</li>
 </ul>
 <p>Module 09 picks up <strong>evaluation</strong>. The first eight modules have been &ldquo;does the agent work?&rdquo; answered by eyeballing the event stream. Module 09 introduces ADK&rsquo;s evaluation framework — <code>AgentEvaluator</code>, <code>EvalSet</code>, trajectory metrics (did the agent call the right tools in the right order?), and the <code>adk eval</code> CLI loop (chat, save evalset, tweak prompt, rerun). Honest about ROUGE-1&rsquo;s limitations for production; gestures at LLM-as-judge as the upgrade path.</p>
+        </section>
+
+        <section class="chapter" id="evaluation">
+            <div class="chapter-number">Chapter 9</div>
+            <h1>Evaluation</h1>
+<p>The first eight chapters have answered &ldquo;does the agent work?&rdquo; by printing events and reading them. That works for demos. It stops working the moment you have more than one use case, more than one agent, more than one prompt iteration. Eyeballing doesn&rsquo;t scale; automated evaluation does.</p>
+<p>This chapter introduces ADK&rsquo;s evaluation framework. You describe a conversation as a <strong>test case</strong> — input, expected tool trajectory, expected response — the framework runs the agent against it, scores what actually happened against what you expected, and reports pass or fail. Like a unit test suite, but for agent behavior.</p>
+<p>ADK ships two built-in metrics, and one of them — trajectory testing — is the genuine differentiator. The other — ROUGE-1 response match — needs honest framing.</p>
+<h2>The two metrics</h2>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Asks</th>
+<th>Scale</th>
+<th>Default threshold</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>tool_trajectory_avg_score</code></td>
+<td>Did the agent call the right tools in the right order with the right args?</td>
+<td>0–1</td>
+<td>1.0 (strict)</td>
+</tr>
+<tr>
+<td><code>response_match_score</code></td>
+<td>How similar is the actual response to the expected one?</td>
+<td>0–1 (ROUGE-1)</td>
+<td>0.8</td>
+</tr>
+</tbody>
+</table>
+<h3>Trajectory is the novel one</h3>
+<p>Most evaluation frameworks for LLM agents score only the final output — did the answer look right? ADK weights <em>how the agent got there</em> equally. For tool-heavy agents, this is the correct framing.</p>
+<p>A correct answer via the wrong reasoning is a bug waiting to happen. If your agent answered correctly today by skipping a verification step or by calling a tool you didn&rsquo;t expect, you were lucky — tomorrow&rsquo;s slightly different input will expose the structural problem. Trajectory testing catches this class of bug immediately; response-only testing misses it.</p>
+<h3>Response match uses ROUGE-1 — and ROUGE-1 is weak</h3>
+<p>ROUGE-1 is unigram overlap between expected and actual text. Great for machine translation benchmarks where the answer space is narrow. Weak for free-form agent responses where the same information can be expressed in many ways.</p>
+<p>The default threshold of 0.8 means &ldquo;80% of the words in the expected response must appear in the actual response.&rdquo; In practice this fails on semantically-correct answers that happen to use different wording — which is most of them. You will fight this metric as you iterate your agent.</p>
+<p>The honest summary: <strong>trajectory testing is useful; ROUGE-1 response matching is weak.</strong> Use trajectory strictly. Use response match loosely or not at all, and plan for LLM-as-judge as the real upgrade.</p>
+<h2>The <code>.test.json</code> format</h2>
+<p>Eval files are JSON documents with one or more test cases. The canonical shape for a minimal case:</p>
+<pre><code class="language-json">{
+  &quot;eval_set_id&quot;: &quot;weather_basic&quot;,
+  &quot;name&quot;: &quot;weather basic&quot;,
+  &quot;description&quot;: &quot;One test case for the weather agent.&quot;,
+  &quot;eval_cases&quot;: [
+    {
+      &quot;eval_id&quot;: &quot;case_prague&quot;,
+      &quot;conversation&quot;: [
+        {
+          &quot;invocation_id&quot;: &quot;inv-1&quot;,
+          &quot;user_content&quot;: {
+            &quot;parts&quot;: [{&quot;text&quot;: &quot;What is the weather in Prague?&quot;}],
+            &quot;role&quot;: &quot;user&quot;
+          },
+          &quot;final_response&quot;: {
+            &quot;parts&quot;: [{&quot;text&quot;: &quot;The weather in Prague is cloudy and 14 degrees Celsius.&quot;}],
+            &quot;role&quot;: &quot;model&quot;
+          },
+          &quot;intermediate_data&quot;: {
+            &quot;tool_uses&quot;: [
+              {&quot;name&quot;: &quot;get_weather&quot;, &quot;args&quot;: {&quot;city&quot;: &quot;Prague&quot;}}
+            ],
+            &quot;intermediate_responses&quot;: []
+          }
+        }
+      ],
+      &quot;session_input&quot;: {
+        &quot;app_name&quot;: &quot;weather_agent&quot;,
+        &quot;user_id&quot;: &quot;tester&quot;,
+        &quot;state&quot;: {}
+      }
+    }
+  ]
+}
+</code></pre>
+<p>Each case has a conversation. Each turn in the conversation has user input, expected final response, and expected intermediate data (the tool calls the agent should make along the way). Optionally, a <code>session_input</code> pre-populates the state.</p>
+<p>You can hand-author these — fine for a one-off test. In practice, author them from the dev UI: run <code>adk web</code>, have a conversation you&rsquo;re happy with, click &ldquo;Save as eval,&rdquo; enter a name. ADK writes exactly this format. The programmatic path and the UI path produce identical files.</p>
+<h2>The eval loop in daily use</h2>
+<p>Three commands:</p>
+<pre><code class="language-bash"># Step 1: run the agent in the dev UI
+adk web
+
+# ... chat, click &quot;Save as eval&quot;, name it
+
+# Step 2: run the evals
+adk eval ./my_agent ./my_agent/my_evals.test.json
+
+# Step 3: tweak the agent; re-run
+adk eval ./my_agent ./my_agent/my_evals.test.json
+</code></pre>
+<p>Chat, save, tweak, re-run. The loop is fast enough to use while prototyping — a few seconds per eval run on a simple agent. Build your evalset incrementally: when the agent handles something tricky, save it. Over a few weeks you accumulate dozens of cases that protect against regressions.</p>
+<p>The programmatic API exposed in the notebook (<code>AgentEvaluator.evaluate(agent_module=..., eval_dataset_file_path_or_dir=...)</code>) does the same thing without the CLI. Handy for unit-test integration — the eval becomes a <code>pytest</code> case.</p>
+<h2>The ROUGE-1 failure mode — live</h2>
+<p>The notebook runs an eval with a deliberately strict threshold of 0.95. It fails, and the failure is the teaching moment.</p>
+<pre><code>expected:  &quot;The weather in Prague is cloudy and 14 degrees Celsius.&quot;
+actual:    &quot;The weather in Prague is cloudy, and the temperature is 14 degrees Celsius.&quot;
+
+response_match_score: 0.87  (threshold 0.95)  → FAIL
+</code></pre>
+<p>Same information, different words. The trajectory score was 1.0 — the agent called the right tool. The entire failure is stylistic. ROUGE-1 counts overlapping unigrams; &ldquo;cloudy, and the temperature is&rdquo; replaces &ldquo;cloudy and&rdquo; with more words, and the count drops.</p>
+<p>In practice, this means:
+- <strong>Don&rsquo;t use 0.8 as a threshold.</strong> Relax to 0.6 for short responses. Give up on the metric entirely for long-form text.
+- <strong>Don&rsquo;t chase the metric.</strong> Tweaking an agent&rsquo;s prompt to pass ROUGE-1 optimizes for word choice, not correctness. That&rsquo;s backwards.
+- <strong>Do use LLM-as-judge for production.</strong> ROUGE-1 is fine as a structural sanity check — did the agent even produce a response with the right shape? — and nothing more.</p>
+<h2>LLM-as-judge: the production upgrade</h2>
+<p>The pattern: for each test case, after running the agent and capturing the actual response, call a <strong>second</strong> LLM with the prompt, the expected answer, and the actual answer. Ask it to score semantic correctness.</p>
+<pre><code class="language-python"># Sketch — not built into ADK &lt; 1.29, straightforward to wire up
+def judge(prompt, expected, actual) -&gt; float:
+    response = judge_llm(
+        f&quot;Is this a reasonable answer to the prompt?\n&quot;
+        f&quot;Prompt: {prompt}\n&quot;
+        f&quot;Expected: {expected}\n&quot;
+        f&quot;Actual: {actual}\n&quot;
+        f&quot;Score 0-1 on semantic correctness. Just the number.&quot;
+    )
+    return float(response.strip())
+</code></pre>
+<p>ADK 1.29+ ships a Gen AI Evaluation Service integration that does this built-in (public preview). Vertex AI users point their eval sets at it and get LLM-graded metrics alongside trajectory. Self-hosted deployments wire the judge themselves — a second LiteLLM call with a grading rubric.</p>
+<p>The framing shift is what matters: trajectory asks <em>did the agent do the right things</em>; LLM-judge asks <em>did it say the right thing</em>. Both matter; neither is ROUGE-1.</p>
+<h2>A full evaluation strategy</h2>
+<p>In real projects, evaluation is not one layer. It&rsquo;s four, run at different cadences:</p>
+<table>
+<thead>
+<tr>
+<th>Layer</th>
+<th>Answers</th>
+<th>Cost</th>
+<th>When to run</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Trajectory score</strong></td>
+<td>Did it call the right tools in the right order?</td>
+<td>Free (structural)</td>
+<td>On every PR</td>
+</tr>
+<tr>
+<td><strong>ROUGE-1 response match</strong></td>
+<td>Is the text lexically close?</td>
+<td>Free, weak signal</td>
+<td>For regressions only</td>
+</tr>
+<tr>
+<td><strong>LLM-as-judge</strong></td>
+<td>Is the answer semantically correct?</td>
+<td>One extra LLM call per case</td>
+<td>Nightly or pre-release</td>
+</tr>
+<tr>
+<td><strong>Human review</strong></td>
+<td>Is it actually good?</td>
+<td>Expensive; unavoidable</td>
+<td>For flagged cases, high-stakes deployments</td>
+</tr>
+</tbody>
+</table>
+<p>You don&rsquo;t pick one. You combine them. Trajectory gives fast, deterministic CI signal. LLM-as-judge gives semantic scoring at moderate cost. Human review is the tail — the cases the automated layers flag as uncertain, plus new-agent deployments, plus customer-reported issues.</p>
+<h2>Production gotcha — read-only filesystems</h2>
+<p>Worth naming before you deploy. <code>adk eval</code> <strong>writes files back to the <code>agents_dir</code></strong> during eval runs — it persists updated session histories into the directory containing your agent. If your deployment image has a read-only root filesystem — a common Kubernetes hardening pattern — eval runs hit <code>PermissionError</code>.</p>
+<p>Upstream issue: adk-python #3887.</p>
+<p><strong>Workaround:</strong> either make the <code>agents_dir</code> writable during eval runs (mount a writable volume), or run eval <strong>outside</strong> the deployed image. Most real deployments do the latter: the agent code is the same in production and in CI, but eval runs in CI against a fresh checkout, not inside the locked-down production image. Doesn&rsquo;t block classroom use; becomes a real concern as you wire eval into a production CI/CD pipeline.</p>
+<h2>What to carry forward</h2>
+<ul>
+<li><strong>Two built-in metrics</strong>: <code>tool_trajectory_avg_score</code> (strict, useful) and <code>response_match_score</code> (ROUGE-1, weak).</li>
+<li><strong>Trajectory is ADK&rsquo;s differentiated contribution to eval.</strong> Use it strictly. Lock in the tool-call path.</li>
+<li><strong>ROUGE-1 punishes stylistic variation.</strong> Don&rsquo;t chase the default 0.8 threshold. Relax, or replace with LLM-as-judge.</li>
+<li><strong>LLM-as-judge is the production upgrade.</strong> ADK 1.29+ ships a Gen AI Evaluation Service path; self-host with a second LiteLLM call.</li>
+<li><strong><code>.test.json</code></strong> authored by hand or saved from <code>adk web</code>. Build evalsets incrementally as you iterate.</li>
+<li><strong><code>adk eval</code></strong> writes to <code>agents_dir</code> — breaks in read-only containers. Run eval outside the deployed image.</li>
+<li><strong>Full strategy</strong>: trajectory on every PR; LLM-judge nightly; human review at the tail. Don&rsquo;t pick one.</li>
+</ul>
+<p>Module 10 — the last module of Part 1 — picks up <strong>deployment</strong>. <code>adk deploy cloud_run</code> as the one-command story, a vanilla Dockerfile that runs the same agent on any cloud, Vertex AI Agent Engine mentioned as the opinionated managed path. Then Part 2 begins: Gemini-specific features you lose when you&rsquo;re vendor-neutral.</p>
         </section>
         </main>
     </div>

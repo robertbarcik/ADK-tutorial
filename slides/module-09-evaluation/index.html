@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ADK Course — M09: Evaluation</title>
+  <link rel="stylesheet" href="../shared/shared.css">
+  <link rel="stylesheet" href="../shared/slides.css">
+</head>
+<body>
+  <nav class="progress-strip">
+    <a href="../../index.html" class="progress-home">Course</a>
+    <div class="progress-title">M09 — Evaluation</div>
+    <div class="progress-meta">
+      <span class="slide-counter">1 / 1</span>
+      <button class="theme-toggle">Theme</button>
+    </div>
+  </nav>
+
+  <main class="slide-viewport">
+
+  <div class="slide active" data-module="09" data-type="section-title">
+    <div class="topic-badge">Module 09 &middot; Part 1 Vendor-agnostic</div>
+    <h1>Evaluation</h1>
+    <h3>Beyond eyeballing the event stream</h3>
+    <p class="highlight-text">Trajectory testing is the real differentiator.</p>
+  </div>
+
+  <div class="slide" data-module="09" data-type="keyfact">
+    <h2 class="text-muted" style="border-bottom:none;font-size:1em;text-transform:uppercase;letter-spacing:0.08em;">Eight modules of</h2>
+    <p><em>"does the agent work?"</em></p>
+    <h2 class="text-muted" style="border-bottom:none;font-size:1em;text-transform:uppercase;letter-spacing:0.08em;margin-top:var(--space-6);">answered by</h2>
+    <p><strong>eyeballing the event stream</strong>.</p>
+    <p style="font-size:0.7em;color:var(--text-muted);margin-top:var(--space-4);">Module 9 stops doing that.</p>
+  </div>
+
+  <div class="slide" data-module="09">
+    <h2>Two built-in metrics</h2>
+    <table>
+      <thead><tr><th>Metric</th><th>Asks</th><th>Scale</th><th>Default</th></tr></thead>
+      <tbody>
+        <tr><td><code>tool_trajectory_avg_score</code></td><td>Right tools, right order, right args?</td><td>0-1</td><td>1.0 (strict)</td></tr>
+        <tr><td><code>response_match_score</code></td><td>Final text close to expected?</td><td>0-1 (ROUGE-1)</td><td>0.8</td></tr>
+      </tbody>
+    </table>
+    <p><strong>Trajectory is the novel one.</strong> Most eval frameworks score outputs only. ADK weighting <em>how the agent got there</em> matches tool-heavy reality.</p>
+  </div>
+
+  <div class="slide" data-module="09" data-type="keyfact">
+    <h2 class="text-muted" style="border-bottom:none;font-size:1em;text-transform:uppercase;letter-spacing:0.08em;">Why trajectory matters</h2>
+    <p>A correct answer via the wrong reasoning<br>is a <strong>bug waiting to happen</strong>.</p>
+  </div>
+
+  <div class="slide" data-module="09">
+    <h2>The eval loop in daily use</h2>
+<pre class="diagram">┌─────────────────────────────────────────────────────────┐
+│                                                         │
+│   adk web  ──▶ chat with agent                          │
+│                    │                                    │
+│                    ▼                                    │
+│             "Save as eval" button                       │
+│                    │                                    │
+│                    ▼                                    │
+│           .test.json file appears                       │
+│                                                         │
+│   adk eval ./my_agent ./my_agent/tests.test.json        │
+│                    │                                    │
+│                    ▼                                    │
+│             pass / fail report                          │
+│                    │                                    │
+│     tweak agent ──┘ (repeat)                            │
+│                                                         │
+└─────────────────────────────────────────────────────────┘</pre>
+    <p>Chat, save, tweak, re-run. Build the evalset <strong>incrementally</strong> as you iterate on the agent.</p>
+  </div>
+
+  <div class="slide" data-module="09" data-type="code">
+    <h2>A minimal <code>.test.json</code></h2>
+<pre><code>{
+  "eval_cases": [{
+    "eval_id": "case_prague",
+    "conversation": [{
+      "invocation_id": "inv-1",
+      "user_content": {
+        "parts": [{"text": "What is the weather in Prague?"}],
+        "role": "user"
+      },
+      "final_response": {
+        "parts": [{"text": "The weather in Prague is cloudy and 14 degrees Celsius."}],
+        "role": "model"
+      },
+      "intermediate_data": {
+        "tool_uses": [{"name": "get_weather", "args": {"city": "Prague"}}]
+      }
+    }]
+  }]
+}</code></pre>
+    <p class="code-caption">Declares expected user input, expected tool trajectory, expected final response.</p>
+  </div>
+
+  <div class="slide" data-module="09" data-type="section-title" style="background:linear-gradient(135deg,var(--amber-dark) 0%,var(--amber) 100%);">
+    <h1>Live</h1>
+    <h3>Eval with strict threshold — fails on ROUGE-1</h3>
+    <p class="highlight-text" style="color:white;">Notebook cell 13</p>
+  </div>
+
+  <div class="slide" data-module="09">
+    <h2>The failure tells a story</h2>
+<pre class="diagram">expected:  "The weather in Prague is cloudy and 14 degrees Celsius."
+actual:    "The weather in Prague is cloudy, and the temperature is 14 degrees Celsius."
+
+response_match_score: 0.87  (threshold 0.95)  → FAIL</pre>
+    <p><strong>Same information. Different words.</strong> ROUGE-1 counts overlapping unigrams; stylistic variation costs you points.</p>
+    <p style="color:var(--text-muted);font-size:0.9em;">Trajectory score was 1.0 — the agent called the right tool. The failure is pure wording.</p>
+  </div>
+
+  <div class="slide" data-module="09" data-type="keyfact">
+    <h2 class="text-muted" style="border-bottom:none;font-size:1em;text-transform:uppercase;letter-spacing:0.08em;">The honest summary</h2>
+    <p><strong>Trajectory testing is useful.<br>ROUGE-1 response matching is weak.</strong></p>
+    <p style="font-size:0.7em;color:var(--text-muted);margin-top:var(--space-4);">ROUGE-1 punishes legitimate stylistic variation. Don't rely on it for production.</p>
+  </div>
+
+  <div class="slide" data-module="09" data-type="code">
+    <h2>Working range in practice</h2>
+<pre><code>// test_config.json next to your .test.json
+{
+  "criteria": {
+    "tool_trajectory_avg_score": 1.0,    // keep strict
+    "response_match_score": 0.6          // permissive
+  }
+}</code></pre>
+    <p>0.6-0.7 for short responses; give up on <code>response_match_score</code> for long-form text.</p>
+    <p style="color:var(--text-muted);font-size:0.9em;">Dropping the threshold isn't a win — it's an admission the metric is the wrong tool. The real upgrade is LLM-as-judge.</p>
+  </div>
+
+  <div class="slide" data-module="09" data-type="code">
+    <h2>LLM-as-judge — the real upgrade</h2>
+<pre><code># Pseudocode; ADK 1.29+ ships Gen AI Evaluation Service for this
+def judge(prompt, expected, actual) -> float:
+    response = judge_llm(
+        f"Is this a reasonable answer?\n"
+        f"Prompt: {prompt}\n"
+        f"Expected: {expected}\n"
+        f"Actual: {actual}\n"
+        f"Score 0-1 on semantic correctness."
+    )
+    return float(response.strip())</code></pre>
+    <p>Different framing: trajectory asks <em>did the agent do the right things</em>; LLM-judge asks <em>did it say the right thing</em>.</p>
+  </div>
+
+  <div class="slide" data-module="09">
+    <h2>The full picture</h2>
+    <table>
+      <thead><tr><th>Layer</th><th>Answers</th><th>Cost</th></tr></thead>
+      <tbody>
+        <tr><td>Trajectory score</td><td>Did it call the right tools in the right order?</td><td>Free — structural check</td></tr>
+        <tr><td>ROUGE-1 response match</td><td>Is the text lexically close to expected?</td><td>Free — but weak signal</td></tr>
+        <tr><td><strong>LLM-as-judge</strong></td><td>Is the answer semantically correct?</td><td>One extra LLM call per test</td></tr>
+        <tr><td>Human review</td><td>Is the answer actually good?</td><td>Expensive; unavoidable at the tail</td></tr>
+      </tbody>
+    </table>
+    <p>Combine all four at different cadences. Trajectory on every PR, ROUGE-1 for regressions, LLM-judge nightly, human review for flagged cases.</p>
+  </div>
+
+  <div class="slide" data-module="09">
+    <h2>Production gotcha</h2>
+    <div class="callout callout-gotcha">
+      <div class="callout-title"><code>adk eval</code> writes to <code>agents_dir</code></div>
+      <p style="margin:0;">In locked-down containers with read-only root filesystems (common in Kubernetes), the eval run hits <code>PermissionError</code>. Upstream: adk-python #3887.</p>
+    </div>
+    <p><strong>Workaround:</strong> make agents_dir writable during eval, OR run eval outside the deployed image — CI job against the same code, developer machine, separate eval pipeline.</p>
+  </div>
+
+  <div class="slide" data-module="09" data-type="keyfact">
+    <h2 class="text-muted" style="border-bottom:none;font-size:1em;text-transform:uppercase;letter-spacing:0.08em;">What to carry forward</h2>
+    <p>Test <strong>trajectory</strong> strictly.<br>Test <strong>response</strong> with LLM-as-judge.<br>Don't trust ROUGE-1 past the sanity check.</p>
+  </div>
+
+  <div class="slide" data-module="09" data-type="section-title" style="background:linear-gradient(135deg,var(--navy) 0%,var(--navy-light) 100%);">
+    <div class="topic-badge">Up next</div>
+    <h1>M10 &mdash; Deployment</h1>
+    <p class="highlight-text">Last module of Part 1. Cloud Run, vanilla Docker, Vertex AI Agent Engine mention.</p>
+  </div>
+
+  </main>
+
+  <script src="../shared/slides.js"></script>
+</body>
+</html>
