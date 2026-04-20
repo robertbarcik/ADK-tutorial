@@ -325,6 +325,7 @@ hr {
 <li><a href="#gemini-unlocks-grounding-and-context-caching">11. Gemini unlocks — grounding and context caching</a></li>
 <li><a href="#thinking-budgets">12. Thinking budgets</a></li>
 <li><a href="#live-api-voice-agent">13. Live API voice agent</a></li>
+<li><a href="#a2a-protocol-the-side-step">14. A2A protocol — the side step</a></li>
             </ul>
         </nav>
     </aside>
@@ -2681,6 +2682,209 @@ Audio out   ◀──WebSocket──   stream response audio
 <li><strong>Rate-limit exploration.</strong> Run multiple concurrent Live sessions. What rate limits appear on your key&rsquo;s tier?</li>
 </ol>
 <p>Module 14 — the course finale — steps sideways into the <strong>A2A protocol</strong>. Agent-to-agent communication — the protocol Google donated to the Linux Foundation in June 2025 that&rsquo;s now the industry standard for agents talking to agents across vendors. 30-minute block: four nouns, one demo, the gotchas that make A2A worth understanding as architecture before infrastructure.</p>
+        </section>
+
+        <section class="chapter" id="a2a-protocol-the-side-step">
+            <div class="chapter-number">Chapter 14</div>
+            <h1>A2A protocol — the side step</h1>
+<p>The course finale. Thirty minutes on something that isn&rsquo;t strictly ADK at all — the <strong>A2A protocol</strong>, the industry standard for agent-to-agent communication.</p>
+<p>You&rsquo;ve spent thirteen chapters building ADK agents that talk to tools. This chapter is about those agents talking to <strong>other agents</strong> — across processes, across organizations, possibly written in completely different frameworks. This is the single most durable thing in this course. <strong>MCP and A2A together will outlast any specific model, any specific framework, any specific vendor.</strong></p>
+<h2>The framing</h2>
+<p>One sentence that captures everything. <strong>MCP is agent↔tool. A2A is agent↔agent.</strong></p>
+<p>You saw MCP in Module 02 — connecting an agent to a separate tool-server process. A2A is the protocol for the next layer up: one agent calling another agent across a network boundary. They&rsquo;re both under Linux Foundation governance now (A2A since June 2025, MCP since December 2025), so they evolve together as the standard for the agentic-AI infrastructure layer.</p>
+<h2>The journey — fast</h2>
+<ul>
+<li><strong>April 2025</strong> — Google launches A2A at Cloud Next.</li>
+<li><strong>June 2025</strong> — Donated to the Linux Foundation. Technical Steering Committee forms.</li>
+<li><strong>August 2025</strong> — IBM&rsquo;s competing Agent Communication Protocol (ACP) merged in.</li>
+<li><strong>December 2025</strong> — MCP also donated to the Linux Foundation&rsquo;s Agentic AI Foundation; A2A and MCP under cross-vendor governance together.</li>
+<li><strong>Early 2026</strong> — A2A v1.0 spec landed. Five official language SDKs (Python, JavaScript, Java, Go, .NET).</li>
+<li><strong>Now</strong> — ~150 founding-member organizations. ~23K GitHub stars. ADK&rsquo;s A2A integration still marked <code>@a2a_experimental</code>.</li>
+</ul>
+<p>The spec is real and stable. The ecosystem is real but thin.</p>
+<h2>The four nouns</h2>
+<p>Memorize these. Everything else about A2A is commentary on these four.</p>
+<table>
+<thead>
+<tr>
+<th>Noun</th>
+<th>What it is</th>
+<th>Analogue</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Agent Card</strong></td>
+<td>JSON descriptor at <code>/.well-known/agent-card.json</code> — identity, skills, capabilities, auth</td>
+<td>OpenAPI spec, but for an agent</td>
+</tr>
+<tr>
+<td><strong>Task</strong></td>
+<td>Stateful, server-owned unit of work. ID, status, history, artifacts</td>
+<td>A GitHub Issue</td>
+</tr>
+<tr>
+<td><strong>Message</strong></td>
+<td>One turn — user or agent — with typed parts (text/file/data)</td>
+<td>A chat message</td>
+</tr>
+<tr>
+<td><strong>Artifact</strong></td>
+<td>Durable output of a task (reports, images, structured data)</td>
+<td>An Issue&rsquo;s attachments</td>
+</tr>
+</tbody>
+</table>
+<p>Two more distinctions worth getting right:</p>
+<ul>
+<li><strong>Skills</strong> are the semantic menu a discovering agent reads to decide whether to call — <code>translate_spanish</code>, <code>find_flights</code>, each with description and examples.</li>
+<li><strong>Capabilities</strong> are protocol feature-flags — whether the agent supports streaming, push notifications, state-history replay.</li>
+</ul>
+<p>Pithy version: <em>&ldquo;skills are the restaurant&rsquo;s menu; capabilities are whether it does delivery.&rdquo;</em></p>
+<h2>Where A2A fits architecturally</h2>
+<p>The layered pattern A2A enables:</p>
+<pre><code>Orchestrator  ─────A2A─────▶  Remote specialist
+  (ADK)                         (LangGraph, CrewAI,
+    │                            or another ADK)
+    │                              │
+    │                              ├──MCP──▶ Tool server
+    │                              │        (any language)
+    │                              │
+    │                              └──MCP──▶ Tool server
+    │
+    └──MCP──▶ Local tools
+</code></pre>
+<p>An orchestrator agent (say, ADK) uses <strong>A2A</strong> to reach specialist agents — which might be written in LangGraph or CrewAI or just another ADK process owned by a different team. Each specialist, in turn, uses <strong>MCP</strong> to call tools — which might be written in Go, Rust, TypeScript, whatever.</p>
+<p>This is the shape of a modern multi-agent deployment. A2A for agent-to-agent across frameworks. MCP for agent-to-tool across languages. Your code is an orchestrator layer over both.</p>
+<h2>Exposing an ADK agent as A2A — <code>to_a2a()</code></h2>
+<pre><code class="language-python">from google.adk.agents import LlmAgent
+from google.adk.a2a.utils.agent_to_a2a import to_a2a
+import uvicorn
+
+root_agent = LlmAgent(
+    name=&quot;temperature_specialist&quot;,
+    model=LiteLlm(model=&quot;openrouter/google/gemini-2.5-flash-lite&quot;),
+    description=&quot;Converts Celsius to Fahrenheit via convert_c_to_f tool.&quot;,
+    instruction=&quot;Convert temperatures. Return only the number.&quot;,
+    tools=[convert_c_to_f],
+)
+
+app = to_a2a(root_agent, host=&quot;localhost&quot;, port=8123)
+uvicorn.run(app, host=&quot;localhost&quot;, port=8123)
+</code></pre>
+<p>Three lines do the server side. <code>to_a2a</code> returns a Starlette app. Starlette speaks A2A — it auto-generates the Agent Card, exposes the JSON-RPC endpoint, handles task lifecycle. You run it under uvicorn and you have an agent-as-HTTP-service any A2A client can call.</p>
+<h2>Consuming an A2A agent — <code>RemoteA2aAgent</code></h2>
+<pre><code class="language-python">from google.adk.agents.remote_a2a_agent import RemoteA2aAgent, AGENT_CARD_WELL_KNOWN_PATH
+
+remote = RemoteA2aAgent(
+    name=&quot;remote_temp_agent&quot;,
+    agent_card=f&quot;http://localhost:8123{AGENT_CARD_WELL_KNOWN_PATH}&quot;,
+    description=&quot;Remote temperature conversion specialist.&quot;,
+    use_legacy=False,   # critical; see below
+)
+
+# Use it anywhere a regular agent fits
+runner = Runner(agent=remote, ...)
+</code></pre>
+<p><code>RemoteA2aAgent</code> takes an Agent Card URL, fetches it on first use, and exposes the remote agent as a local ADK agent. Drop it into a <code>Runner</code>, into another agent&rsquo;s <code>sub_agents=</code> list, or wrap it in an <code>AgentTool</code>. The composition patterns from Module 06 apply unchanged — A2A is just the transport underneath.</p>
+<p><strong>The single most practical detail in this chapter: <code>use_legacy=False</code>.</strong> The default is <code>True</code>, and the legacy executor has three known bugs:</p>
+<ol>
+<li>User messages can be duplicated across the wire.</li>
+<li>Remote agent outputs are mis-classified as &ldquo;thoughts&rdquo; in the event stream.</li>
+<li>Nested remote agents can lose sub-agent output entirely.</li>
+</ol>
+<p>The new path (<code>use_legacy=False</code>) replaces the executor with one that fixes these. For new code, always <code>False</code>. Type it explicitly every time until the default flips.</p>
+<h2>The event stream — what a remote call looks like</h2>
+<p>When you run the remote agent:</p>
+<pre><code>USER: Convert 20 degrees Celsius to Fahrenheit.
+
+[tool_call] convert_c_to_f                   ← ran on the REMOTE server
+[tool_resp] {'celsius': 20, 'fahrenheit': 68.0}
+[remote_temp_agent] 68
+</code></pre>
+<p>The <code>convert_c_to_f</code> tool call executed <strong>on the remote server&rsquo;s side of the network</strong>, not locally. Your side sees a regular event — tool call, tool response, final text — same shape as a local agent&rsquo;s work. A2A bridges the gap seamlessly.</p>
+<p>This is the A2A payoff. From your agent&rsquo;s perspective, the specialist might as well be local. From the network&rsquo;s perspective, you made an HTTP call to a separate process. From the architectural perspective, you&rsquo;ve just crossed a framework or organization boundary. The event stream doesn&rsquo;t care which.</p>
+<h2>The Agent Card, up close</h2>
+<p>ADK auto-generates the Agent Card from your agent&rsquo;s name, description, and tools. Here&rsquo;s what the course&rsquo;s demo agent produces:</p>
+<pre><code class="language-json">{
+  &quot;name&quot;: &quot;temperature_specialist&quot;,
+  &quot;description&quot;: &quot;Converts Celsius to Fahrenheit via convert_c_to_f tool.&quot;,
+  &quot;protocolVersion&quot;: &quot;0.3.0&quot;,
+  &quot;preferredTransport&quot;: &quot;JSONRPC&quot;,
+  &quot;capabilities&quot;: {},
+  &quot;defaultInputModes&quot;: [&quot;text/plain&quot;],
+  &quot;defaultOutputModes&quot;: [&quot;text/plain&quot;],
+  &quot;skills&quot;: [
+    {
+      &quot;id&quot;: &quot;temperature_specialist&quot;,
+      &quot;name&quot;: &quot;model&quot;,
+      &quot;description&quot;: &quot;Converts Celsius to Fahrenheit... Convert temperatures using the tool. Return only the number.&quot;,
+      &quot;tags&quot;: [&quot;llm&quot;],
+      &quot;examples&quot;: []
+    },
+    {
+      &quot;id&quot;: &quot;temperature_specialist-convert_c_to_f&quot;,
+      &quot;description&quot;: &quot;Convert Celsius to Fahrenheit.&quot;,
+      &quot;tags&quot;: [&quot;tool&quot;],
+      &quot;examples&quot;: []
+    }
+  ]
+}
+</code></pre>
+<p>For production, you&rsquo;d author this by hand:</p>
+<ul>
+<li>Populate <code>examples</code> on each skill with realistic invocations.</li>
+<li>Declare <code>capabilities.streaming: true</code> if your agent supports incremental output.</li>
+<li>Add <code>securitySchemes</code> and <code>security</code> blocks for authenticated endpoints.</li>
+<li>Sign the card with an <code>AgentCardSignature</code> (JWS over canonicalized JSON) so consumers can verify identity.</li>
+</ul>
+<p>The auto-generated version is fine for internal and demo use; the carefully-authored version is what you ship to external consumers.</p>
+<h2>Maturity — an honest read</h2>
+<p>What&rsquo;s real:</p>
+<ul>
+<li><strong>A2A v1.0</strong> is a stable, published specification.</li>
+<li><strong>Linux Foundation governance</strong> is in place with a cross-vendor Technical Steering Committee.</li>
+<li><strong>Five official SDKs</strong> — Python, JavaScript, Java, Go, .NET.</li>
+<li><strong>150+ founding-member organizations</strong> have signed on.</li>
+</ul>
+<p>What&rsquo;s thin:</p>
+<ul>
+<li>Most of those 150 orgs are signatories, not shippers. Named customer references (Adobe, Tyson Foods, S&amp;P Global Market Intelligence) exist, but no deep production post-mortems are public yet.</li>
+<li>ADK&rsquo;s A2A integration is still marked <code>@a2a_experimental</code>. Tool-call shapes can drift between ADK and a2a-sdk versions; <code>use_legacy=False</code> exists because the legacy path has bugs.</li>
+<li>The cross-org <strong>trust fabric is unfinished</strong>. Signed Agent Cards are in v1.0 as SHOULD, not MUST. There&rsquo;s no central root-of-trust CA for agents. Registries — how you discover an agent you haven&rsquo;t hard-coded a URL for — are explicitly marked &ldquo;future exploration&rdquo; in the spec.</li>
+</ul>
+<p>The framing to carry: <strong>A2A is architecture worth understanding, not infrastructure you&rsquo;d bet production on this year.</strong> Build against it for new work; don&rsquo;t migrate existing production workloads yet. By late 2026 this should invert as the ecosystem matures.</p>
+<h2>Six gotchas</h2>
+<ol>
+<li><strong>The <code>.well-known</code> path rename.</strong> <code>/.well-known/agent.json</code> (v0.2) became <code>/.well-known/agent-card.json</code> (v0.3). Code copied from older blogs has the wrong path.</li>
+<li><strong>Legacy executor bugs.</strong> <code>RemoteA2aAgent(..., use_legacy=True)</code> (the default) has three issues: user-message duplication, remote outputs mis-classified as thoughts, sub-agent output loss. Pass <code>use_legacy=False</code> always.</li>
+<li><strong>Version-pin ADK and a2a-sdk together.</strong> ADK 1.28-1.31 uses <code>a2a-sdk 0.3.24</code>; A2A v1.0 requires <code>a2a-sdk ≥ 1.0.0a1</code> which ADK doesn&rsquo;t yet speak. Don&rsquo;t mix.</li>
+<li><strong>Discovery is underspecified.</strong> The <code>.well-known</code> path is stable; registries are explicitly future work. Don&rsquo;t build on registry features.</li>
+<li><strong>Agent Engine is non-spec-default.</strong> Google&rsquo;s Agent Engine serves the Agent Card at <code>/v1/card</code> behind authentication, not at <code>/.well-known/</code>. Third-party A2A clients expecting the standard path will fail against Agent Engine.</li>
+<li><strong>Cross-org trust is unsolved.</strong> Every cross-org A2A response is <strong>untrusted input</strong> to your planner. Simon Willison&rsquo;s lethal trifecta — private data + untrusted content + external communications — applies fully. Treat every remote agent&rsquo;s output as if a malicious user wrote it; run it through the same guardrails you&rsquo;d apply to user input.</li>
+</ol>
+<h2>What to carry forward — M14</h2>
+<ul>
+<li><strong>Four A2A nouns</strong>: Agent Card, Task, Message, Artifact.</li>
+<li><strong>Two patterns</strong>: A2A for agent↔agent; MCP for agent↔tool.</li>
+<li><strong><code>to_a2a(agent)</code></strong> exposes any ADK agent as A2A; <strong><code>RemoteA2aAgent(agent_card=...)</code></strong> consumes one.</li>
+<li><strong><code>use_legacy=False</code></strong> is non-negotiable for new code.</li>
+<li><strong>Version-pin</strong> <code>google-adk</code> + <code>a2a-sdk</code> together.</li>
+<li><strong>Maturity check</strong>: spec is real, ecosystem is thin. Architecture worth understanding; not yet production-grade infrastructure.</li>
+<li><strong>Cross-org trust is unsolved</strong>; every remote agent&rsquo;s output is untrusted.</li>
+</ul>
+<h2>Course finale</h2>
+<p>Fourteen chapters. From &ldquo;what is an agent&rdquo; to &ldquo;agents talking to agents across organizations.&rdquo;</p>
+<p><strong>Part 1 — Vendor-agnostic spine</strong> (M01-M10). The four primitives; four tool flavors; state with scope prefixes; one-line model swaps; workflow agents (Sequential / Parallel / Loop); multi-agent via <code>sub_agents</code> and <code>AgentTool</code>; callbacks as middleware; memory with persistence and long-term recall; automated eval; deployment as HTTP service.</p>
+<p><strong>Part 2 — Gemini unlocks</strong> (M11-M13). Google Search grounding with real citations; long context + 90%-discount caching; thinking budgets; Live API voice agents.</p>
+<p><strong>Side step</strong> (M14). A2A protocol for cross-framework agent-to-agent communication.</p>
+<h3>What to do next</h3>
+<ul>
+<li><strong>Build something.</strong> A voice-first customer-support bot. A research orchestrator. A personal assistant that survives restarts. The course taught mechanics; building teaches the rest.</li>
+<li><strong>Follow the protocols.</strong> A2A and MCP are both under Linux Foundation governance. The protocols outlast frameworks; invest in understanding them as durable.</li>
+<li><strong>Watch the course repo.</strong> <code>DEMOS_BROKEN.md</code> tracks what&rsquo;s broken at preview-tier; entries will be cleared as the APIs stabilize.</li>
+</ul>
+<p>Thanks for taking the course. Go build something.</p>
         </section>
         </main>
     </div>
