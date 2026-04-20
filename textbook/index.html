@@ -324,6 +324,7 @@ hr {
 <li><a href="#deployment">10. Deployment</a></li>
 <li><a href="#gemini-unlocks-grounding-and-context-caching">11. Gemini unlocks — grounding and context caching</a></li>
 <li><a href="#thinking-budgets">12. Thinking budgets</a></li>
+<li><a href="#live-api-voice-agent">13. Live API voice agent</a></li>
             </ul>
         </nav>
     </aside>
@@ -2478,6 +2479,208 @@ router = LlmAgent(
 <li><strong>Include thoughts.</strong> Set <code>include_thoughts=True</code> in a <code>ThinkingConfig</code> and inspect the response. What does the model&rsquo;s internal reasoning look like?</li>
 </ol>
 <p>Module 13 — the last of the three Gemini unlocks — covers the <strong>Live API</strong>: bidirectional voice streaming with voice activity detection and interruption. It&rsquo;s the single most differentiated Gemini-only capability on the market as of April 2026. Fair warning: the Live API is genuinely fragile in some environments. If the notebook demo doesn&rsquo;t run end-to-end on your machine, the course&rsquo;s <code>DEMOS_BROKEN.md</code> logs the fallback path.</p>
+        </section>
+
+        <section class="chapter" id="live-api-voice-agent">
+            <div class="chapter-number">Chapter 13</div>
+            <h1>Live API voice agent</h1>
+<p>The third and most interesting of the three Gemini-only unlocks.</p>
+<p><strong>The Live API lets Gemini exchange audio bidirectionally with the user in real time.</strong> Voice in, voice out. Voice activity detection. User-interruption-aware. Sub-second latency on happy-path sessions. Nothing in the Claude, GPT, or open-weight ecosystem ships this cleanly as of April 2026. OpenAI&rsquo;s Realtime API is the closest alternative — different semantics, different pricing, different failure modes. Anthropic has no direct equivalent.</p>
+<p>The production use cases are the obvious ones: voice assistants, live interpreter agents, real-time coaching tools, accessibility apps, voice-driven customer support. If voice-first conversational agents are your product, Gemini Live is where you build.</p>
+<p><strong>Fair warning before we begin.</strong> Live is the most fragile of the three Gemini unlocks. The API is preview-tier; model names change frequently; the happy-path session can fail with server-side errors that have nothing to do with your code. The course repo&rsquo;s <code>DEMOS_BROKEN.md</code> logs the specific current failure mode observed at recording time.</p>
+<p>This chapter teaches the <strong>mechanics</strong> — the API shape, the queue-based interaction pattern, what&rsquo;s special about it — even when the demo can&rsquo;t fully run end-to-end in some environments. The concepts are more durable than this month&rsquo;s version-string.</p>
+<h2>What Live does differently</h2>
+<p>Every module until now used <code>runner.run_async(new_message=...)</code> — a request/response cycle. You hand ADK a user message, ADK drives the agent, events stream back, the turn ends, you move on to the next turn.</p>
+<p>Live is different. The agent holds <strong>an open bidirectional WebSocket</strong> to Gemini. You don&rsquo;t hand over a single message; you stream chunks of audio (or text) into a queue, and chunks of response audio (or text) stream back, in parallel, for as long as the session is open. There are no &ldquo;turns&rdquo; in the traditional sense — just two streams flowing in opposite directions, with turn boundaries inferred from silence.</p>
+<p>Four things make Live feel different from text chat:</p>
+<ul>
+<li><strong>Bidirectional audio</strong> over a single WebSocket. Not request-then-response; they run simultaneously.</li>
+<li><strong>Voice Activity Detection (VAD)</strong> — Gemini decides when you&rsquo;ve stopped talking and starts responding. You don&rsquo;t say &ldquo;okay, done&rdquo;; silence triggers response.</li>
+<li><strong>Interruption</strong> — if you start talking while Gemini is mid-response, Gemini stops immediately and listens. The natural &ldquo;wait, actually&hellip;&rdquo; pattern humans use.</li>
+<li><strong>Sub-second latency</strong> on happy-path sessions.</li>
+</ul>
+<h2>The three primitives</h2>
+<table>
+<thead>
+<tr>
+<th>Primitive</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>LiveRequestQueue</code></td>
+<td>Client-side queue you push user input into (text chunks via <code>send_content</code>, audio blobs via <code>send_realtime</code>)</td>
+</tr>
+<tr>
+<td><code>Runner.run_live(...)</code></td>
+<td>Async generator yielding server events; runs until you close the queue</td>
+</tr>
+<tr>
+<td><code>RunConfig(response_modalities=[...])</code></td>
+<td>Which output modalities — <code>"TEXT"</code>, <code>"AUDIO"</code>, or both</td>
+</tr>
+</tbody>
+</table>
+<p>Same <code>Runner</code> as the previous 12 modules; different method. Same event-stream shape; different transport.</p>
+<p>Model names that ship the Live capability move around — check <a href="https://ai.google.dev/gemini-api/docs/live">ai.google.dev/gemini-api/docs/live</a> for the current catalog. As of this writing:</p>
+<ul>
+<li><strong><code>gemini-3.1-flash-live-preview</code></strong> — preview, free-tier-available. What the notebook tries.</li>
+<li><strong><code>gemini-live-2.5-flash-native-audio</code></strong> — paid, production-grade, ~$0.012 per minute of audio.</li>
+</ul>
+<h2>The API shape — text-mode Live</h2>
+<p>Before audio, see the API mechanics with text-only Live. Same WebSocket, same queue, same event generator — just text in text out.</p>
+<pre><code class="language-python">from google.adk.agents import LlmAgent
+from google.adk.agents.run_config import RunConfig
+from google.adk.agents.live_request_queue import LiveRequestQueue
+from google.adk.runners import Runner
+from google.adk.sessions import InMemorySessionService
+from google.genai import types
+
+live_agent = LlmAgent(
+    name=&quot;live_chat_agent&quot;,
+    model=&quot;gemini-3.1-flash-live-preview&quot;,
+    instruction=&quot;Chat casually, keep replies short.&quot;,
+)
+
+session_service = InMemorySessionService()
+await session_service.create_session(app_name=&quot;m13&quot;, user_id=&quot;u&quot;, session_id=&quot;s1&quot;)
+runner = Runner(agent=live_agent, app_name=&quot;m13&quot;, session_service=session_service)
+
+queue = LiveRequestQueue()
+config = RunConfig(response_modalities=[&quot;TEXT&quot;])   # text out so we can print it
+
+# Push one user turn into the queue
+queue.send_content(
+    content=types.Content(role=&quot;user&quot;, parts=[types.Part(text=&quot;Say hi.&quot;)]),
+)
+
+# Iterate events until the turn completes
+async for event in runner.run_live(
+    user_id=&quot;u&quot;, session_id=&quot;s1&quot;,
+    live_request_queue=queue, run_config=config,
+):
+    if event.content and event.content.parts:
+        for p in event.content.parts:
+            if p.text:
+                print(p.text, end=&quot;&quot;, flush=True)
+    if event.turn_complete:
+        break
+
+queue.close()
+</code></pre>
+<p>Four things to notice:</p>
+<ol>
+<li><code>queue.send_content(...)</code> pushes a Content object in. For audio, you&rsquo;d call <code>queue.send_realtime(audio_bytes)</code> with raw PCM at 16kHz, mono, 16-bit instead.</li>
+<li><code>response_modalities=["TEXT"]</code> asks Gemini for text out. Use <code>["AUDIO"]</code> for production voice; the response events contain <code>inline_data</code> with raw PCM at 24kHz.</li>
+<li>Iteration uses <code>async for event in runner.run_live(...)</code> — same as <code>run_async</code>, but continues streaming until <code>event.turn_complete</code> or the queue closes.</li>
+<li><code>queue.close()</code> ends the session; do this in a <code>finally</code> block in production.</li>
+</ol>
+<p>For multi-turn conversation, keep the queue open and keep pushing more content in; keep iterating the generator. The WebSocket never closes until you want it to.</p>
+<h2>Voice Activity Detection + interruption</h2>
+<p>Both handled server-side. Default on. Tune via <code>RealtimeInputConfig</code> in <code>RunConfig</code>:</p>
+<pre><code class="language-python">from google.genai.types import RealtimeInputConfig, AutomaticActivityDetection
+
+config = RunConfig(
+    response_modalities=[&quot;AUDIO&quot;],
+    realtime_input_config=RealtimeInputConfig(
+        automatic_activity_detection=AutomaticActivityDetection(
+            silence_duration_ms=1000,     # wait 1s of silence before responding
+            prefix_padding_ms=200,        # 200ms of context before detected speech
+        )
+    ),
+)
+</code></pre>
+<p><strong><code>silence_duration_ms</code></strong> is the main knob. Lower (300-500ms) makes the agent snappy but triggers on brief pauses inside a sentence. Higher (1500ms+) waits for longer silences, feels more natural but noticeably delayed. 1000ms is a sensible conversational default; 500ms works for command-style interfaces where users know exactly what they&rsquo;ll say.</p>
+<p><strong><code>prefix_padding_ms</code></strong> captures some audio before the detected speech start — ensures Gemini doesn&rsquo;t miss the leading consonant of a word. 200ms is usually enough.</p>
+<p>Interruption is automatic. While Gemini is producing output audio, if you send more audio into the queue, Gemini stops producing and listens. You don&rsquo;t have to manage that; the protocol handles it.</p>
+<h2>Production architecture sketch</h2>
+<p>What a real Live-voice product looks like:</p>
+<pre><code>Browser (user)              Your backend              Gemini
+──────────────              ──────────────            ──────
+Microphone ──WebSocket──▶   ADK agent
+                               │
+                               ├── LiveRequestQueue ◀── audio chunks
+                               │
+                               │                     ──WebSocket──▶
+                               │                       Live API
+                               │
+                               ◀── event.audio chunks ──
+                               │
+Audio out   ◀──WebSocket──   stream response audio
+                             (+ interruption signals)
+</code></pre>
+<ul>
+<li><strong>Browser side:</strong> Web Audio API captures microphone audio, encodes to PCM, streams over a WebSocket to your backend at ~16kHz.</li>
+<li><strong>Backend side:</strong> the ADK agent with <code>run_live(...)</code> holds a WebSocket to Gemini. You push audio chunks into <code>LiveRequestQueue</code>, the generator yields events, you pull audio out of <code>event.content.parts[].inline_data</code> and stream it back to the browser.</li>
+<li><strong>Browser side again:</strong> Web Audio API plays the response audio. On a new audio chunk from the user, the browser also pushes a &ldquo;cancel output&rdquo; signal; the backend handles mid-response interruption.</li>
+</ul>
+<p>None of this lives in a notebook — the full path needs a browser with microphone access, a WebSocket server, and audio libraries. What lives in the notebook is the ADK-side of the API contract. For a full-stack version, start from the <a href="https://github.com/google/adk-samples"><code>google/adk-samples</code></a> voice-agent example.</p>
+<h2>Fragility is real — and worth naming</h2>
+<p>The Live API is preview-tier, and preview means what it says. Expected failure modes you&rsquo;ll encounter:</p>
+<ul>
+<li><strong>APIError 1011 &ldquo;Internal error encountered&rdquo;</strong> on <code>live.connect(...)</code>. Happens at the WebSocket handshake; nothing you can do. Retry or wait.</li>
+<li><strong>Connection drops mid-session.</strong> Network blip, server rotation, quota exhaustion. Implement reconnection with session resumption (Live&rsquo;s session-handle feature persists state across reconnections — see docs).</li>
+<li><strong>Model-name rotation.</strong> The current free-tier preview model is <code>gemini-3.1-flash-live-preview</code> as of April 2026; it was <code>gemini-2.0-flash-live-preview-09-2025</code> last quarter. The course&rsquo;s <code>DEMOS_BROKEN.md</code> logs the current state.</li>
+<li><strong>Transient latency spikes.</strong> When the service is under load, sub-second latency becomes multi-second. Not ADK&rsquo;s fault.</li>
+</ul>
+<p>The code shown in this chapter and the matching notebook is correct. What fails is server-side. When the Live API matures past preview — likely by late 2026 — this roughness goes away. The API shape you learn here will remain.</p>
+<h2>Pricing</h2>
+<p>Audio is billed <strong>by minute, not by token</strong> — a quirk of real-time streaming.</p>
+<table>
+<thead>
+<tr>
+<th>Model</th>
+<th>Tier</th>
+<th>Rate</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>gemini-3.1-flash-live-preview</code></td>
+<td>Preview, free-tier-eligible</td>
+<td>Free up to quota</td>
+</tr>
+<tr>
+<td><code>gemini-live-2.5-flash-native-audio</code></td>
+<td>Paid, production-grade</td>
+<td>~$0.012 per minute audio in/out</td>
+</tr>
+</tbody>
+</table>
+<p>For a conversational voice agent with one-minute average sessions, that&rsquo;s under a dollar per hundred sessions. Cheap enough that the per-minute cost is rarely the blocker. What blocks production deployments is quota — Live has much tighter rate limits than text models.</p>
+<h2>When Live is the right tool</h2>
+<p>Live is for <strong>real-time conversational voice</strong>. Not for:</p>
+<ul>
+<li><strong>Transcription.</strong> Use a dedicated STT service (Google Cloud Speech, OpenAI Whisper, AssemblyAI); feed the text to a regular agent.</li>
+<li><strong>TTS playback of pre-computed answers.</strong> Use a dedicated TTS service (Google TTS, ElevenLabs, OpenAI Audio).</li>
+<li><strong>Non-interactive voice.</strong> An agent narrating a pre-written script doesn&rsquo;t need Live.</li>
+</ul>
+<p>Live is specifically for:</p>
+<ul>
+<li><strong>Sub-second response latency</strong> — users notice delays above ~300ms in real conversation.</li>
+<li><strong>Interruption handling</strong> — users talk over the agent; natural conversation requires it.</li>
+<li><strong>Open-session continuous dialog</strong> — not turn-based chat; fluid back-and-forth.</li>
+</ul>
+<p>For everything else, <code>run_async</code> with text in, text out, plus separate STT and TTS services is simpler, cheaper, and more controllable. Live is a specific tool for a specific problem.</p>
+<h2>What to carry forward</h2>
+<ul>
+<li><strong>Live is the most differentiated Gemini capability.</strong> Bidirectional audio, VAD, interruption, sub-second latency. No competitor replicates it cleanly as of April 2026.</li>
+<li><strong>Three primitives:</strong> <code>LiveRequestQueue</code>, <code>Runner.run_live()</code>, <code>RunConfig(response_modalities=[...])</code>.</li>
+<li><strong>API shape</strong>: push inputs via <code>send_content</code>/<code>send_realtime</code>, iterate events with <code>async for</code>, <code>turn_complete</code> ends a turn, <code>queue.close()</code> ends the session.</li>
+<li><strong>VAD + interruption</strong> server-side; tune via <code>RealtimeInputConfig.automatic_activity_detection</code>.</li>
+<li><strong>Production architecture</strong>: browser microphone → WebSocket → backend ADK agent with <code>run_live</code> → Gemini Live API → response audio back. Notebook can&rsquo;t do the full loop.</li>
+<li><strong>Preview-tier fragility is real</strong> — transient server errors, model-name rotation, connection drops. Code is correct; endpoint matures over time.</li>
+<li><strong>Use Live only for real-time conversational voice.</strong> Transcription, TTS-of-answers, non-interactive voice all have simpler tools.</li>
+</ul>
+<h2>Your turn</h2>
+<ol>
+<li><strong>Enumerate Live models on your key.</strong> Which ones are listed under <code>supported_actions=["bidiGenerateContent"]</code>? Note which require a paid tier.</li>
+<li><strong>Run the text-mode Live cell several times.</strong> How consistently does it succeed? Do you hit 1011 errors?</li>
+<li><strong>Sketch audio-mode.</strong> Modify the notebook&rsquo;s Live cell to pass <code>response_modalities=["AUDIO"]</code>. Inspect response events — are there <code>inline_data</code> parts with audio bytes? Don&rsquo;t try to play them; just confirm they arrive.</li>
+<li><strong>Rate-limit exploration.</strong> Run multiple concurrent Live sessions. What rate limits appear on your key&rsquo;s tier?</li>
+</ol>
+<p>Module 14 — the course finale — steps sideways into the <strong>A2A protocol</strong>. Agent-to-agent communication — the protocol Google donated to the Linux Foundation in June 2025 that&rsquo;s now the industry standard for agents talking to agents across vendors. 30-minute block: four nouns, one demo, the gotchas that make A2A worth understanding as architecture before infrastructure.</p>
         </section>
         </main>
     </div>
