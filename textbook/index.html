@@ -321,6 +321,7 @@ hr {
 <li><a href="#callbacks-as-middleware">7. Callbacks as middleware</a></li>
 <li><a href="#memory">8. Memory</a></li>
 <li><a href="#evaluation">9. Evaluation</a></li>
+<li><a href="#deployment">10. Deployment</a></li>
             </ul>
         </nav>
     </aside>
@@ -1848,6 +1849,224 @@ def judge(prompt, expected, actual) -&gt; float:
 <li><strong>Full strategy</strong>: trajectory on every PR; LLM-judge nightly; human review at the tail. Don&rsquo;t pick one.</li>
 </ul>
 <p>Module 10 — the last module of Part 1 — picks up <strong>deployment</strong>. <code>adk deploy cloud_run</code> as the one-command story, a vanilla Dockerfile that runs the same agent on any cloud, Vertex AI Agent Engine mentioned as the opinionated managed path. Then Part 2 begins: Gemini-specific features you lose when you&rsquo;re vendor-neutral.</p>
+        </section>
+
+        <section class="chapter" id="deployment">
+            <div class="chapter-number">Chapter 10</div>
+            <h1>Deployment</h1>
+<p>The last chapter of Part 1.</p>
+<p>Nine chapters of building agents that run in notebooks, in <code>adk web</code>, in test scripts. This chapter is about turning them into <strong>products</strong> — HTTP services running in production.</p>
+<p>ADK gives you three deployment paths, which differ only in who runs the container and what batteries come with it. Everything at the agent layer is identical — the same <code>LlmAgent</code>, the same tools, the same sessions.</p>
+<ul>
+<li><strong><code>adk deploy cloud_run</code></strong> — one command; deploys to Google Cloud Run. Fast path if you&rsquo;re fine with GCP.</li>
+<li><strong>Vanilla Docker</strong> — write a Dockerfile, <code>docker build</code>, deploy anywhere containers run. Vendor-neutral.</li>
+<li><strong>Vertex AI Agent Engine</strong> — the managed, opinionated path. Most batteries included (Memory Bank, Agent Identity, built-in eval). Deepest Google lock-in.</li>
+</ul>
+<p>We&rsquo;ll walk the first two hands-on, and sketch Agent Engine in theory.</p>
+<h2>The deployable repo layout</h2>
+<p>Every ADK platform tool — <code>adk api_server</code>, <code>adk web</code>, <code>adk deploy cloud_run</code>, <code>AgentEvaluator.evaluate</code> — looks for the same shape:</p>
+<pre><code>my_agent/
+├── __init__.py          # empty; makes it a package
+├── agent.py             # exports `root_agent`
+├── requirements.txt     # pinned Python deps
+└── .env                 # optional; OPENROUTER_API_KEY, etc.
+</code></pre>
+<p>The <code>__init__.py</code> marks the directory as a Python package. <code>agent.py</code> is the file everyone looks at; it must export <code>root_agent = LlmAgent(...)</code>. <code>requirements.txt</code> pins your dependencies so production installs reproducibly. <code>.env</code> is optional — if present, <code>python-dotenv</code> loads it before the agent starts.</p>
+<p>This is convention, not hard requirement. You can deviate if you have a specific reason. <code>adk create my_agent</code> scaffolds exactly this layout — one command, done.</p>
+<h2>Path 1 — <code>adk api_server</code>: see your agent as an HTTP service</h2>
+<p>Before any cloud deployment, see the agent running as an HTTP service locally. That&rsquo;s what <code>adk api_server</code> does.</p>
+<pre><code class="language-bash"># From the parent of the agent folder
+adk api_server .
+</code></pre>
+<p>This starts a FastAPI server at <code>http://localhost:8000</code>. It hosts every agent folder it finds in the directory you gave it. The API is documented via Swagger at <code>http://localhost:8000/docs</code>.</p>
+<p>Key endpoints:</p>
+<ul>
+<li><code>GET /list-apps</code> — returns the list of agents hosted.</li>
+<li><code>POST /apps/&lt;app&gt;/users/&lt;user&gt;/sessions/&lt;session_id&gt;</code> — create a session.</li>
+<li><code>POST /run</code> — send a message to an agent; returns an array of events.</li>
+</ul>
+<p>A minimal client interaction:</p>
+<pre><code class="language-bash"># Discover what's hosted
+curl http://localhost:8000/list-apps
+
+# Create a session
+curl -X POST http://localhost:8000/apps/my_agent/users/u/sessions/s1 \
+  -H &quot;Content-Type: application/json&quot; -d '{}'
+
+# Run a turn
+curl -X POST http://localhost:8000/run \
+  -H &quot;Content-Type: application/json&quot; -d '{
+    &quot;app_name&quot;: &quot;my_agent&quot;,
+    &quot;user_id&quot;: &quot;u&quot;,
+    &quot;session_id&quot;: &quot;s1&quot;,
+    &quot;new_message&quot;: {&quot;role&quot;: &quot;user&quot;, &quot;parts&quot;: [{&quot;text&quot;: &quot;hello&quot;}]}
+  }'
+</code></pre>
+<p>The response is a JSON array of events — the same events you&rsquo;d iterate over in a Python runner. Text responses, tool calls, tool responses, state deltas. Identical structure; different transport.</p>
+<p>This is the <strong>production shape</strong>. Cloud Run is the same FastAPI app running somewhere else. Swap <code>http://localhost:8000</code> for the Cloud Run URL and the client code doesn&rsquo;t change.</p>
+<h2>Path 2 — vanilla Docker: deploy anywhere</h2>
+<p>Turn the local setup into a container image, and you can deploy it to anything that runs containers. The Dockerfile:</p>
+<pre><code class="language-dockerfile">FROM python:3.12-slim
+
+WORKDIR /app
+
+# Install Python deps first (separate layer, better caching)
+COPY my_agent/requirements.txt ./requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy the agent code
+COPY my_agent/ ./my_agent/
+
+# Cloud Run and most PaaS platforms set $PORT; default to 8080 otherwise.
+ENV PORT=8080
+
+# Start the ADK API server hosting the agent folder.
+# --host 0.0.0.0 so the container is reachable from outside.
+CMD [&quot;sh&quot;, &quot;-c&quot;, &quot;adk api_server /app --host 0.0.0.0 --port ${PORT}&quot;]
+</code></pre>
+<p>Ten lines. No ADK-specific platform plumbing. This is just a FastAPI app in a container.</p>
+<p>Build and run locally:</p>
+<pre><code class="language-bash">docker build -t my-agent .
+
+docker run -p 8080:8080 \
+    -e OPENROUTER_API_KEY=sk-or-... \
+    my-agent
+
+curl http://localhost:8080/list-apps
+</code></pre>
+<p>Deploy elsewhere:</p>
+<ul>
+<li><strong>AWS Fargate / App Runner</strong>: <code>aws ecr</code> push, point a service at the image.</li>
+<li><strong>Azure Container Apps</strong>: <code>az acr build</code>, <code>az containerapp create</code>.</li>
+<li><strong>Fly.io</strong>: <code>fly launch --dockerfile ./Dockerfile</code>.</li>
+<li><strong>Kubernetes</strong>: your usual Helm chart or Kustomize manifest.</li>
+<li><strong>Your own server</strong>: <code>docker run</code>.</li>
+</ul>
+<p><strong>The important property, worth stating explicitly: there is no ADK-specific deployment story for non-Google clouds.</strong> It&rsquo;s regular container deployment. You write the same Dockerfile you&rsquo;d write for any Python web app. ADK&rsquo;s FastAPI output runs everywhere FastAPI runs.</p>
+<h2>Path 3 — <code>adk deploy cloud_run</code>: the one-liner</h2>
+<p>For Google Cloud, one command does the whole thing:</p>
+<pre><code class="language-bash">adk deploy cloud_run \
+    --project YOUR_GCP_PROJECT \
+    --region europe-west1 \
+    --service_name my-weather-agent \
+    my_weather_agent
+</code></pre>
+<p>Under the hood: ADK generates a Dockerfile, builds the image via Cloud Build, pushes to Artifact Registry, deploys a Cloud Run service. The output is a URL — your deployed agent&rsquo;s endpoint. Five minutes, end to end, for a fresh project.</p>
+<p><strong>Trade-offs:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Pro</th>
+<th>Con</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Minutes to production; one command</td>
+<td>Google Cloud only</td>
+</tr>
+<tr>
+<td>Sensible defaults tuned for agent workloads</td>
+<td>Less control than hand-rolling a Dockerfile</td>
+</tr>
+<tr>
+<td>Integrates with Cloud Trace + Cloud Logging naturally</td>
+<td>You pay the Cloud Run runtime margin</td>
+</tr>
+</tbody>
+</table>
+<p>Good default for &ldquo;I&rsquo;m on GCP and I want to ship.&rdquo; Bad default for &ldquo;I care about the details of my deployment&rdquo; — use the vanilla Docker path for that.</p>
+<h2>Path 4 — Vertex AI Agent Engine: the managed path</h2>
+<p>The most opinionated option. Vertex AI Agent Engine is Google&rsquo;s à la carte managed runtime for agents. You deploy; Google runs.</p>
+<h3>What Agent Engine adds over Cloud Run</h3>
+<ul>
+<li><strong>Managed sessions</strong> — no separate database to run. Billed per event.</li>
+<li><strong>Memory Bank</strong> — LLM-distilled long-term memory with automatic consolidation and decay. A real upgrade over the hand-rolled <code>InMemoryMemoryService</code> we used in Module 08.</li>
+<li><strong>Agent Identity</strong> — per-agent IAM principals with certificate-bound credentials. Your agent has its own identity, separate from any service account; stolen credentials are un-replayable outside the trusted runtime. The strongest enterprise-governance primitive Google ships in the agent stack.</li>
+<li><strong>Built-in evaluation and observability</strong> — integrates with the Gen AI Evaluation Service mentioned in Module 09.</li>
+<li><strong>Framework support</strong>: ADK is first-class; LangChain, LangGraph also supported; CrewAI, OpenAI Agents SDK, and FastAPI work via custom templates.</li>
+</ul>
+<h3>Pricing (April 2026)</h3>
+<ul>
+<li><strong>Runtime</strong>: $0.0864/vCPU-hour + $0.0090/GiB-hour. Same rate as Cloud Run; no margin on compute.</li>
+<li><strong>Sessions</strong>: $0.25 per 1,000 events.</li>
+<li><strong>Memory Bank storage</strong>: $0.25 per 1,000 memories per month.</li>
+<li><strong>Memory Bank retrieval</strong>: $0.50 per 1,000 retrieved (first 1,000/month free).</li>
+</ul>
+<h3>When to pick Agent Engine vs DIY Cloud Run</h3>
+<ul>
+<li><strong>Agent Engine</strong> if you want Memory Bank and Agent Identity without building them yourself. That&rsquo;s the real pitch — the adjacent services, not the runtime.</li>
+<li><strong>DIY Cloud Run</strong> if you want portability (the same container runs elsewhere tomorrow), or if you&rsquo;re running at a scale where managed-service margins matter.</li>
+<li><strong>Neither</strong> if you&rsquo;re not on Google Cloud.</li>
+</ul>
+<p>Deployment command:</p>
+<pre><code class="language-bash">adk deploy agent_engine \
+    --project YOUR_PROJECT \
+    --region europe-west1 \
+    --staging_bucket gs://your-staging-bucket \
+    my_weather_agent
+</code></pre>
+<h2>Plugins — the production cross-cutting mechanism</h2>
+<p>Module 07 covered callbacks — per-agent lifecycle hooks attached to a single <code>LlmAgent</code>. Good for agent-specific guards.</p>
+<p>Production often needs the same policy applied to <strong>every agent in the app</strong>: audit logging, per-user rate-limits, token-budget enforcement, org-wide PII redaction. That&rsquo;s what <strong>plugins</strong> are for. They attach to the <code>Runner</code>, not to individual agents; every agent managed by that Runner goes through the plugin.</p>
+<p>Sketch:</p>
+<pre><code class="language-python">from google.adk.plugins import Plugin
+
+class AuditPlugin(Plugin):
+    async def before_run(self, context):
+        logger.info(&quot;agent_invoked&quot;,
+                    user=context.user_id,
+                    agent=context.agent.name)
+    async def after_run(self, context):
+        logger.info(&quot;agent_finished&quot;, duration_ms=context.duration_ms)
+
+runner = Runner(
+    agent=root_agent,
+    app_name=&quot;my_app&quot;,
+    session_service=sessions,
+    plugins=[AuditPlugin()],   # ← applies to EVERY agent the runner touches
+)
+</code></pre>
+<p><strong>Rule of thumb, carried over from Module 07:</strong>
+- Callbacks for agent-specific logic — specific guards on specific specialists.
+- Plugins for app-wide policy — audit, rate-limits, cost tracking, compliance.</p>
+<p>In production you&rsquo;ll have both. Plugins are the newer mechanism; Google recommends them over app-wide callbacks for new code. If you&rsquo;re refactoring an existing ADK deployment, this is the pattern to migrate toward.</p>
+<h2>Production-readiness checklist</h2>
+<p>Things to have sorted beyond making the agent work. None are ADK-specific — they&rsquo;re what any Python service needs — but they&rsquo;re worth listing because the ADK demos stop at &ldquo;does the agent work?&rdquo; and leave the rest to you.</p>
+<ol>
+<li><strong>Persistence</strong> — <code>DatabaseSessionService</code> pointed at managed Postgres. Not in-memory, not SQLite on ephemeral disk.</li>
+<li><strong>Secrets</strong> — out of the container. Cloud Run secrets, AWS Secrets Manager, HashiCorp Vault, whatever your platform provides. Never bake keys into images.</li>
+<li><strong>Callbacks for guardrails</strong> — the blocklist, PII redaction, and mocking-in-tests patterns from Module 07.</li>
+<li><strong>Plugins for observability</strong> — audit logging, cost tracking, rate-limiting.</li>
+<li><strong>Eval in CI</strong> — <code>adk eval</code> runs on every PR against your curated evalset. Module 09 wiring.</li>
+<li><strong>Trace backend</strong> — Cloud Trace, Langfuse, Arize, or your own OpenTelemetry collector. Every event is already instrumented; you just need to receive them.</li>
+<li><strong>Health endpoint</strong> — <code>adk api_server</code> exposes <code>/list-apps</code>; your load balancer needs to know what counts as healthy.</li>
+<li><strong>Auth</strong> — ADK doesn&rsquo;t ship auth. Put an API gateway in front or run it in an authenticated subnet.</li>
+</ol>
+<h2>What to carry forward</h2>
+<ul>
+<li><strong>Three deploy paths</strong>: Cloud Run (one command, GCP), Docker (vendor-neutral), Agent Engine (managed, deepest GCP lock-in).</li>
+<li><strong>The deployable layout</strong> is one folder with <code>agent.py</code> exporting <code>root_agent</code>, plus <code>__init__.py</code> and <code>requirements.txt</code>.</li>
+<li><strong><code>adk api_server</code></strong> runs the production shape locally; hit it with <code>curl</code> to see what your deployed agent will look like.</li>
+<li><strong>The Dockerfile</strong> is 10 lines; no ADK-specific platform code — just FastAPI in a container.</li>
+<li><strong>Agent Engine&rsquo;s real pitch is Memory Bank + Agent Identity</strong>, not the runtime (which is Cloud Run priced the same).</li>
+<li><strong>Plugins</strong> are the production cross-cutting mechanism; callbacks for per-agent, plugins for app-wide.</li>
+<li><strong>Production readiness</strong> is beyond ADK — persistence, secrets, eval in CI, auth, observability.</li>
+</ul>
+<h2>Part 1 wrap</h2>
+<p>Ten chapters. From &ldquo;what is an agent&rdquo; to &ldquo;how do I ship one.&rdquo;</p>
+<p>After these chapters you can build:
+- Agents with tools — four flavors (M02)
+- Persistent state with scope prefixes (M03, M08)
+- Vendor-neutral model swapping (M04)
+- Compositions: Sequential, Parallel, Loop, and LLM-driven routing (M05, M06)
+- Guardrails, caches, PII redaction via callbacks (M07)
+- Long-term memory via <code>MemoryService</code> (M08)
+- Automated eval with trajectory + LLM-as-judge (M09)
+- Deployable as an HTTP service anywhere (this chapter)</p>
+<p>All on whichever model you want — Claude, GPT, Gemini, Qwen, Gemma — because the LiteLLM wrapper made the model a configuration, not a dependency.</p>
+<p>Module 11 — Part 2 — shifts gears. We switch from LiteLLM-wrapped models to native Gemini and explore the features ADK + Gemini do that nothing else does: Google Search grounding with inline citations, long-context windows with context caching, thinking budgets, and — in Module 13 — the Live API voice agent, the single most differentiated Gemini-only capability in the market.</p>
+<p>Switch your <code>.env</code> to include <code>GOOGLE_API_KEY</code> (free tier at aistudio.google.com is enough for M11–M13). See you in Part 2.</p>
         </section>
         </main>
     </div>
