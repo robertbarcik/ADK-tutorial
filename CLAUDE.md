@@ -38,12 +38,19 @@ Reference: `barcik-training-publications/_sources/token-economics/chapters/01_ge
 - Speaker notes are spoken delivery — readable straight into a microphone. No "let's take a look at...". Just say the thing.
 
 ### Notebooks → hybrid voice
-Reference: the existing `notebooks/legacy/*.ipynb` for tone.
+Reference: the existing `notebooks/legacy/*.ipynb` — particularly after the
+April 2026 "notebook guidelines" updates — for the target tone.
 
-- Keep "### Your Turn" framing for exercises.
-- Drop emoji-heavy headings (no target, no hammer, no lightbulb icons).
-- Verbose, use-case-framed docstrings are a strength — keep them.
-- Markdown-cell *content* still leans Token Economics (direct, specific).
+- **Colab-first.** `!pip install -q` at the top, `userdata.get(...)` + `getpass` fallback + optional `.env` load. Notebooks must run unchanged on Colab and on a local Jupyter.
+- **Use `LlmAgent`** (the user-facing class name), not `Agent` (which is an alias).
+- **Friendly "Your Turn" framing for exercises** — keep this.
+- **Status emojis are fine and encouraged in code output**: ✅ for success, ❌ for error, 💡 for tips, 🔑 for key-setup. They aid visual parsing in a scrolling notebook. *Do not* use decorative emojis in markdown headings (no 🎯, 🛠️ in an `## Our Agent Goals` header).
+- **Verbose, use-case-framed docstrings** on tool functions are a strength — keep them.
+- **Markdown-cell content** still leans Token Economics in voice (direct, specific, no filler) — the friendly structure is in the scaffolding, not in padded prose.
+- **Pinned dependencies at install**: match `requirements.txt` versions exactly in `!pip install` lines, so Colab and local get identical environments.
+
+### Slides + speaker notes + textbook → Token Economics voice
+*(unchanged — no emojis, no filler, no "let's explore")*
 
 ## Keys and model choice
 
