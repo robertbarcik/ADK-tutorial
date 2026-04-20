@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ADK Course — M04: The One-Line Model Swap</title>
+  <link rel="stylesheet" href="../shared/shared.css">
+  <link rel="stylesheet" href="../shared/slides.css">
+</head>
+<body>
+  <nav class="progress-strip">
+    <a href="../../index.html" class="progress-home">Course</a>
+    <div class="progress-title">M04 — The one-line model swap</div>
+    <div class="progress-meta">
+      <span class="slide-counter">1 / 1</span>
+      <button class="theme-toggle">Theme</button>
+    </div>
+  </nav>
+
+  <main class="slide-viewport">
+
+  <div class="slide active" data-module="04" data-type="section-title">
+    <div class="topic-badge">Module 04 &middot; Part 1 Vendor-agnostic</div>
+    <h1>The one-line model swap</h1>
+    <h3>Claude, GPT, Gemini, Qwen, Llama — same agent code</h3>
+    <p class="highlight-text">LiteLLM is the translation layer.</p>
+  </div>
+
+  <div class="slide" data-module="04" data-type="keyfact">
+    <h2 class="text-muted" style="border-bottom:none;font-size:1em;text-transform:uppercase;letter-spacing:0.08em;">Three modules in</h2>
+    <p>Every demo used <code>openrouter/google/gemini-2.5-flash-lite</code>.</p>
+    <h2 class="text-muted" style="border-bottom:none;font-size:1em;text-transform:uppercase;letter-spacing:0.08em;margin-top:var(--space-8);">This module</h2>
+    <p>Open it up.</p>
+  </div>
+
+  <div class="slide" data-module="04">
+    <h2>What <code>LiteLlm</code> actually is</h2>
+    <p>ADK was written by Google; it speaks Gemini natively. Every other model needs a <strong>translation layer</strong>. That layer is LiteLLM — an independent open-source library that sits between your code and ~100 LLM providers.</p>
+    <p>Requests are OpenAI-shaped on the way in. LiteLLM translates them to whatever the target provider expects, sends, translates the response back.</p>
+    <p>ADK's <code>LiteLlm</code> wrapper is a thin adapter exposing this library as an ADK model. Google wrote it so they didn't have to write a custom shim per vendor.</p>
+  </div>
+
+  <div class="slide" data-module="04">
+    <h2>Request flow</h2>
+<pre class="diagram">   ADK Agent
+      │ OpenAI-shaped request
+      ▼
+   LiteLlm wrapper
+      │
+      ▼
+   LiteLLM ─── Anthropic format ──▶ OpenRouter ──▶ Anthropic API
+      ▲                                               │
+      └───── Anthropic response ◀── OpenRouter ◀──────┘
+      │ OpenAI-shaped response
+      ▼
+   ADK Agent (sees the shape it expected)</pre>
+    <p style="color:var(--text-muted);font-size:0.9em;">Two translations per call. Both handled by LiteLLM. The catch: bumping <code>google-adk</code> and <code>litellm</code> independently can break tool-call shapes — that's why <code>requirements.txt</code> pins them together.</p>
+  </div>
+
+  <div class="slide" data-module="04" data-type="code">
+    <h2>The OpenRouter model-string convention</h2>
+<pre><code>openrouter/&lt;provider&gt;/&lt;model&gt;[:tier]</code></pre>
+    <table>
+      <thead><tr><th>Provider</th><th>Model string</th></tr></thead>
+      <tbody>
+        <tr><td>Google</td><td><code>openrouter/google/gemini-2.5-flash-lite</code></td></tr>
+        <tr><td>OpenAI</td><td><code>openrouter/openai/gpt-4o-mini</code></td></tr>
+        <tr><td>Anthropic</td><td><code>openrouter/anthropic/claude-haiku-4-5</code></td></tr>
+        <tr><td>Qwen</td><td><code>openrouter/qwen/qwen3-32b</code></td></tr>
+        <tr><td>Meta</td><td><code>openrouter/meta-llama/llama-3.1-8b-instruct</code></td></tr>
+      </tbody>
+    </table>
+    <p style="color:var(--text-muted);font-size:0.9em;">One OpenRouter key replaces five provider keys. Skip <code>:free</code> tiers for real work — rate-limited, unreliable.</p>
+  </div>
+
+  <div class="slide" data-module="04" data-type="section-title" style="background:linear-gradient(135deg,var(--amber-dark) 0%,var(--amber) 100%);">
+    <h1>Live</h1>
+    <h3>One agent, one prompt, five providers</h3>
+    <p class="highlight-text" style="color:white;">Notebook cells 8-11</p>
+  </div>
+
+  <div class="slide" data-module="04">
+    <h2>What to notice in the output</h2>
+    <ul>
+      <li><strong>Answers vary in style, converge on content.</strong> Every model explains tool-calling; none hallucinate badly on a vanilla concept. Quality differences only show on hard prompts.</li>
+      <li><strong>Latency varies ~3x.</strong> Open-weight models through their current providers are slower than the hosted frontier ones. For tool-heavy agents this matters; for Q&amp;A usually not.</li>
+      <li><strong>Reasoning traces leak sometimes.</strong> Some models (Qwen, DeepSeek) emit a thought process even when not asked. Pick a non-reasoning variant or pass <code>extra_body={"reasoning": {"effort": "low"}}</code>.</li>
+    </ul>
+  </div>
+
+  <div class="slide" data-module="04" data-type="section-title" style="background:linear-gradient(135deg,var(--navy-dark) 0%,var(--navy) 100%);">
+    <div class="topic-badge">Bonus</div>
+    <h1>Local models via Ollama</h1>
+    <p class="highlight-text">Zero cost per call. No network. One prefix to get right.</p>
+  </div>
+
+  <div class="slide" data-module="04" data-type="code">
+    <h2>Setup</h2>
+<pre><code># One-time, on your machine
+brew install ollama         # or ollama.com download
+ollama serve                # starts http://localhost:11434
+ollama pull qwen3:8b        # downloads the model
+
+# Then in your ADK code
+agent = LlmAgent(
+    model=LiteLlm(model="ollama_chat/qwen3:8b"),  # ← this exact prefix
+    ...
+)</code></pre>
+  </div>
+
+  <div class="slide" data-module="04" data-type="keyfact">
+    <h2 class="text-muted" style="border-bottom:none;font-size:1em;text-transform:uppercase;letter-spacing:0.08em;">The gotcha</h2>
+    <p><code>ollama_chat/</code> ← use this.<br><br><code>ollama/</code> ← <strong>not</strong> this.</p>
+    <p style="font-size:0.75em;color:var(--text-muted);margin-top:var(--space-6);">The plain <code>ollama/</code> prefix hits the <em>completions</em> API. Tool calls become text the model has to produce exactly; it fails; infinite loop. Use <code>ollama_chat/</code> for the chat-completions API with real function-calling.</p>
+  </div>
+
+  <div class="slide" data-module="04" data-type="comparison">
+    <h2>Native vs LiteLLM-wrapped Gemini</h2>
+    <div class="comparison-layout">
+      <div class="vs-left">
+        <h3>Native</h3>
+<pre><code>model="gemini-2.5-flash"</code></pre>
+        <p style="font-size:0.9em;">Direct to google-genai SDK. All Gemini-specific features available (search grounding, thinking, Live API, context caching).</p>
+        <p style="font-size:0.85em;color:var(--text-muted);">Part 2 of this course (M11-M13).</p>
+      </div>
+      <div class="vs-divider">vs</div>
+      <div class="vs-right">
+        <h3>LiteLLM-wrapped</h3>
+<pre><code>LiteLlm(model="openrouter/google/gemini-2.5-flash-lite")</code></pre>
+        <p style="font-size:0.9em;">Through LiteLLM. OpenAI-shaped request. Gemini-only features not reachable.</p>
+        <p style="font-size:0.85em;color:var(--text-muted);">Part 1 of this course (M01-M10, M14).</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="slide" data-module="04" data-type="section-title" style="background:linear-gradient(135deg,#6A1B9A 0%,#8E24AA 100%);">
+    <div class="topic-badge">Interlude &middot; Agentic Design Patterns</div>
+    <h1>Prompt priority tiers</h1>
+    <p class="highlight-text">Instructions that survive pressure.</p>
+  </div>
+
+  <div class="slide" data-module="04">
+    <h2>The problem</h2>
+    <p>When you swap models, instructions that worked on Claude sometimes partially fail on GPT. One model reads your instruction all the way through; another prioritizes the earliest tokens.</p>
+    <p>Long instructions also get truncated under context pressure — long system prompts plus long tool descriptions plus long chat history can force ADK to drop parts of what you wrote.</p>
+    <p><strong>Structure your instruction so the most important bits survive.</strong></p>
+  </div>
+
+  <div class="slide" data-module="04">
+    <h2>Three tiers</h2>
+    <div class="callout callout-gotcha">
+      <div class="callout-title">Tier 1 — Invariants (top of prompt)</div>
+      <p style="margin:0;font-size:0.95em;">Rules the agent must obey <strong>always</strong>. Safety gates, hard refusals, format constraints. Short, declarative. <em>"Never include credit card numbers."</em></p>
+    </div>
+    <div class="callout callout-tip">
+      <div class="callout-title">Tier 2 — Core behavior</div>
+      <p style="margin:0;font-size:0.95em;">The job description. What the agent is for. <em>"You help engineers debug build failures by reading logs and suggesting fixes."</em></p>
+    </div>
+    <div class="callout callout-success">
+      <div class="callout-title">Tier 3 — Preferences (bottom, OK to lose)</div>
+      <p style="margin:0;font-size:0.95em;">Communication style — length, tone, markdown. <em>"Prefer bullet points over paragraphs."</em></p>
+    </div>
+  </div>
+
+  <div class="slide" data-module="04" data-type="code">
+    <h2>A priority-tiered instruction</h2>
+<pre><code># INVARIANTS (highest priority; never violate)
+- Do not execute code; only suggest code to run.
+- Refuse to generate credentials, API keys, or secrets.
+- If asked about a language you don't know, say so; do not guess.
+
+# CORE BEHAVIOR
+You are a coding-help assistant for a small engineering team.
+For any code question: identify language, give a minimal example,
+explain in 2-3 sentences.
+
+# PREFERENCES
+- Use fenced code blocks for code.
+- Keep prose short; engineers prefer code they can read.</code></pre>
+    <p class="code-caption">Top survives pressure. Bottom does not. Rank accordingly.</p>
+  </div>
+
+  <div class="slide" data-module="04">
+    <h2>When to swap models in production</h2>
+    <div class="callout callout-tip">
+      <div class="callout-title">Failover</div>
+      <p style="margin:0;font-size:0.95em;">A provider has an outage. One-line config change sends traffic to GPT or Gemini. This is the main reason to bother with LiteLLM at all.</p>
+    </div>
+    <div class="callout callout-tip">
+      <div class="callout-title">Per-task capability</div>
+      <p style="margin:0;font-size:0.95em;">GPT reasons better on obscure math; Claude writes cleaner code; Gemini grounds in live web results. Pick the right tool per sub-agent.</p>
+    </div>
+    <div class="callout callout-tip">
+      <div class="callout-title">Cost optimization</div>
+      <p style="margin:0;font-size:0.95em;">Cheap queries to Haiku / 4o-mini / Flash-lite; hard queries to Opus / GPT-5 / Pro. Callbacks (M07) and eval (M09) give you the hooks.</p>
+    </div>
+  </div>
+
+  <div class="slide" data-module="04" data-type="keyfact">
+    <h2 class="text-muted" style="border-bottom:none;font-size:1em;text-transform:uppercase;letter-spacing:0.08em;">The rule</h2>
+    <p>Vendor-neutrality is a <strong>capability</strong>, not a habit.</p>
+    <p style="font-size:0.7em;color:var(--text-muted);margin-top:var(--space-4);">Swap models with evaluation, not on hunches.</p>
+  </div>
+
+  <div class="slide" data-module="04" data-type="section-title" style="background:linear-gradient(135deg,var(--navy) 0%,var(--navy-light) 100%);">
+    <div class="topic-badge">Up next</div>
+    <h1>M05 &mdash; Workflow agents</h1>
+    <p class="highlight-text">Sequential, Parallel, Loop. And the Generator+Critic wow demo.</p>
+  </div>
+
+  </main>
+
+  <script src="../shared/slides.js"></script>
+</body>
+</html>
