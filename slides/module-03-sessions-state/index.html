@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ADK Course — M03: Sessions, State, Events, Artifacts</title>
+  <link rel="stylesheet" href="../shared/shared.css">
+  <link rel="stylesheet" href="../shared/slides.css">
+</head>
+<body>
+  <nav class="progress-strip">
+    <a href="../../index.html" class="progress-home">Course</a>
+    <div class="progress-title">M03 — Sessions, State, Events, Artifacts</div>
+    <div class="progress-meta">
+      <span class="slide-counter">1 / 1</span>
+      <button class="theme-toggle">Theme</button>
+    </div>
+  </nav>
+
+  <main class="slide-viewport">
+
+  <div class="slide active" data-module="03" data-type="section-title">
+    <div class="topic-badge">Module 03 &middot; Part 1 Vendor-agnostic</div>
+    <h1>Sessions, State, Events, Artifacts</h1>
+    <h3>Where the conversation's memory actually lives</h3>
+    <p class="highlight-text">The prefix is the lifetime.</p>
+  </div>
+
+  <div class="slide" data-module="03" data-type="keyfact">
+    <h2 class="text-muted" style="border-bottom:none;font-size:1em;text-transform:uppercase;letter-spacing:0.08em;">Stateless agent</h2>
+    <p>A <strong>party trick</strong>.</p>
+    <h2 class="text-muted" style="border-bottom:none;font-size:1em;text-transform:uppercase;letter-spacing:0.08em;margin-top:var(--space-8);">Stateful agent</h2>
+    <p><strong>Infrastructure</strong>.</p>
+  </div>
+
+  <div class="slide" data-module="03">
+    <h2>A session is two things</h2>
+    <ul>
+      <li><strong>A list of events</strong> — the full ordered history of every message, tool call, tool response, and state mutation. Read-only from your code; ADK appends.</li>
+      <li><strong>A state dict</strong> — mutable key-value storage for whatever the agent should remember between turns.</li>
+    </ul>
+    <p>Identified by the triple <code>(app_name, user_id, session_id)</code>. That triple is the primary key for every session in every session store.</p>
+  </div>
+
+  <div class="slide" data-module="03">
+    <h2>Three session services</h2>
+    <table>
+      <thead><tr><th>Service</th><th>Backing</th><th>When</th></tr></thead>
+      <tbody>
+        <tr><td><code>InMemorySessionService</code></td><td>Python dict</td><td>Demos and tests (this course through M07)</td></tr>
+        <tr><td><code>DatabaseSessionService</code></td><td>SQLAlchemy (Postgres, SQLite)</td><td>Self-hosted production</td></tr>
+        <tr><td><code>VertexAiSessionService</code></td><td>Google Cloud</td><td>Vertex deployments only</td></tr>
+      </tbody>
+    </table>
+    <p style="color:var(--text-muted);font-size:0.9em;">Same interface across all three. You swap the service; the agent code doesn't change.</p>
+  </div>
+
+  <div class="slide" data-module="03" data-type="section-title" style="background:linear-gradient(135deg,var(--navy-dark) 0%,var(--navy) 100%);">
+    <div class="topic-badge">The important part</div>
+    <h1>State — with scope prefixes</h1>
+    <p class="highlight-text">Four scope rings, one 5-character prefix.</p>
+  </div>
+
+  <div class="slide" data-module="03">
+    <h2>The state dict has four scope tiers</h2>
+    <table>
+      <thead><tr><th>Prefix</th><th>Scope</th><th>Survives</th></tr></thead>
+      <tbody>
+        <tr><td><em>(none)</em></td><td>This session only</td><td>Until the session is deleted</td></tr>
+        <tr><td><code>user:</code></td><td>This user, across all their sessions</td><td>As long as the user exists</td></tr>
+        <tr><td><code>app:</code></td><td>Global across all users of this app</td><td>As long as the app exists</td></tr>
+        <tr><td><code>temp:</code></td><td>This invocation only</td><td>Thrown away after the run</td></tr>
+      </tbody>
+    </table>
+    <p>React state, but with <strong>persistence tiers</strong> baked into the key.</p>
+  </div>
+
+  <div class="slide" data-module="03">
+    <h2>Mental model — four rings</h2>
+<pre class="diagram">             ┌──────────────────────────────────────┐
+             │  app:  global, across all users       │
+             │  ┌────────────────────────────────┐   │
+             │  │ user:  per user, all sessions  │   │
+             │  │   ┌──────────────────────┐     │   │
+             │  │   │ (unprefixed)         │     │   │
+             │  │   │  this session only   │     │   │
+             │  │   │   ┌──────────────┐   │     │   │
+             │  │   │   │ temp:        │   │     │   │
+             │  │   │   │ this run only│   │     │   │
+             │  │   │   └──────────────┘   │     │   │
+             │  │   └──────────────────────┘     │   │
+             │  └────────────────────────────────┘   │
+             └──────────────────────────────────────┘</pre>
+  </div>
+
+  <div class="slide" data-module="03" data-type="code">
+    <h2>Writing state from a tool</h2>
+<pre><code>def remember_favorite_color(color: str, tool_context: ToolContext) -> dict:
+    """Record the user's favorite color for future sessions."""
+    # user: prefix → survives beyond this session
+    tool_context.state["user:favorite_color"] = color
+    return {"status": "saved", "color": color}</code></pre>
+    <p class="code-caption">Add <code>tool_context: ToolContext</code> as a parameter. ADK injects the running context. <code>tool_context.state</code> behaves like a dict; the assignment is recorded as an event and persisted.</p>
+  </div>
+
+  <div class="slide" data-module="03" data-type="section-title" style="background:linear-gradient(135deg,var(--amber-dark) 0%,var(--amber) 100%);">
+    <h1>Live</h1>
+    <h3>Cross-session memory in 80 lines</h3>
+    <p class="highlight-text" style="color:white;">Notebook cells 11–15</p>
+  </div>
+
+  <div class="slide" data-module="03">
+    <h2>The wow moment</h2>
+<pre class="diagram">Session 1  ─────────────────────────────────────
+  USER:       My favorite color is teal.
+  tool_call:  remember_favorite_color(color='teal')
+  state ←     user:favorite_color = 'teal'
+
+          ═════ session ends, new session starts ═════
+
+Session 2  ─────────────────────────────────────
+  state IS:   user:favorite_color = 'teal'    ← carries over!
+  USER:       Hey, what's my favorite color?
+  tool_call:  recall_favorite_color()
+  tool_resp:  {'known': True, 'color': 'teal'}
+  FINAL:      teal.</pre>
+    <p>No database setup. No vector store. No custom embedding pipeline. Just a prefix convention on a dict key.</p>
+  </div>
+
+  <div class="slide" data-module="03">
+    <h2>Three ways to write state</h2>
+    <table>
+      <thead><tr><th>Pattern</th><th>Persists?</th><th>Use for</th></tr></thead>
+      <tbody>
+        <tr><td><code>output_key="last_response"</code> on the agent</td><td><strong>Yes</strong></td><td>Caching final reply; passing output between workflow steps</td></tr>
+        <tr><td><code>tool_context.state[key] = value</code> in a tool</td><td><strong>Yes</strong></td><td>Writing structured data during tool calls</td></tr>
+        <tr><td><code>session.state[key] = value</code> on a fetched session</td><td><strong>No!</strong></td><td>Avoid. Does not persist.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="slide" data-module="03" data-type="keyfact">
+    <h2 class="text-muted" style="border-bottom:none;font-size:1em;text-transform:uppercase;letter-spacing:0.08em;">The rule</h2>
+    <p><code>output_key=</code> on the agent.<br><code>tool_context.state[...]</code> in a tool.</p>
+    <p style="font-size:0.75em;color:var(--text-muted);margin-top:var(--space-4);">Direct assignment to a returned session's <code>.state</code> does <strong>not</strong> round-trip. It silently fails to persist.</p>
+  </div>
+
+  <div class="slide" data-module="03" data-type="section-title" style="background:linear-gradient(135deg,var(--navy-dark) 0%,var(--navy) 100%);">
+    <div class="topic-badge">Part 2 of the module</div>
+    <h1>Events and Artifacts</h1>
+    <p class="highlight-text">The session's ledger and its blob store.</p>
+  </div>
+
+  <div class="slide" data-module="03">
+    <h2>Events — the session's immutable ledger</h2>
+    <p>Every turn produces events; the session keeps them all. Walk <code>session.events</code> to audit what happened, replay a conversation, or feed it into an evaluation suite.</p>
+<pre class="diagram">[ 0] user         text(My favorite color is teal.)
+[ 1] color_agent  tool_call(remember_favorite_color)
+[ 2] color_agent  tool_resp | state_delta(['user:favorite_color'])
+[ 3] color_agent  text(Awesome! I'll remember...) | state_delta(['last_response'])</pre>
+    <p style="font-size:0.9em;color:var(--text-muted);">State is a <em>projection</em> of the event stream's <code>state_delta</code> entries. This is event sourcing, and it's how ADK can back a session with a database later without the agent noticing.</p>
+  </div>
+
+  <div class="slide" data-module="03">
+    <h2>Artifacts — binary blobs outside events</h2>
+    <p>Images, audio clips, PDFs, any payload you don't want to serialize into events. Analogy: <strong>Git LFS for agents</strong> — the pointer lives in the event stream; the payload lives in a separate store.</p>
+    <ul>
+      <li><code>InMemoryArtifactService</code> — demos and tests.</li>
+      <li><code>GcsArtifactService</code> — Google Cloud Storage, for production.</li>
+      <li>Or roll your own <code>BaseArtifactService</code> — S3, Azure Blob, MinIO.</li>
+    </ul>
+    <p style="color:var(--text-muted);font-size:0.9em;">Skimmable for now. M13 (Live API voice agent) is where artifacts carry real weight.</p>
+  </div>
+
+  <div class="slide" data-module="03" data-type="section-title" style="background:linear-gradient(135deg,#6A1B9A 0%,#8E24AA 100%);">
+    <div class="topic-badge">Interlude &middot; Agentic Design Patterns</div>
+    <h1>Skeptical Memory</h1>
+    <p class="highlight-text">Stored state is a hint, not a fact.</p>
+  </div>
+
+  <div class="slide" data-module="03">
+    <h2>Memory staleness is real</h2>
+    <p>The demo looks clean because the state hasn't had time to go stale. In production, this is not how it works.</p>
+    <ul>
+      <li>User's favorite color from three months ago? Probably still current.</li>
+      <li>User's current project? Maybe not — they might have moved on without telling the agent.</li>
+      <li>Tickets the agent "remembered" being open yesterday? Possibly all closed.</li>
+      <li>Server IP an MCP tool cached? Could have been reassigned.</li>
+    </ul>
+    <p><strong>Stored memory is a hint.</strong> Not a fact.</p>
+  </div>
+
+  <div class="slide" data-module="03">
+    <h2>Three guidelines from the publication</h2>
+    <ol>
+      <li><strong>Prefer retrieval over recall for high-stakes decisions.</strong> Before the agent sends an email, charges a card, or deploys code, it should call a read-only tool to re-verify — not trust its own stored state.</li>
+      <li><strong>Scope aggressively.</strong> <code>temp:</code> for scratchpads, unprefixed for per-session, <code>user:</code> only for things you're confident change only with explicit user action, <code>app:</code> only for genuinely immutable configuration.</li>
+      <li><strong>Log a reason when you write <code>user:</code> or <code>app:</code> state.</strong> Months from now you will debug an agent acting on six-month-old memory. The one-line "why did this get stored" note saves hours.</li>
+    </ol>
+    <p style="color:var(--text-muted);font-size:0.9em;margin-top:var(--space-4);">The pattern has a name: <strong>Skeptical Memory</strong>. Treat your own stored context as unverified until proven otherwise.</p>
+  </div>
+
+  <div class="slide" data-module="03" data-type="keyfact">
+    <h2 class="text-muted" style="border-bottom:none;font-size:1em;text-transform:uppercase;letter-spacing:0.08em;">What to carry forward</h2>
+    <p>State + Events + Artifacts + Scope prefixes. <br>And: <strong>stored state is a hint, not a fact</strong>.</p>
+  </div>
+
+  <div class="slide" data-module="03" data-type="section-title" style="background:linear-gradient(135deg,var(--navy) 0%,var(--navy-light) 100%);">
+    <div class="topic-badge">Up next</div>
+    <h1>M04 &mdash; The one-line model swap</h1>
+    <p class="highlight-text">How LiteLLM actually works. Claude, GPT, Qwen, Ollama, and the one prefix gotcha that matters.</p>
+  </div>
+
+  </main>
+
+  <script src="../shared/slides.js"></script>
+</body>
+</html>

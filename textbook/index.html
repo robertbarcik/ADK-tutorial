@@ -314,6 +314,7 @@ hr {
                 <li><a href="#introduction">Introduction</a></li>
 <li><a href="#why-agents-why-adk">1. Why agents, why ADK</a></li>
 <li><a href="#tools-as-verbs">2. Tools as verbs</a></li>
+<li><a href="#sessions-state-events-artifacts">3. Sessions, State, Events, Artifacts</a></li>
             </ul>
         </nav>
     </aside>
@@ -616,6 +617,162 @@ orchestrator = LlmAgent(
 <p>Tools come in four flavors: <strong>FunctionTool, OpenAPIToolset, McpToolset, AgentTool</strong>. Same abstraction to the model; different integration targets. FunctionTool is the default; reach for the others when you have a specific reason.</p>
 <p>And the design rule from the Agentic Design Patterns interlude: <strong>blast radius matters</strong>. Categorize your tools by how much damage a mis-call can do. Put the guards for irreversible tools in the code, not in the instruction. An instruction is a polite request. Code is a wall.</p>
 <p>Module 03 picks up where the event stream leaves off. Every tool call you just saw went into the session&rsquo;s event history; Module 03 makes sessions, state, and events the subject.</p>
+        </section>
+
+        <section class="chapter" id="sessions-state-events-artifacts">
+            <div class="chapter-number">Chapter 3</div>
+            <h1>Sessions, State, Events, Artifacts</h1>
+<p>Module 01 gave you four primitives: Agent, Runner, Event, Session. Module 02 built on the first two. This chapter goes deep on the third, which is where the agent&rsquo;s memory actually lives. A stateless agent is a demo. A stateful agent is infrastructure. The difference is entirely about how you use the Session.</p>
+<h2>A session is two things</h2>
+<p>A session is identified by a triple: <code>(app_name, user_id, session_id)</code>. Those three strings are the primary key for every session in every session store, regardless of which backend you&rsquo;re using. Inside the session live two collections.</p>
+<p>The first is a <strong>list of events</strong> — the full ordered history of every user message, every model response, every tool call, every tool response, every state mutation. You don&rsquo;t append to this list; ADK does, as things happen. Your code reads it when it wants to audit what happened, replay a conversation, or feed a run into an evaluation suite.</p>
+<p>The second is a <strong>state dictionary</strong> — mutable key-value storage for whatever you want the agent to carry between turns. This is where the action is.</p>
+<p>ADK ships three session services:</p>
+<ul>
+<li><strong><code>InMemorySessionService</code></strong> — backs everything by a Python dict. Loses on process restart. This is what we&rsquo;ll use through Module 07. Perfect for tests, notebooks, and demos.</li>
+<li><strong><code>DatabaseSessionService</code></strong> — SQLAlchemy-backed. Works against Postgres, MySQL, SQLite. This is the production default for self-hosted deployments. Module 08 swaps to it when memory becomes the subject.</li>
+<li><strong><code>VertexAiSessionService</code></strong> — managed, Google-Cloud-only. Mentioned in this course; not taught — the pattern is the same, only the backing store changes.</li>
+</ul>
+<p>The interface is identical across all three. The agent code does not change when you swap the service, which is the whole point of the abstraction.</p>
+<h2>State with scope prefixes</h2>
+<p>This is the most useful under-documented feature in ADK, and the one you will use every day.</p>
+<p>A state dict is a regular Python dict. But the key&rsquo;s <strong>prefix decides where the value lives and how long it survives.</strong> Four tiers.</p>
+<table>
+<thead>
+<tr>
+<th>Prefix</th>
+<th>Scope</th>
+<th>Survives</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><em>(none)</em></td>
+<td>This session only</td>
+<td>Until the session is deleted</td>
+</tr>
+<tr>
+<td><code>user:</code></td>
+<td>This user, across all their sessions</td>
+<td>As long as the user exists</td>
+</tr>
+<tr>
+<td><code>app:</code></td>
+<td>Global across all users of this app</td>
+<td>As long as the app exists</td>
+</tr>
+<tr>
+<td><code>temp:</code></td>
+<td>This invocation only</td>
+<td>Thrown away after the run</td>
+</tr>
+</tbody>
+</table>
+<p>Think of it as React state with persistence tiers baked into the key. You decide the lifetime of every piece of data with a 5-character prefix; ADK handles the routing.</p>
+<p>In practice:</p>
+<ul>
+<li><strong>Unprefixed</strong> is the default. A favorite color you learn mid-conversation and only need for this session&rsquo;s replies. A draft the agent is composing.</li>
+<li><strong><code>user:</code></strong> for per-user persistence. Favorite colors, language preferences, history summaries — anything that&rsquo;s specific to one user but should persist across all their sessions with your app.</li>
+<li><strong><code>app:</code></strong> for global configuration. A daily-changing prompt template every agent should use. A shared rate-limit counter. Rare in practice; reach for it cautiously.</li>
+<li><strong><code>temp:</code></strong> for scratchpads inside a single run. A tool that needs to hand a value to the next tool in the same turn. A calculation the agent would rather not expose in the final event log.</li>
+</ul>
+<p>Pick the scope when you write, and ADK handles persistence accordingly.</p>
+<h2>Writing state — three ways, one of which is a trap</h2>
+<p>Three patterns for writing state. Two of them persist. One of them silently fails. It is almost always the one a new developer reaches for first.</p>
+<p><strong>Pattern 1 — <code>output_key=</code> on the agent.</strong> When you construct an <code>LlmAgent</code>, pass <code>output_key="last_response"</code> (or whatever key you want). After every run, the model&rsquo;s final text response is automatically written to <code>state[output_key]</code>. This is the cleanest way to cache a final answer, and — more importantly — it&rsquo;s how you pass output between workflow-agent steps, which Module 05 will lean on heavily.</p>
+<pre><code class="language-python">agent = LlmAgent(
+    name=&quot;color_agent&quot;,
+    model=LiteLlm(model=MODEL_STRING),
+    instruction=&quot;...&quot;,
+    tools=[...],
+    output_key=&quot;last_response&quot;,   # final text auto-saved to state['last_response']
+)
+</code></pre>
+<p><strong>Pattern 2 — <code>tool_context.state[key] = value</code> inside a tool.</strong> Your tool function gets an extra parameter, <code>tool_context: ToolContext</code>. ADK injects the running context automatically; you don&rsquo;t pass it in. From inside the tool, <code>tool_context.state</code> behaves like a mutable dict. Writes are recorded as events and persisted by the session service.</p>
+<pre><code class="language-python">def remember_favorite_color(color: str, tool_context: ToolContext) -&gt; dict:
+    &quot;&quot;&quot;Record the user's favorite color for future sessions.&quot;&quot;&quot;
+    tool_context.state[&quot;user:favorite_color&quot;] = color
+    return {&quot;status&quot;: &quot;saved&quot;, &quot;color&quot;: color}
+</code></pre>
+<p>Two subtleties to notice: the parameter is <code>tool_context</code> — ADK looks for exactly that name. And the <code>user:</code> prefix on the key is what makes the value survive beyond this session. Drop it, and the value is session-local.</p>
+<p><strong>Pattern 3 — direct assignment to a returned session&rsquo;s <code>.state</code> dict. Does NOT persist.</strong> You fetch a session with <code>session_service.get_session(...)</code>, get back a Session object with a <code>.state</code> dict, and you assign to it:</p>
+<pre><code class="language-python">session = await session_service.get_session(app_name=APP, user_id=USER, session_id=SID)
+session.state[&quot;user:foo&quot;] = &quot;bar&quot;   # ← does not persist
+</code></pre>
+<p>Next time you call <code>get_session()</code> for the same triple, your assignment is gone. Nobody tells you. You just wonder why state isn&rsquo;t sticking.</p>
+<p>The reason is event sourcing: ADK persists state <em>via events</em>. Patterns 1 and 2 both produce state-delta events that the session service writes to the backing store. Pattern 3 is a dict assignment on an in-memory object; no event is generated; nothing is persisted.</p>
+<p><strong>Rule to carry forward:</strong> use <code>output_key=</code> on the agent for final-text caching, and <code>tool_context.state[...]</code> inside a tool for structured writes. Treat a fetched session&rsquo;s <code>.state</code> as read-only.</p>
+<h2>The cross-session wow demo</h2>
+<p>The notebook for this module ships a complete version. Here is the essence.</p>
+<pre><code class="language-python">APP = &quot;m03_demo&quot;
+USER = &quot;alice&quot;
+
+def remember_favorite_color(color: str, tool_context: ToolContext) -&gt; dict:
+    tool_context.state[&quot;user:favorite_color&quot;] = color
+    return {&quot;status&quot;: &quot;saved&quot;, &quot;color&quot;: color}
+
+def recall_favorite_color(tool_context: ToolContext) -&gt; dict:
+    color = tool_context.state.get(&quot;user:favorite_color&quot;)
+    return {&quot;known&quot;: bool(color), &quot;color&quot;: color}
+
+agent = LlmAgent(
+    name=&quot;color_agent&quot;,
+    model=LiteLlm(model=MODEL_STRING),
+    instruction=(
+        &quot;You track the user's favorite color. When they tell you one, call &quot;
+        &quot;remember_favorite_color. When they ask, call recall_favorite_color. &quot;
+        &quot;Be brief.&quot;
+    ),
+    tools=[remember_favorite_color, recall_favorite_color],
+)
+</code></pre>
+<p><strong>Session 1:</strong> the user says &ldquo;my favorite color is teal.&rdquo; The agent calls <code>remember_favorite_color("teal")</code>. The tool writes <code>user:favorite_color = "teal"</code> to the state.</p>
+<p><strong>Session 2:</strong> a brand-new session for the same user. No initial state passed. But the session&rsquo;s <code>.state</code> <em>starts</em> with <code>user:favorite_color: "teal"</code> — because the <code>user:</code> prefix made the value survive across sessions.</p>
+<p>The user asks, &ldquo;what&rsquo;s my favorite color?&rdquo; The agent calls <code>recall_favorite_color()</code>, which reads the key, returns <code>"teal"</code>. The model replies &ldquo;teal.&rdquo;</p>
+<p>Cross-session memory. No database setup. No vector store. No custom embedding pipeline. A prefix on a dict key.</p>
+<h2>Events — the session&rsquo;s immutable ledger</h2>
+<p>Every turn produces events, and the session keeps them all. <code>session.events</code> gives you the full audit log: every user message, every model response, every tool call, every tool response, every state mutation recorded as a <code>state_delta</code>.</p>
+<p>A condensed example from the color demo:</p>
+<pre><code>[ 0] user         text(My favorite color is teal.)
+[ 1] color_agent  tool_call(remember_favorite_color)
+[ 2] color_agent  tool_resp | state_delta(['user:favorite_color'])
+[ 3] color_agent  text(Awesome!) | state_delta(['last_response'])
+</code></pre>
+<p>Four events. Two state deltas. The state dict is a <strong>projection</strong> of the event stream — when you fetch a session, ADK replays the events in order, applies the state deltas, and hands you the final state. This is event sourcing, and it&rsquo;s why Module 08 can swap in-memory sessions for database sessions without changing the agent code. The data model is the same; only the storage changes.</p>
+<p>Read-only from your code&rsquo;s perspective. You don&rsquo;t build events yourself. You read them when you need to understand what happened, or when you hand them to an evaluation suite (Module 09) for trajectory testing.</p>
+<h2>Artifacts — binary blobs outside the event stream</h2>
+<p>A brief word on the fourth concept.</p>
+<p><strong>Artifacts</strong> are for binary data — images, audio clips, PDFs, any large payload — that you want associated with a session but don&rsquo;t want serialized into events. The analogy: <a href="https://git-lfs.com">Git LFS</a> for agents. The pointer lives in the event stream; the payload lives in a separate store.</p>
+<p>Three artifact services mirror the session services:</p>
+<ul>
+<li><code>InMemoryArtifactService</code> — demos and tests.</li>
+<li><code>GcsArtifactService</code> — Google Cloud Storage, for production.</li>
+<li>Roll your own <code>BaseArtifactService</code> for S3, Azure Blob, MinIO, whatever.</li>
+</ul>
+<p>You won&rsquo;t need artifacts for the text-only agents in Part 1 of this course. Module 13 (Live API voice agent) is the first module where they carry real weight — audio clips need to live somewhere that isn&rsquo;t the event stream.</p>
+<h2>Interlude — Skeptical Memory</h2>
+<p><em>From the Agentic Design Patterns publication, Chapter 2: The Persistent Context Problem. The pattern has a name: Skeptical Memory. It is worth two minutes.</em></p>
+<p>The wow demo in this chapter looks clean because the state has not had time to go stale. In production, this is not how it works.</p>
+<p>A user&rsquo;s favorite color from three months ago is probably still their favorite color. Their current project, maybe not — they might have switched projects and never told the agent. The tickets the agent &ldquo;remembered&rdquo; being open yesterday might all be closed by now. A server IP an MCP tool cached might have been reassigned. The client name in <code>user:current_client</code> might refer to a client the user no longer works with.</p>
+<p><strong>Stored memory is a hint, not a fact.</strong></p>
+<p>Three guidelines, condensed from the publication:</p>
+<ol>
+<li><strong>Prefer retrieval over recall for high-stakes decisions.</strong> Before the agent sends an email, charges a card, deploys code, or takes any action with irreversible consequences, it should call a read-only tool to re-verify the relevant state — not act on its own stored memory. The cost of one extra tool call is trivial compared to the cost of acting on stale information.</li>
+<li><strong>Scope your state aggressively.</strong> <code>temp:</code> for scratchpads inside a single run. Unprefixed for per-session. <code>user:</code> only for things you are confident change only on explicit user action. <code>app:</code> only for genuinely immutable configuration. The more narrowly scoped the data, the less staleness it can cause.</li>
+<li><strong>Log a reason when you write <code>user:</code> or <code>app:</code> state.</strong> Months from now, when you&rsquo;re debugging an agent acting on six-month-old memory, a one-line &ldquo;why did this get stored&rdquo; note saves hours of investigation. Future you will thank present you.</li>
+</ol>
+<p>The pattern&rsquo;s name captures the spirit: <strong>Skeptical Memory</strong>. Treat your own stored context as unverified hints, not facts. Verify before acting on anything consequential.</p>
+<p>Module 08 picks up this thread when we move from session state into long-term memory — where the staleness problem gets its full treatment.</p>
+<h2>What to carry forward</h2>
+<p>From this chapter, five things:</p>
+<ul>
+<li>A <strong>Session</strong> is <code>(app_name, user_id, session_id)</code>. It holds events (immutable ledger) and state (mutable dict).</li>
+<li><strong>Scope prefixes</strong> on state keys decide lifetime: unprefixed is session-only, <code>user:</code> is per-user, <code>app:</code> is global, <code>temp:</code> is per-invocation.</li>
+<li><strong>Two state-write patterns persist</strong>: <code>output_key=</code> on the agent, and <code>tool_context.state[key] = value</code> inside a tool.</li>
+<li><strong>Direct assignment to a fetched session&rsquo;s <code>.state</code></strong> does not round-trip. Use the two patterns above.</li>
+<li><strong>Skeptical Memory</strong>: stored state is a hint, not a fact. Verify before acting on high-stakes decisions.</li>
+</ul>
+<p>Module 04 opens up the <code>LiteLlm</code> wrapper we&rsquo;ve been using since M01. The one-line model swap: Claude, GPT, Qwen via OpenRouter, and a locally-hosted Ollama model — same agent code, different provider — plus the one prefix gotcha that causes infinite tool-call loops if you get it wrong.</p>
         </section>
         </main>
     </div>
