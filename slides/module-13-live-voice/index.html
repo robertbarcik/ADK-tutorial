@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ADK Course — M13: Live API Voice Agent</title>
+  <link rel="stylesheet" href="../shared/shared.css">
+  <link rel="stylesheet" href="../shared/slides.css">
+</head>
+<body>
+  <nav class="progress-strip">
+    <a href="../../index.html" class="progress-home">Course</a>
+    <div class="progress-title">M13 — Live API voice agent</div>
+    <div class="progress-meta">
+      <span class="slide-counter">1 / 1</span>
+      <button class="theme-toggle">Theme</button>
+    </div>
+  </nav>
+
+  <main class="slide-viewport">
+
+  <div class="slide active" data-module="13" data-type="section-title">
+    <div class="topic-badge">Module 13 &middot; Part 2 Gemini unlocks</div>
+    <h1>Live API voice agent</h1>
+    <h3>The biggest Gemini unlock</h3>
+    <p class="highlight-text">Bidirectional audio &middot; VAD &middot; interruption</p>
+  </div>
+
+  <div class="slide" data-module="13" data-type="keyfact">
+    <h2 class="text-muted" style="border-bottom:none;font-size:1em;text-transform:uppercase;letter-spacing:0.08em;">As of April 2026</h2>
+    <p>The <strong>single most differentiated</strong> capability<br>Gemini ships that no competitor replicates cleanly.</p>
+  </div>
+
+  <div class="slide" data-module="13">
+    <h2>What Live does</h2>
+    <ul>
+      <li><strong>Bidirectional audio.</strong> Voice in, voice out, over a single WebSocket.</li>
+      <li><strong>Voice Activity Detection (VAD).</strong> Gemini decides when you've stopped talking and starts responding.</li>
+      <li><strong>Interruption.</strong> Talk over Gemini mid-response and it stops immediately, listens to the new input.</li>
+      <li><strong>Sub-second latency</strong> on happy-path sessions.</li>
+    </ul>
+    <p>Competitors: OpenAI's Realtime API is the closest; different semantics, different pricing. Anthropic has no direct equivalent.</p>
+  </div>
+
+  <div class="slide" data-module="13" data-type="comparison">
+    <h2>Live vs run_async</h2>
+    <div class="comparison-layout">
+      <div class="vs-left">
+        <h3><code>run_async</code> (M01-M12)</h3>
+        <p style="font-size:0.9em;">Request/response cycle. Hand in a message, events stream back, turn ends.</p>
+        <p style="font-size:0.9em;color:var(--text-muted);">Text in, text out. No notion of a continuous session beyond event history.</p>
+      </div>
+      <div class="vs-divider">vs</div>
+      <div class="vs-right">
+        <h3><code>run_live</code> (this module)</h3>
+        <p style="font-size:0.9em;">Open bidirectional WebSocket. Stream chunks of audio into a queue; chunks of response audio stream back, in parallel.</p>
+        <p style="font-size:0.9em;color:var(--text-muted);">For as long as the session is open. Built for voice, not turn-based chat.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="slide" data-module="13">
+    <h2>Three primitives you need</h2>
+    <table>
+      <thead><tr><th>Primitive</th><th>Role</th></tr></thead>
+      <tbody>
+        <tr><td><code>LiveRequestQueue</code></td><td>Push user input into (text chunks or audio blobs)</td></tr>
+        <tr><td><code>Runner.run_live(...)</code></td><td>Async generator yielding server events; runs until queue closes</td></tr>
+        <tr><td><code>RunConfig(response_modalities=[...])</code></td><td>Output shape: <code>"TEXT"</code>, <code>"AUDIO"</code>, or both</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="slide" data-module="13" data-type="code">
+    <h2>The API shape — text-mode Live</h2>
+<pre><code>live_agent = LlmAgent(
+    model="gemini-3.1-flash-live-preview",
+    instruction="Chat casually, short replies.",
+)
+
+queue = LiveRequestQueue()
+config = RunConfig(response_modalities=["TEXT"])
+
+queue.send_content(
+    content=types.Content(role="user", parts=[types.Part(text="Hi!")])
+)
+
+async for event in runner.run_live(
+    user_id=USER, session_id=SID,
+    live_request_queue=queue, run_config=config,
+):
+    # stream events until turn_complete
+    ...
+
+queue.close()   # end the session</code></pre>
+  </div>
+
+  <div class="slide" data-module="13">
+    <h2>Voice Activity Detection + Interruption</h2>
+    <p>Both server-side, both on by default. Tune via <code>RealtimeInputConfig</code> in <code>RunConfig</code>:</p>
+<pre><code>RealtimeInputConfig(
+    automatic_activity_detection=AutomaticActivityDetection(
+        silence_duration_ms=1000,     # respond after 1s silence
+        prefix_padding_ms=200,        # 200ms context before detected speech
+    )
+)</code></pre>
+    <p><strong>Lower <code>silence_duration_ms</code></strong> = snappier but false triggers. <strong>Higher</strong> = natural but noticeable delay. 1000ms is a sensible conversational default.</p>
+  </div>
+
+  <div class="slide" data-module="13">
+    <h2>Production architecture</h2>
+<pre class="diagram">Browser (user)              Your backend              Gemini
+──────────────              ──────────────            ──────
+Microphone ──WebSocket──▶   ADK agent
+                               │
+                               ├── LiveRequestQueue ◀── audio chunks
+                               │
+                               │                     ──WebSocket──▶
+                               │                       Live API
+                               │
+                               ◀── response audio chunks ──
+                               │
+Audio out   ◀──WebSocket──   stream response audio</pre>
+    <p>Browser microphone → WebSocket → backend ADK → Live API → audio out.</p>
+    <p style="color:var(--text-muted);font-size:0.9em;">For full-stack, see <code>google/adk-samples</code> voice-agent example.</p>
+  </div>
+
+  <div class="slide" data-module="13" data-type="section-title" style="background:linear-gradient(135deg,var(--amber-dark) 0%,var(--amber) 100%);">
+    <h1>Live</h1>
+    <h3>Text-mode Live session</h3>
+    <p class="highlight-text" style="color:white;">Notebook cell 9</p>
+  </div>
+
+  <div class="slide" data-module="13">
+    <h2>Fair warning</h2>
+    <div class="callout callout-gotcha">
+      <div class="callout-title">Live is preview-tier and brittle</div>
+      <p style="margin:0;">Transient server errors (code 1011 "Internal error encountered", connection drops) show up on free-tier keys. The code is correct; the endpoint is unreliable. Logged in <code>DEMOS_BROKEN.md</code>.</p>
+    </div>
+    <div class="callout callout-tip">
+      <div class="callout-title">What to do</div>
+      <p style="margin:0;">Learn the API shape today. Run the audio demo in a few weeks, or on a paid tier, or against Vertex AI. The concepts are durable; this month's version-string is not.</p>
+    </div>
+  </div>
+
+  <div class="slide" data-module="13">
+    <h2>Pricing</h2>
+    <p>Audio is billed by minute, not by token.</p>
+    <table>
+      <thead><tr><th>Model</th><th>Tier</th><th>Rate</th></tr></thead>
+      <tbody>
+        <tr><td><code>gemini-3.1-flash-live-preview</code></td><td>Preview, free-tier-eligible</td><td>Free up to quota</td></tr>
+        <tr><td><code>gemini-live-2.5-flash-native-audio</code></td><td>Paid, production-grade</td><td>~$0.012 per minute audio in/out</td></tr>
+      </tbody>
+    </table>
+    <p style="color:var(--text-muted);font-size:0.9em;">Model names move. Check <code>ai.google.dev/gemini-api/docs/live</code> for the current catalog.</p>
+  </div>
+
+  <div class="slide" data-module="13">
+    <h2>When Live is the right tool</h2>
+    <div class="callout callout-success">
+      <div class="callout-title">Use Live for</div>
+      <ul style="margin:0;">
+        <li>Real-time conversational voice</li>
+        <li>Interruption handling — users will talk over you</li>
+        <li>Sub-second latency requirements</li>
+        <li>Open-session continuous dialog</li>
+      </ul>
+    </div>
+    <div class="callout callout-gotcha">
+      <div class="callout-title">Don't use Live for</div>
+      <ul style="margin:0;">
+        <li>Transcription (use a dedicated STT service)</li>
+        <li>TTS playback of pre-computed answers (use TTS)</li>
+        <li>Non-interactive voice (narration of a script)</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="slide" data-module="13" data-type="keyfact">
+    <h2 class="text-muted" style="border-bottom:none;font-size:1em;text-transform:uppercase;letter-spacing:0.08em;">What to carry forward</h2>
+    <p><strong>Live</strong> is for real-time conversational voice.<br>The API is <code>run_live + LiveRequestQueue</code>.<br>The model names rotate.</p>
+    <p style="font-size:0.7em;color:var(--text-muted);margin-top:var(--space-4);">Preview-tier fragility is real; the teaching of the shape is durable.</p>
+  </div>
+
+  <div class="slide" data-module="13" data-type="section-title" style="background:linear-gradient(135deg,var(--navy) 0%,var(--navy-light) 100%);">
+    <div class="topic-badge">Up next &middot; course finale</div>
+    <h1>M14 &mdash; A2A protocol</h1>
+    <p class="highlight-text">Agent-to-agent. The sidestep. 30-minute block.</p>
+  </div>
+
+  </main>
+
+  <script src="../shared/slides.js"></script>
+</body>
+</html>
