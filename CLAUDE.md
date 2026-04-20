@@ -12,8 +12,10 @@ A full course on Google's Agent Development Kit (ADK). Four aligned components p
 ## Folder conventions
 
 ```
-slides/shared/              # shared.css + slides.css + slides.js, referenced by every module deck
-slides/module-NN-slug/      # index.html + speaker_notes.md, per module
+index.html                  # slides portal / course front page (self-contained, deployable to S3)
+slides/shared/              # CANONICAL shared.css + slides.css + slides.js — edit here
+slides/build_slides.py      # inlines shared/*.{css,js} into each deck's index.html
+slides/module-NN-slug/      # index.html (generated, self-contained) + speaker_notes.md
 textbook/_sources/chapters/ # NN-slug.md — markdown canonical
 textbook/_sources/tools/    # build_html.py
 textbook/index.html         # generated output — do NOT hand-edit
@@ -21,6 +23,19 @@ notebooks/                  # NN_slug.ipynb — one per module, plus legacy/ for
 mcp_servers/                # reusable MCP servers for M02 tools demos
 scripts/                    # python helpers loaded by notebooks when inline code would be too long
 ```
+
+## Why the slide deck HTMLs are "built"
+
+Safari — and some Chrome strict-mode configurations — block `file://`-path loads of relative CSS and JS as a security measure. That turns every double-click-to-open into a wall of unstyled text.
+
+Fix: each `slides/module-NN-slug/index.html` has the shared CSS/JS **inlined** by `slides/build_slides.py`. Each deck becomes a single self-contained HTML file that opens cleanly via `file://` in any browser, and still deploys cleanly over HTTPS.
+
+**Workflow**:
+1. Edit the canonical sources in `slides/shared/` (shared.css, slides.css, slides.js).
+2. Run `python3 slides/build_slides.py` — it walks every `slides/module-*/index.html` and re-inlines.
+3. Commit the regenerated deck HTMLs alongside the shared-source change.
+
+A banner comment at the top of each generated deck says: `<!-- Built by slides/build_slides.py — shared CSS/JS inlined for file:// portability. -->`. Don't hand-edit the inlined blocks; edit the shared source and re-run the builder.
 
 ## Writing voice — read this before writing content
 
