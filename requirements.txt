@@ -20,6 +20,12 @@ google-genai>=1.0.0,<2.0.0
 # ─── A2A protocol SDK (M14 — pinned to 0.3.x until ADK catches up to 1.0) ──
 a2a-sdk>=0.3.24,<0.4.0
 
+# ─── Persistence (M08 DatabaseSessionService) ──────────────────────────
+# aiosqlite is the async SQLite driver; greenlet is a transitive SQLAlchemy
+# async requirement. Required for `sqlite+aiosqlite://` URLs.
+aiosqlite>=0.20.0
+greenlet>=3.0.0
+
 # ─── Notebook plumbing (local dev; Colab pre-installs Jupyter) ─────────
 jupyter>=1.0.0
 ipykernel>=6.0.0
