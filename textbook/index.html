@@ -318,6 +318,7 @@ hr {
 <li><a href="#the-one-line-model-swap">4. The one-line model swap</a></li>
 <li><a href="#workflow-agents">5. Workflow agents</a></li>
 <li><a href="#multi-agent-hierarchies">6. Multi-agent hierarchies</a></li>
+<li><a href="#callbacks-as-middleware">7. Callbacks as middleware</a></li>
             </ul>
         </nav>
     </aside>
@@ -1332,6 +1333,206 @@ coordinator = LlmAgent(
 <li><strong>Default:</strong> one agent with tools. Multi-agent is a deliberate choice.</li>
 </ul>
 <p>Module 07 picks up callbacks. Six lifecycle hooks — <code>before_agent</code>, <code>after_agent</code>, <code>before_model</code>, <code>after_model</code>, <code>before_tool</code>, <code>after_tool</code> — that let you intercept, log, transform, or short-circuit any step in an agent&rsquo;s lifecycle. It is the cleanest mechanism in the framework for guardrails, caching, PII redaction, and per-agent-specific cross-cutting concerns.</p>
+        </section>
+
+        <section class="chapter" id="callbacks-as-middleware">
+            <div class="chapter-number">Chapter 7</div>
+            <h1>Callbacks as middleware</h1>
+<p>Six lifecycle hooks wrap every invocation of an ADK agent. You can intercept any step — the agent starting, the LLM being called, a tool running — observe it, transform it, or <strong>short-circuit it entirely</strong>. This is the cleanest mechanism in the framework for guardrails, caching, PII redaction, mocking, and every other cross-cutting concern that should apply to an agent&rsquo;s lifecycle without polluting its instruction.</p>
+<p>If you have used Express.js middleware, Django middleware, or plugin hooks in any framework, the shape is familiar. <strong>Callbacks are for agents what middleware is for web handlers.</strong> A pipeline of before- and after-hooks around each meaningful step, each of which can decide to let the step proceed or replace it with something else.</p>
+<h2>The six hooks</h2>
+<p>Three lifecycle events, each wrapped by a before/after pair:</p>
+<table>
+<thead>
+<tr>
+<th>Event</th>
+<th>Before</th>
+<th>After</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Agent runs</td>
+<td><code>before_agent_callback</code></td>
+<td><code>after_agent_callback</code></td>
+</tr>
+<tr>
+<td>Model call</td>
+<td><code>before_model_callback</code></td>
+<td><code>after_model_callback</code></td>
+</tr>
+<tr>
+<td>Tool call</td>
+<td><code>before_tool_callback</code></td>
+<td><code>after_tool_callback</code></td>
+</tr>
+</tbody>
+</table>
+<p>Plus two error-handling hooks for recovering from exceptions: <code>on_model_error_callback</code> and <code>on_tool_error_callback</code>. Less common; default behavior is the error propagates.</p>
+<p>All six are passed to <code>LlmAgent(...)</code> as named arguments. All six are plain Python functions.</p>
+<h2>The return-to-override pattern</h2>
+<p>This is the rule. Every callback follows the same convention:</p>
+<pre><code class="language-python">def my_callback(context, request_or_response_or_args):
+    # Observe, log, validate — whatever.
+    if &lt;some condition&gt;:
+        return &lt;a replacement value&gt;   # ← ADK uses this; real call skipped
+    return None                        # ← real call proceeds
+</code></pre>
+<p><code>None</code> means &ldquo;carry on.&rdquo; A returned object means &ldquo;use this instead of doing the thing.&rdquo;</p>
+<p>The type of the &ldquo;thing&rdquo; depends on the hook:
+- A <code>before_model_callback</code> returning a value must return an <code>LlmResponse</code> (what the model would have produced).
+- A <code>before_tool_callback</code> returning a value must return whatever the tool would have returned (usually a dict).
+- An <code>after_tool_callback</code> returning a value replaces the tool&rsquo;s actual return.
+- And so on.</p>
+<p>That single convention — return <code>None</code> or return a replacement value — is what makes callbacks a general-purpose interception layer. Same API, different hooks, different things get short-circuited.</p>
+<h2>Demo 1 — <code>before_model_callback</code>: the blocklist guardrail</h2>
+<p>The canonical 5-line safety gate. Runs just before every LLM call. Sees the full request — user message, system instruction, chat history, tool definitions.</p>
+<pre><code class="language-python">from google.adk.models.llm_response import LlmResponse
+
+BLOCKED_WORDS = [&quot;password&quot;, &quot;secret&quot;, &quot;credit card&quot;]
+
+def blocklist_guardrail(callback_context, llm_request):
+    latest_user = &quot;&quot;
+    if llm_request.contents:
+        for part in llm_request.contents[-1].parts or []:
+            if part.text:
+                latest_user = part.text.lower()
+                break
+
+    for bad in BLOCKED_WORDS:
+        if bad in latest_user:
+            return LlmResponse(
+                content=types.Content(
+                    role=&quot;model&quot;,
+                    parts=[types.Part(text=(
+                        f&quot;I can't help with '{bad}'. Please rephrase.&quot;
+                    ))],
+                )
+            )
+    return None
+
+guarded_agent = LlmAgent(
+    name=&quot;guarded_agent&quot;,
+    model=LiteLlm(model=MODEL_STRING),
+    instruction=&quot;You are helpful and concise.&quot;,
+    before_model_callback=blocklist_guardrail,
+)
+</code></pre>
+<p>Two runs demonstrate the behavior:</p>
+<ul>
+<li><strong>&ldquo;What is photosynthesis?&rdquo;</strong> — no blocked words. Callback returns <code>None</code>. LLM runs. Normal answer.</li>
+<li><strong>&ldquo;What&rsquo;s the CEO&rsquo;s password?&rdquo;</strong> — callback returns a canned <code>LlmResponse</code>. The LLM is <strong>never called</strong>. ADK uses the callback&rsquo;s response as if it came from the model.</li>
+</ul>
+<p>You will not see any LLM-deliberation events in the blocked run. Zero tokens billed. Guaranteed refusal.</p>
+<p>This is the single most important reason to learn callbacks: they are how you enforce safety at the <strong>framework layer</strong>, not the prompt layer. An instruction like &ldquo;refuse to discuss passwords&rdquo; is a polite request the model can misinterpret or be jailbroken around. A code-level check in a callback is a wall — the text never reaches the model.</p>
+<p>The pattern scales. Swap the <code>in</code> check for regex, a PII classifier, a toxicity model, or anything else that can decide yes/no in Python. The returned <code>LlmResponse</code> can be whatever you want: a refusal, a redirect, a templated answer. You own the decision.</p>
+<h2>Demo 2 — <code>after_tool_callback</code>: PII redaction</h2>
+<p>Runs just after a tool returns, before the result goes back to the model. Sees the tool, the arguments it was called with, the context, and the return value.</p>
+<pre><code class="language-python">SENSITIVE_FIELDS = {&quot;salary&quot;, &quot;ssn&quot;, &quot;home_address&quot;, &quot;date_of_birth&quot;}
+
+def redact_pii(tool, args, tool_context, tool_response):
+    if isinstance(tool_response, dict):
+        cleaned = dict(tool_response)
+        for key in SENSITIVE_FIELDS &amp; cleaned.keys():
+            cleaned[key] = &quot;[REDACTED]&quot;
+        return cleaned
+    return None  # No change
+
+hr_agent = LlmAgent(
+    name=&quot;hr_agent&quot;,
+    model=LiteLlm(model=MODEL_STRING),
+    instruction=&quot;Use lookup_employee to answer.&quot;,
+    tools=[lookup_employee],
+    after_tool_callback=redact_pii,
+)
+</code></pre>
+<p>When the HR agent runs, the tool function itself returns the full record — including salary, SSN, home address. The callback intercepts the return value on the way back. The model&rsquo;s tool-response event contains only the cleaned dict; salary, SSN, home address appear as <code>[REDACTED]</code>.</p>
+<p>The key observation: <strong>the tool function itself returned the full record</strong>. Your Python code is still aware of the sensitive fields. Audit logs, downstream pipelines, and systems that legitimately need the data can still use the unredacted return. Only the model&rsquo;s view is redacted.</p>
+<p>This contains the PII blast radius at the callback layer rather than hard-coding redaction into the tool function. If the same tool has ten callers — some of which need the full data, some of which don&rsquo;t — the callback gives you per-agent redaction policy without forking the tool.</p>
+<p>The pattern scales to anything &ldquo;filter outputs on the way out&rdquo;: truncate overly long results, rename fields the model keeps getting confused by, add audit tags, strip base64-encoded blobs, normalize currency units.</p>
+<h2>Demo 3 — <code>before_tool_callback</code>: mocking for tests</h2>
+<p>Runs just before a tool executes. Sees the tool and the args the model wants to call it with.</p>
+<pre><code class="language-python">MOCK_RESPONSES = {
+    &quot;AAPL&quot;: {&quot;ticker&quot;: &quot;AAPL&quot;, &quot;price&quot;: 180.00, &quot;currency&quot;: &quot;USD&quot;, &quot;source&quot;: &quot;mock&quot;},
+    &quot;GOOG&quot;: {&quot;ticker&quot;: &quot;GOOG&quot;, &quot;price&quot;: 140.00, &quot;currency&quot;: &quot;USD&quot;, &quot;source&quot;: &quot;mock&quot;},
+}
+
+def mock_in_tests(tool, args, tool_context):
+    if tool.name == &quot;fetch_stock_price&quot;:
+        ticker = args.get(&quot;ticker&quot;, &quot;&quot;).upper()
+        if ticker in MOCK_RESPONSES:
+            return MOCK_RESPONSES[ticker]
+    return None  # Let the real tool run.
+
+stock_agent = LlmAgent(
+    ...,
+    tools=[fetch_stock_price],
+    before_tool_callback=mock_in_tests,
+)
+</code></pre>
+<p>When you ask the agent for AAPL, the callback matches the ticker against its mock dictionary, returns the mock, and the real <code>fetch_stock_price</code> never runs. When you ask for MSFT, the callback returns <code>None</code> and the real tool runs.</p>
+<p>This is the cleanest pattern for making agent code <strong>unit-testable</strong>. Inject the callback in tests — no real API hits, no fixtures, no separate test doubles. Leave it off in production. The same agent code runs both paths without modification.</p>
+<p>It&rsquo;s also useful in production: a cache hit check before running an expensive tool, a circuit-breaker that returns a fallback when an external API is degraded, environment-specific behavior (canned data in dev, real data in prod).</p>
+<h2>When to use callbacks vs alternatives</h2>
+<p>Callbacks are not the only way to intervene in an agent&rsquo;s lifecycle. ADK offers several mechanisms, each with its place.</p>
+<table>
+<thead>
+<tr>
+<th>Mechanism</th>
+<th>Scope</th>
+<th>When</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Instruction prompt</strong></td>
+<td>One agent</td>
+<td>Soft preferences, style, default behavior</td>
+</tr>
+<tr>
+<td><strong>Tool function code</strong></td>
+<td>One tool</td>
+<td>Guards on irreversible operations (covered in M02)</td>
+</tr>
+<tr>
+<td><strong>Callback</strong></td>
+<td>One agent&rsquo;s lifecycle</td>
+<td>Cross-cutting concerns — guardrails, PII, caching, mocking</td>
+</tr>
+<tr>
+<td><strong>Plugin</strong></td>
+<td>Whole runner, all agents</td>
+<td>Org-wide policies; audit logging; compliance</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Rule of thumb: callbacks for agent-specific logic, plugins for app-wide policy.</strong></p>
+<p>A blocklist that applies to one specialist agent → callback. A company-wide audit trail that must fire on every agent in the app → plugin.</p>
+<p>Plugins are out of scope for this chapter — M10 touches on them for production deployments. For most day-to-day work, callbacks are the right reach.</p>
+<h2>The observability gotcha</h2>
+<p>Worth naming so you&rsquo;re not surprised in production. <strong>Callback execution does not automatically appear in the OpenTelemetry traces ADK emits</strong> — at least as of v1.28 (check release notes on newer versions; this may be addressed).</p>
+<p>Concretely: if you use Cloud Trace, Langfuse, Arize, or any other observability tool consuming ADK&rsquo;s OTel output, you will see LLM calls, tool calls, and state deltas as spans. You will <strong>not</strong> see &ldquo;before_model_callback ran, returned None&rdquo; as a span.</p>
+<p>If you rely on callbacks for policy decisions in production and need to observe them, instrument your callbacks manually — a print, a log line, or an explicit OpenTelemetry span created from inside the callback. The documentation gap is known; Google&rsquo;s own ADK blog posts acknowledge it.</p>
+<h2>Putting callbacks in a larger architecture</h2>
+<p>Callbacks, workflow agents, sub_agents, and AgentTool combine cleanly. A real production architecture often has:</p>
+<ul>
+<li>Workflow agents for the top-level flow (Sequential, Parallel, Loop).</li>
+<li>Sub-agents or AgentTools for specialization.</li>
+<li>Callbacks on each agent for its specific policies — guardrails, redaction, mocks.</li>
+<li>Plugins on the runner for org-wide concerns — audit, billing, global rate-limit.</li>
+</ul>
+<p>All four layers are compositional. You can add a callback to a sub-agent inside a LoopAgent inside a SequentialAgent and everything still works. The interception mechanism is orthogonal to the composition mechanism.</p>
+<h2>What to carry forward</h2>
+<ul>
+<li><strong>Six lifecycle hooks:</strong> before/after × agent/model/tool. Plus two error hooks.</li>
+<li><strong>Return-to-override:</strong> <code>None</code> proceeds, a value short-circuits with your replacement.</li>
+<li><strong><code>before_model_callback</code></strong> is the guardrail hook — short-circuits the LLM, zero tokens billed.</li>
+<li><strong><code>after_tool_callback</code></strong> is the output-filter hook — redact PII, truncate, reshape.</li>
+<li><strong><code>before_tool_callback</code></strong> is the mocking/cache hook — the test-seam.</li>
+<li><strong>Callbacks for agent-specific logic; Plugins for app-wide policy.</strong></li>
+<li><strong>Observability gap:</strong> callbacks don&rsquo;t automatically appear in OTel traces. Instrument manually if needed.</li>
+</ul>
+<p>Module 08 picks up <strong>memory</strong>. Session state was short-term memory — tied to one session, or at best carried across sessions within one user via scope prefixes. M08 is the long-term version: swapping <code>InMemorySessionService</code> for a SQLite-backed <code>DatabaseSessionService</code>, introducing <code>MemoryService</code> and the <code>load_memory</code> tool for explicit recall across time, and revisiting the Skeptical Memory pattern from Module 03 — now with teeth, because at long time horizons staleness is the default.</p>
         </section>
         </main>
     </div>
