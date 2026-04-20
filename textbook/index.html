@@ -316,6 +316,7 @@ hr {
 <li><a href="#tools-as-verbs">2. Tools as verbs</a></li>
 <li><a href="#sessions-state-events-artifacts">3. Sessions, State, Events, Artifacts</a></li>
 <li><a href="#the-one-line-model-swap">4. The one-line model swap</a></li>
+<li><a href="#workflow-agents">5. Workflow agents</a></li>
             </ul>
         </nav>
     </aside>
@@ -973,6 +974,212 @@ For any code question:
 <li><strong>Swap models for failover, per-task capability, or cost.</strong> Always with evaluation, never on hunches.</li>
 </ul>
 <p>Module 05 picks up composition. One agent is enough for toy demos; real work needs composition. Sequential, Parallel, Loop — three first-class composition primitives. And the canonical ADK wow demo: a Generator+Critic pair refining a draft in a loop until the critic says it&rsquo;s good enough.</p>
+        </section>
+
+        <section class="chapter" id="workflow-agents">
+            <div class="chapter-number">Chapter 5</div>
+            <h1>Workflow agents</h1>
+<p>Four chapters in, every example has featured one agent doing the work. One agent is enough for toy problems, and nothing more. Real agent software is composition — several agents arranged into pipelines, fan-outs, refinement loops — because the interesting problems never fit one prompt.</p>
+<p>This chapter introduces ADK&rsquo;s three first-class composition primitives: <code>SequentialAgent</code>, <code>ParallelAgent</code>, and <code>LoopAgent</code>. Each takes a list of child agents and runs them according to a fixed control-flow pattern. You don&rsquo;t write orchestration code; you name the pattern.</p>
+<p>This is the single strongest pedagogical differentiator ADK has against the alternatives. LangGraph asks you to draw control flow as a node-and-edge graph. CrewAI hides it behind a role-playing DSL. ADK lets you <em>name the workflow</em>: Sequential, Parallel, Loop. Three Python classes, no graph diagrams, no metaphor.</p>
+<h2>The three primitives, at a glance</h2>
+<pre><code>SequentialAgent       ParallelAgent          LoopAgent
+─────────────────     ─────────────────      ─────────────────
+                                             ┌────────────────┐
+   child 1               child 1             │   child 1      │
+      │                     │                │      │         │
+      ▼                     ▼                │      ▼         │
+   child 2       ──&gt;    child 2    &lt;──       │   child 2      │
+      │                     │                │      │         │
+      ▼                     ▼                │      ▼ (loop)  │
+   child 3               child 3             │   child 1 ...  │
+                                             └────────────────┘
+   ordered              concurrent           until exit_loop
+   pipeline             fan-out              or max_iterations
+</code></pre>
+<p>Same <code>Runner</code>, same event stream, same session state — only the composition class differs. Everything from the first four chapters — tools, events, state prefixes — still applies inside each child.</p>
+<h2>State is the pipe</h2>
+<p>Between children, state is how data flows. Two pieces of syntax do the entire orchestration.</p>
+<p><strong><code>output_key="summary"</code> on a child</strong> — the child&rsquo;s final text is written to <code>state["summary"]</code> automatically. This is the same <code>output_key=</code> parameter we covered in Module 03; here it takes on a second role as the &ldquo;output port&rdquo; of a child in a workflow.</p>
+<p><strong><code>{summary}</code> in a later child&rsquo;s instruction</strong> — ADK substitutes the value from state before the model sees the prompt. The <code>?</code> suffix (<code>{summary?}</code>) means &ldquo;substitute if present, empty string if missing.&rdquo; The <code>?</code> matters for LoopAgent children that run before the key exists.</p>
+<p>Write with <code>output_key=</code>. Read with <code>{key}</code>. That is the entire orchestration vocabulary for workflow agents.</p>
+<h2>SequentialAgent — ordered pipeline</h2>
+<p><code>SequentialAgent</code> runs children one after another. Child 1 finishes, child 2 starts, and so on. The first child&rsquo;s output is in state by the time the second child runs, so the second child can read it.</p>
+<pre><code class="language-python">summarizer = LlmAgent(
+    name=&quot;summarizer&quot;,
+    model=MODEL,
+    instruction=&quot;Read the user input. Summarize it in one sentence. Output only the summary.&quot;,
+    output_key=&quot;summary&quot;,
+)
+
+translator = LlmAgent(
+    name=&quot;translator&quot;,
+    model=MODEL,
+    instruction=&quot;Translate this English sentence to Slovak: {summary}. Output only the translation.&quot;,
+    output_key=&quot;translation&quot;,
+)
+
+pipeline = SequentialAgent(
+    name=&quot;summarize_then_translate&quot;,
+    sub_agents=[summarizer, translator],
+)
+</code></pre>
+<p>Run this on &ldquo;The cat sat on the mat. It was hungry. It meowed loudly until fed.&rdquo; and you get two state entries: <code>summary</code> with a one-sentence condensation, <code>translation</code> with that sentence in Slovak. The translator&rsquo;s <code>{summary}</code> slot was filled in from state before the model saw the prompt, so the translator worked on the summary rather than the original.</p>
+<p>When to reach for SequentialAgent: whenever the workflow is a fixed chain of transformations. Data preparation pipelines. Multi-step research. Any &ldquo;do X, then do Y with X&rsquo;s result&rdquo; shape.</p>
+<h2>ParallelAgent — concurrent fan-out</h2>
+<p><code>ParallelAgent</code> runs all children concurrently via <code>asyncio</code>, each writing to its own state key. Total wall time is approximately the slowest child, not the sum of children.</p>
+<pre><code class="language-python">de_researcher = LlmAgent(name=&quot;de_researcher&quot;, ...,
+    instruction=&quot;State one interesting fun fact about Germany.&quot;,
+    output_key=&quot;germany_fact&quot;)
+sk_researcher = LlmAgent(name=&quot;sk_researcher&quot;, ...,
+    instruction=&quot;State one interesting fun fact about Slovakia.&quot;,
+    output_key=&quot;slovakia_fact&quot;)
+cz_researcher = LlmAgent(name=&quot;cz_researcher&quot;, ...,
+    instruction=&quot;State one interesting fun fact about Czech Republic.&quot;,
+    output_key=&quot;czech_fact&quot;)
+
+trio = ParallelAgent(
+    name=&quot;trio&quot;,
+    sub_agents=[de_researcher, sk_researcher, cz_researcher],
+)
+</code></pre>
+<p>Run this and you get three state keys populated. Key properties:</p>
+<ul>
+<li><strong>Authors interleave in finish order</strong> — cz_researcher might print before de_researcher even though it was declared second. When you read events from a parallel run, don&rsquo;t assume declaration order.</li>
+<li><strong>Wall time ≈ slowest child.</strong> Three ~1-second LLM calls in parallel take ~1.2 seconds, not 3. The savings scale with the width of the fan-out.</li>
+<li><strong>Children must write to different state keys.</strong> If two children try to write to the same key, whichever wrote last wins. The framework won&rsquo;t warn you; design your keys to avoid collision.</li>
+</ul>
+<p>When to reach for ParallelAgent: whenever you&rsquo;re doing several independent things that don&rsquo;t depend on each other. Calling three APIs. Researching three topics. Running three different evaluators on the same input.</p>
+<h2>LoopAgent — the canonical wow demo</h2>
+<p>The third primitive, and the one people remember. <code>LoopAgent</code> runs its children in a cycle until one of them calls the <code>exit_loop</code> tool or the <code>max_iterations</code> ceiling is reached.</p>
+<p>The archetypal pattern is a <strong>Generator + Critic</strong> pair. The generator produces a draft. The critic evaluates it. If the critic isn&rsquo;t satisfied, it writes a critique back to state and the loop continues; on the next iteration, the generator reads the critique and revises. When the critic is satisfied, it calls <code>exit_loop</code> and the loop terminates.</p>
+<p>This pattern has many names — <em>self-correction</em>, <em>critic-driven refinement</em>, <em>reflexion</em>, <em>draft-and-review</em>. In a plain agent framework you&rsquo;d implement it as:</p>
+<pre><code class="language-python"># The manual version
+state = {&quot;draft&quot;: None, &quot;critique&quot;: None}
+for i in range(5):
+    state[&quot;draft&quot;] = await generator.run(state)
+    state[&quot;critique&quot;] = await critic.run(state)
+    if critic_is_satisfied(state[&quot;critique&quot;]):
+        break
+</code></pre>
+<p>In ADK it&rsquo;s a <code>LoopAgent</code> with two children. The framework handles the looping, the state passing, the iteration counting, and the exit-signal mechanism.</p>
+<pre><code class="language-python">from google.adk.tools import exit_loop
+
+generator = LlmAgent(
+    name=&quot;generator&quot;,
+    model=MODEL,
+    instruction=&quot;&quot;&quot;Write or revise a tagline. If a previous draft and critique
+exist, revise to address the critique. Otherwise, draft fresh.
+
+Previous draft:    {draft?}
+Previous critique: {critique?}
+
+Output ONLY the new tagline.&quot;&quot;&quot;,
+    output_key=&quot;draft&quot;,
+)
+
+critic = LlmAgent(
+    name=&quot;critic&quot;,
+    model=MODEL,
+    instruction=&quot;&quot;&quot;Draft: {draft}
+
+If the draft FAILS any criterion, write a one-sentence critique.
+If the draft PASSES all criteria, call exit_loop. Do NOT output text.&quot;&quot;&quot;,
+    output_key=&quot;critique&quot;,
+    tools=[exit_loop],
+)
+
+refiner = LoopAgent(
+    name=&quot;tagline_refiner&quot;,
+    sub_agents=[generator, critic],
+    max_iterations=5,   # always set
+)
+</code></pre>
+<p>Three things worth flagging in the code:</p>
+<p><strong>The <code>?</code> suffix on <code>{draft?}</code> and <code>{critique?}</code>.</strong> Iteration 1 has no previous draft and no previous critique. Without the <code>?</code>, ADK would throw a KeyError when it tried to substitute the template. With it, the template substitutes to an empty string.</p>
+<p><strong><code>exit_loop</code> is a built-in tool.</strong> You import it from <code>google.adk.tools</code> and give it to whichever child has the authority to terminate the loop — usually the critic or reviewer. When the critic&rsquo;s model emits a <code>function_call</code> to <code>exit_loop</code>, ADK catches it and stops iteration.</p>
+<p><strong><code>max_iterations=5</code> is the safety net.</strong> If the critic is impossible to satisfy, the loop runs forever — and so does your API bill. Always set this. In practice I&rsquo;ve seen production LoopAgents set to 5 or 10; I&rsquo;ve never seen one set higher than 20.</p>
+<h3>The event stream of a running Loop</h3>
+<p>When you run the generator-critic loop, here&rsquo;s the shape of what you see:</p>
+<pre><code>USER: Write a tagline.
+
+[generator] Build secure, high-performance Android applications with the
+           Google ADK. Master device integration and data management.
+[critic]    The draft uses the marketing cliche &quot;Master,&quot; which the
+           criterion rejects.
+[generator] Develop secure, high-performance Android applications using the
+           Google ADK. Handle device integration and data management.
+[tool_call] exit_loop({})
+</code></pre>
+<p>Two iterations. The critic rejected &ldquo;Master&rdquo; as a cliche. The generator revised. The critic approved and called <code>exit_loop</code>. The loop terminated.</p>
+<p>In production you&rsquo;d want the critic to be stricter about cliches and the generator to push toward specific, vivid language. The demo here shows the mechanism; the prompt engineering is the separate craft of making the loop converge on something actually good.</p>
+<h2>Composing workflows</h2>
+<p>Workflow agents are themselves agents. You can nest them — put a <code>ParallelAgent</code> as a child of a <code>SequentialAgent</code>, put a <code>SequentialAgent</code> inside a <code>LoopAgent</code>, and so on.</p>
+<p>The most useful composition in practice: <strong>fan out independent work in parallel, then synthesize sequentially.</strong></p>
+<pre><code class="language-python">synthesizer = LlmAgent(
+    name=&quot;synthesizer&quot;,
+    model=MODEL,
+    instruction=&quot;&quot;&quot;You have three country facts in session state.
+Write a short 3-sentence combined report connecting them thematically.
+
+Germany: {germany_fact}
+Slovakia: {slovakia_fact}
+Czech Republic: {czech_fact}
+
+Output only the report.&quot;&quot;&quot;,
+    output_key=&quot;report&quot;,
+)
+
+pipeline = SequentialAgent(
+    name=&quot;research_pipeline&quot;,
+    sub_agents=[
+        trio,           # ParallelAgent from earlier
+        synthesizer,    # reads all three parallel results from state
+    ],
+)
+</code></pre>
+<p>Five LLM calls total — three parallel researchers, then one synthesizer. Wall time comes in around two calls&rsquo; worth, not five. Production agents are built out of compositions like this. Not one monolithic agent. Not a flat list of five children. A pipeline of phases, some parallel within a phase, some sequential across phases.</p>
+<h2>When to use workflow agents vs. LLM-driven flow</h2>
+<p>The alternative to workflow agents is <strong>LLM-driven flow</strong>: build one agent with several sub-agents in its <code>sub_agents=</code> list, let the model decide which to transfer control to. Module 06 covers this in depth.</p>
+<p>Both styles work. They are not interchangeable.</p>
+<table>
+<thead>
+<tr>
+<th>Use a <strong>workflow agent</strong> when&hellip;</th>
+<th>Use <strong>LLM-driven flow</strong> when&hellip;</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>The control flow is fixed — always summarize, then translate</td>
+<td>The control flow depends on user input</td>
+</tr>
+<tr>
+<td>You need determinism for tests or evals</td>
+<td>You need flexibility</td>
+</tr>
+<tr>
+<td>Latency matters — Parallel fans out without a deliberation turn</td>
+<td>The model&rsquo;s judgment is the point</td>
+</tr>
+<tr>
+<td>The workflow should be auditable from a diagram</td>
+<td>The conversation can go anywhere</td>
+</tr>
+</tbody>
+</table>
+<p><strong>The rule of thumb:</strong> if you can <em>name</em> the workflow, use a workflow agent. If you can&rsquo;t, let the LLM decide.</p>
+<p>Sequential, Parallel, Loop cover the named-workflow cases cleanly. Most compositions are either purely these three, or a mix of workflow agents and LLM-driven top levels. If your composition gets unwieldy, that&rsquo;s usually a signal that the workflow shouldn&rsquo;t be named — let the LLM drive.</p>
+<h2>What to carry forward</h2>
+<ul>
+<li><strong>Three workflow primitives:</strong> <code>SequentialAgent</code> (ordered pipeline), <code>ParallelAgent</code> (concurrent fan-out), <code>LoopAgent</code> (cycle until <code>exit_loop</code> or <code>max_iterations</code>).</li>
+<li><strong>State is the pipe.</strong> <code>output_key="foo"</code> writes to state; <code>{foo}</code> in a later instruction reads. <code>{foo?}</code> is &ldquo;optional, don&rsquo;t error if missing.&rdquo;</li>
+<li><strong>Always set <code>max_iterations</code></strong> on a LoopAgent. The critic might be impossible to satisfy.</li>
+<li><strong><code>exit_loop</code></strong> is a built-in tool; give it to the child with the exit condition (usually the critic).</li>
+<li><strong>Compose freely.</strong> Workflow agents are agents; they nest. Parallel-inside-Sequential is the classic production shape.</li>
+<li><strong>Name it if you can.</strong> If you can name the workflow, use a workflow agent. If you can&rsquo;t, that&rsquo;s what M06 is for — LLM-driven routing.</li>
+</ul>
+<p>Module 06 picks up where this one leaves off. Where workflow agents give you control flow by declaration, <code>sub_agents</code> and <code>AgentTool</code> give you control flow driven by the LLM&rsquo;s judgment. Two patterns, different trade-offs, same underlying machinery.</p>
         </section>
         </main>
     </div>

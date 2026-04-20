@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ADK Course — M05: Workflow Agents</title>
+  <link rel="stylesheet" href="../shared/shared.css">
+  <link rel="stylesheet" href="../shared/slides.css">
+</head>
+<body>
+  <nav class="progress-strip">
+    <a href="../../index.html" class="progress-home">Course</a>
+    <div class="progress-title">M05 — Workflow Agents</div>
+    <div class="progress-meta">
+      <span class="slide-counter">1 / 1</span>
+      <button class="theme-toggle">Theme</button>
+    </div>
+  </nav>
+
+  <main class="slide-viewport">
+
+  <div class="slide active" data-module="05" data-type="section-title">
+    <div class="topic-badge">Module 05 &middot; Part 1 Vendor-agnostic</div>
+    <h1>Workflow agents</h1>
+    <h3>Control flow as Python classes, not graph diagrams</h3>
+    <p class="highlight-text">Sequential &middot; Parallel &middot; Loop</p>
+  </div>
+
+  <div class="slide" data-module="05" data-type="keyfact">
+    <h2 class="text-muted" style="border-bottom:none;font-size:1em;text-transform:uppercase;letter-spacing:0.08em;">One agent</h2>
+    <p>Enough for <strong>toy problems</strong>.</p>
+    <h2 class="text-muted" style="border-bottom:none;font-size:1em;text-transform:uppercase;letter-spacing:0.08em;margin-top:var(--space-8);">Real work</h2>
+    <p>Needs <strong>composition</strong>.</p>
+  </div>
+
+  <div class="slide" data-module="05">
+    <h2>Three first-class primitives</h2>
+    <ul>
+      <li><code>SequentialAgent</code> — run children in order. A <strong>shell pipeline</strong>.</li>
+      <li><code>ParallelAgent</code> — run children concurrently. An <strong><code>asyncio.gather()</code></strong>.</li>
+      <li><code>LoopAgent</code> — cycle until <code>exit_loop</code> or <code>max_iterations</code>. A <strong><code>while</code> with an escape hatch</strong>.</li>
+    </ul>
+    <p>This is ADK's strongest pedagogical differentiator. LangGraph makes you draw a graph; CrewAI hides flow behind a role DSL; ADK lets you <em>name</em> the workflow.</p>
+  </div>
+
+  <div class="slide" data-module="05">
+    <h2>Visual</h2>
+<pre class="diagram">SequentialAgent        ParallelAgent          LoopAgent
+─────────────────      ─────────────────      ─────────────────
+                                              ┌────────────────┐
+   child 1                 child 1            │   child 1      │
+      │                       │               │      │         │
+      ▼                       ▼               │      ▼         │
+   child 2          ──>   child 2   <──       │   child 2      │
+      │                       │               │      │         │
+      ▼                       ▼               │      ▼ (loop)  │
+   child 3                 child 3            │   child 1 ...  │
+                                              └────────────────┘
+   ordered              concurrent           until exit_loop
+   pipeline             fan-out              or max_iterations</pre>
+  </div>
+
+  <div class="slide" data-module="05">
+    <h2>State is the pipe</h2>
+    <ul>
+      <li><code>output_key="summary"</code> on a child → writes its result to <code>state["summary"]</code>.</li>
+      <li><code>{summary}</code> in a later child's instruction → substituted from state before the model sees it.</li>
+      <li><code>{summary?}</code> → same, but "optional; don't error if missing."</li>
+    </ul>
+    <p>Write with <code>output_key=</code>. Read with <code>{key}</code>. No orchestration code.</p>
+  </div>
+
+  <div class="slide" data-module="05" data-type="section-title" style="background:linear-gradient(135deg,var(--navy-dark) 0%,var(--navy) 100%);">
+    <div class="topic-badge">Primitive 1</div>
+    <h1>SequentialAgent</h1>
+    <p class="highlight-text">Ordered pipeline. State flows downstream.</p>
+  </div>
+
+  <div class="slide" data-module="05" data-type="code">
+    <h2>A two-step pipeline</h2>
+<pre><code>summarizer = LlmAgent(
+    name="summarizer",
+    instruction="Summarize the user input in one sentence.",
+    output_key="summary",       # writes state["summary"]
+)
+
+translator = LlmAgent(
+    name="translator",
+    instruction="Translate to Slovak: {summary}",   # reads state["summary"]
+    output_key="translation",
+)
+
+pipeline = SequentialAgent(
+    name="pipeline",
+    sub_agents=[summarizer, translator],
+)</code></pre>
+  </div>
+
+  <div class="slide" data-module="05" data-type="section-title" style="background:linear-gradient(135deg,var(--amber-dark) 0%,var(--amber) 100%);">
+    <h1>Live</h1>
+    <h3>summarizer → translator</h3>
+    <p class="highlight-text" style="color:white;">Notebook cell 9</p>
+  </div>
+
+  <div class="slide" data-module="05" data-type="section-title" style="background:linear-gradient(135deg,var(--navy-dark) 0%,var(--navy) 100%);">
+    <div class="topic-badge">Primitive 2</div>
+    <h1>ParallelAgent</h1>
+    <p class="highlight-text">Concurrent fan-out. Wall time ≈ slowest child.</p>
+  </div>
+
+  <div class="slide" data-module="05" data-type="code">
+    <h2>Three-way fan-out</h2>
+<pre><code>de_researcher = LlmAgent(name="de_researcher", ...,
+    instruction="One fun fact about Germany.",
+    output_key="germany_fact")
+sk_researcher = LlmAgent(name="sk_researcher", ...,
+    instruction="One fun fact about Slovakia.",
+    output_key="slovakia_fact")
+cz_researcher = LlmAgent(name="cz_researcher", ...,
+    instruction="One fun fact about Czech Republic.",
+    output_key="czech_fact")
+
+trio = ParallelAgent(
+    name="trio",
+    sub_agents=[de_researcher, sk_researcher, cz_researcher],
+)</code></pre>
+  </div>
+
+  <div class="slide" data-module="05" data-type="section-title" style="background:linear-gradient(135deg,var(--amber-dark) 0%,var(--amber) 100%);">
+    <h1>Live</h1>
+    <h3>Three researchers in parallel — ~1.25s total</h3>
+    <p class="highlight-text" style="color:white;">Notebook cell 12</p>
+  </div>
+
+  <div class="slide" data-module="05">
+    <h2>What to notice</h2>
+    <ul>
+      <li><strong>Authors interleave in finish order</strong>, not declaration order.</li>
+      <li><strong>Wall time is one child's duration</strong>, not the sum. Savings scale with width of the fan-out.</li>
+      <li>Each child writes to its own state key, so they don't collide.</li>
+    </ul>
+    <p style="color:var(--text-muted);font-size:0.9em;">Common production pattern: fan out independent research in parallel, then feed everything into a Sequential synthesizer.</p>
+  </div>
+
+  <div class="slide" data-module="05" data-type="section-title" style="background:linear-gradient(135deg,var(--navy-dark) 0%,var(--navy) 100%);">
+    <div class="topic-badge">Primitive 3 &middot; the canonical ADK wow demo</div>
+    <h1>LoopAgent</h1>
+    <p class="highlight-text">Generator + Critic. Refine until satisfied.</p>
+  </div>
+
+  <div class="slide" data-module="05">
+    <h2>The pattern</h2>
+<pre class="diagram">┌─ LoopAgent ──────────────────────────────────────────┐
+│                                                       │
+│   generator ─▶ writes state["draft"]                  │
+│        ▲                                              │
+│        │                                              │
+│   critic ─▶ either writes state["critique"]           │
+│             or calls exit_loop()                      │
+│                                                       │
+└──── repeat until exit_loop OR max_iterations ────────┘</pre>
+    <p>Self-correction, critic-driven refinement, reflexion — same pattern, many names. In ADK: a LoopAgent with two children.</p>
+  </div>
+
+  <div class="slide" data-module="05" data-type="code">
+    <h2>The generator</h2>
+<pre><code>generator = LlmAgent(
+    name="generator",
+    instruction="""Write or revise a tagline.
+If a previous draft and critique exist, revise
+to address the critique. Otherwise, draft fresh.
+
+Previous draft:    {draft?}
+Previous critique: {critique?}
+
+Output only the new tagline.""",
+    output_key="draft",
+)</code></pre>
+    <p class="code-caption"><code>?</code> suffix = optional. On iteration 1 neither key exists yet.</p>
+  </div>
+
+  <div class="slide" data-module="05" data-type="code">
+    <h2>The critic</h2>
+<pre><code>critic = LlmAgent(
+    name="critic",
+    instruction="""Draft: {draft}
+If the draft FAILS any criterion, write
+one-sentence critique.
+If the draft PASSES all criteria,
+call exit_loop. Do NOT output text.""",
+    output_key="critique",
+    tools=[exit_loop],   # ← the exit-the-loop tool
+)
+
+refiner = LoopAgent(
+    sub_agents=[generator, critic],
+    max_iterations=5,    # safety net; always set
+)</code></pre>
+  </div>
+
+  <div class="slide" data-module="05" data-type="section-title" style="background:linear-gradient(135deg,var(--amber-dark) 0%,var(--amber) 100%);">
+    <h1>Live</h1>
+    <h3>Generator+Critic — refinement in action</h3>
+    <p class="highlight-text" style="color:white;">Notebook cell 15</p>
+  </div>
+
+  <div class="slide" data-module="05">
+    <h2>What to always do</h2>
+    <div class="callout callout-gotcha">
+      <div class="callout-title">Always set <code>max_iterations</code></div>
+      <p style="margin:0;">The critic might be impossible to satisfy. The agent enters an infinite loop; you get a big bill and no result. Set a ceiling.</p>
+    </div>
+    <div class="callout callout-tip">
+      <div class="callout-title">Pair <code>exit_loop</code> with the child that has the exit condition</div>
+      <p style="margin:0;">Usually the critic, reviewer, or gate-keeper. Don't scatter <code>exit_loop</code> across multiple children unless you mean to.</p>
+    </div>
+    <div class="callout callout-success">
+      <div class="callout-title">Use <code>{key?}</code> for keys that might not exist yet</div>
+      <p style="margin:0;">Iteration 1 has no critique yet. Optional-state syntax avoids the error.</p>
+    </div>
+  </div>
+
+  <div class="slide" data-module="05" data-type="section-title" style="background:linear-gradient(135deg,var(--navy-dark) 0%,var(--navy) 100%);">
+    <div class="topic-badge">Putting it together</div>
+    <h1>Composing workflows</h1>
+    <p class="highlight-text">Workflow agents are themselves agents.</p>
+  </div>
+
+  <div class="slide" data-module="05" data-type="code">
+    <h2>Parallel inside Sequential</h2>
+<pre><code>pipeline = SequentialAgent(
+    name="research_pipeline",
+    sub_agents=[
+        trio,           # ParallelAgent: fan out 3 researchers
+        synthesizer,    # LlmAgent: reads all 3 state keys, writes a report
+    ],
+)</code></pre>
+    <p>Five LLM calls — three parallel researchers, then one synthesizer. Wall time ≈ two calls, not five. Production agents are built out of compositions like this.</p>
+  </div>
+
+  <div class="slide" data-module="05" data-type="section-title" style="background:linear-gradient(135deg,var(--amber-dark) 0%,var(--amber) 100%);">
+    <h1>Live</h1>
+    <h3>Parallel researchers → Sequential synthesizer</h3>
+    <p class="highlight-text" style="color:white;">Notebook cell 18</p>
+  </div>
+
+  <div class="slide" data-module="05" data-type="comparison">
+    <h2>Workflow agent vs. LLM-driven flow</h2>
+    <div class="comparison-layout">
+      <div class="vs-left">
+        <h3>Workflow agent</h3>
+        <ul style="font-size:0.9em;">
+          <li>Control flow is fixed</li>
+          <li>Determinism: tests &amp; evals</li>
+          <li>Latency: Parallel fans out without a deliberation turn</li>
+          <li>Auditable from a diagram</li>
+        </ul>
+      </div>
+      <div class="vs-divider">vs</div>
+      <div class="vs-right">
+        <h3>LLM-driven flow</h3>
+        <ul style="font-size:0.9em;">
+          <li>Control flow depends on user input</li>
+          <li>Flexibility: the model's judgment is the point</li>
+          <li>Conversation can go anywhere</li>
+          <li>(M06 covers this — <code>sub_agents</code> and <code>AgentTool</code>)</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="slide" data-module="05" data-type="keyfact">
+    <h2 class="text-muted" style="border-bottom:none;font-size:1em;text-transform:uppercase;letter-spacing:0.08em;">The rule of thumb</h2>
+    <p>If you can <strong>name</strong> the workflow, use a workflow agent.<br>If you can't, let the <strong>LLM decide</strong>.</p>
+  </div>
+
+  <div class="slide" data-module="05" data-type="section-title" style="background:linear-gradient(135deg,var(--navy) 0%,var(--navy-light) 100%);">
+    <div class="topic-badge">Up next</div>
+    <h1>M06 &mdash; Multi-agent hierarchies</h1>
+    <p class="highlight-text">LLM-driven routing. <code>sub_agents</code> (transfer) vs <code>AgentTool</code> (consultant).</p>
+  </div>
+
+  </main>
+
+  <script src="../shared/slides.js"></script>
+</body>
+</html>
