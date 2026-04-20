@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ADK Course — M11: Gemini Grounding and Caching</title>
+  <link rel="stylesheet" href="../shared/shared.css">
+  <link rel="stylesheet" href="../shared/slides.css">
+</head>
+<body>
+  <nav class="progress-strip">
+    <a href="../../index.html" class="progress-home">Course</a>
+    <div class="progress-title">M11 — Gemini Grounding + Caching</div>
+    <div class="progress-meta">
+      <span class="slide-counter">1 / 1</span>
+      <button class="theme-toggle">Theme</button>
+    </div>
+  </nav>
+
+  <main class="slide-viewport">
+
+  <div class="slide active" data-module="11" data-type="section-title">
+    <div class="topic-badge">Module 11 &middot; Part 2 begins &middot; Gemini unlocks</div>
+    <h1>Grounding and context caching</h1>
+    <h3>What you give up by staying vendor-neutral</h3>
+    <p class="highlight-text">Real citations &middot; 1M tokens &middot; 90% discount</p>
+  </div>
+
+  <div class="slide" data-module="11" data-type="keyfact">
+    <h2 class="text-muted" style="border-bottom:none;font-size:1em;text-transform:uppercase;letter-spacing:0.08em;">Part 1 taught</h2>
+    <p>vendor-neutral ADK.</p>
+    <h2 class="text-muted" style="border-bottom:none;font-size:1em;text-transform:uppercase;letter-spacing:0.08em;margin-top:var(--space-6);">Part 2 shows</h2>
+    <p>what you <strong>give up</strong> by staying neutral.</p>
+  </div>
+
+  <div class="slide" data-module="11">
+    <h2>The switch is mechanical</h2>
+<pre class="diagram">Part 1 (LiteLLM-wrapped)                Part 2 (native Gemini)
+──────────────────────────              ──────────────────────────
+model=LiteLlm(                          model="gemini-2.5-flash"
+    model="openrouter/google/..."
+)                                       ← plain string; that's it</pre>
+    <p>Everything else — tools, sessions, workflow agents, callbacks, memory, eval — identical. Only the model argument changes.</p>
+  </div>
+
+  <div class="slide" data-module="11">
+    <h2>Three Gemini unlocks</h2>
+    <ul>
+      <li><strong>Google Search grounding</strong> (this module) — real citations, no external search API to manage</li>
+      <li><strong>Long context + caching</strong> (this module) — 1M tokens; 75-90% discount on repeated content</li>
+      <li><strong>Thinking budgets</strong> (M12) — trade latency for reasoning quality</li>
+      <li><strong>Live API voice</strong> (M13) — bidirectional audio streaming with interruption</li>
+    </ul>
+    <p style="color:var(--text-muted);font-size:0.9em;">None reachable through LiteLLM. All require native Gemini + <code>GOOGLE_API_KEY</code>.</p>
+  </div>
+
+  <div class="slide" data-module="11" data-type="section-title" style="background:linear-gradient(135deg,var(--navy-dark) 0%,var(--navy) 100%);">
+    <div class="topic-badge">Unlock 1</div>
+    <h1>Google Search grounding</h1>
+    <p class="highlight-text">Built-in tool. Real citations.</p>
+  </div>
+
+  <div class="slide" data-module="11" data-type="code">
+    <h2>Add <code>google_search</code> to tools</h2>
+<pre><code>from google.adk.tools import google_search
+
+grounded_agent = LlmAgent(
+    name="grounded_agent",
+    model="gemini-2.5-flash",
+    description="Answers with up-to-date search results.",
+    instruction="Use google_search for current-information questions.",
+    tools=[google_search],   # ← built-in; Gemini handles the call
+)</code></pre>
+    <p class="code-caption">No custom search tool. No external API. Gemini invokes Search internally and returns cited results.</p>
+  </div>
+
+  <div class="slide" data-module="11" data-type="section-title" style="background:linear-gradient(135deg,var(--amber-dark) 0%,var(--amber) 100%);">
+    <h1>Live</h1>
+    <h3>Ask about current-day facts; inspect citations</h3>
+    <p class="highlight-text" style="color:white;">Notebook cell 9</p>
+  </div>
+
+  <div class="slide" data-module="11">
+    <h2>What you saw</h2>
+<pre class="diagram">USER: What is the capital of Slovakia and its current population?
+
+[grounded_agent] The capital of Slovakia is Bratislava. Regarding population:
+                 — about 479,000 in the city proper, ...
+
+── Grounding metadata: 7 source(s) ──
+  1. wikipedia.org  https://...
+  2. britannica.com  https://...
+  ...</pre>
+    <p>Real URLs. Citation-grade sources. No hallucinated references.</p>
+    <p style="color:var(--text-muted);font-size:0.85em;">In production, you surface these URLs to users as "Source: wikipedia.org (official)".</p>
+  </div>
+
+  <div class="slide" data-module="11">
+    <h2>Cost reality</h2>
+    <div class="callout callout-gotcha">
+      <div class="callout-title">Search is billed separately</div>
+      <p style="margin:0;">~$35 per 1,000 grounded requests. Not per-token; per-request. Budget accordingly for search-heavy agents.</p>
+    </div>
+    <div class="callout callout-gotcha">
+      <div class="callout-title">Built-in tools don't mix</div>
+      <p style="margin:0;"><code>google_search</code>, <code>BuiltInCodeExecutor</code>, <code>VertexAiSearchTool</code> — cannot coexist with regular function tools in the same agent. Wrap each as a sub-agent via <code>AgentTool</code>, OR (for Search on ADK ≥ 1.16) pass <code>bypass_multi_tools_limit=True</code>.</p>
+    </div>
+  </div>
+
+  <div class="slide" data-module="11" data-type="section-title" style="background:linear-gradient(135deg,var(--navy-dark) 0%,var(--navy) 100%);">
+    <div class="topic-badge">Unlock 2</div>
+    <h1>Long context + caching</h1>
+    <p class="highlight-text">1M tokens. 90% discount on cached input.</p>
+  </div>
+
+  <div class="slide" data-module="11" data-type="keyfact">
+    <h2 class="text-muted" style="border-bottom:none;font-size:1em;text-transform:uppercase;letter-spacing:0.08em;">Gemini 2.5+</h2>
+    <p><strong>1M tokens</strong> input window.<br>(2M on Pro variants.)</p>
+    <p style="font-size:0.7em;color:var(--text-muted);margin-top:var(--space-4);">Enough for 500-page manuals, entire codebases, months of email history.</p>
+  </div>
+
+  <div class="slide" data-module="11">
+    <h2>The economics problem</h2>
+    <p>A 100-page PDF is ~50K tokens. Asking 20 questions against it:</p>
+<pre class="diagram">No caching:  20 × 50K input = 1M input tokens → $0.075/hour
+(You re-pay for the PDF on every question.)</pre>
+    <p>Context caching fixes this. You cache the PDF once; subsequent queries pay a discounted rate on the cached portion.</p>
+  </div>
+
+  <div class="slide" data-module="11">
+    <h2>Two caching flavors</h2>
+    <table>
+      <thead><tr><th>Type</th><th>Setup</th><th>Discount</th><th>Control</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Implicit</strong></td><td>Auto — zero code</td><td>~75%</td><td>None; Gemini decides what to cache</td></tr>
+        <tr><td><strong>Explicit</strong></td><td><code>client.caches.create(...)</code> with TTL</td><td>~90%</td><td>You pick content and TTL</td></tr>
+      </tbody>
+    </table>
+    <p>Implicit is automatic for repeated prefixes. Explicit wins when you want a named, time-bounded cache you can hit from many sessions.</p>
+  </div>
+
+  <div class="slide" data-module="11" data-type="code">
+    <h2>Explicit caching API</h2>
+<pre><code>cache = client.caches.create(
+    model="gemini-2.5-flash",
+    config=types.CreateCachedContentConfig(
+        contents=[types.Content(role="user", parts=[types.Part(text=big_manual)])],
+        system_instruction="Answer questions about the manual.",
+        ttl="300s",   # 5 minutes; billed by the second
+    ),
+)
+
+resp = client.models.generate_content(
+    model="gemini-2.5-flash",
+    contents="What is the default wake word?",
+    config=types.GenerateContentConfig(cached_content=cache.name),
+)</code></pre>
+    <p class="code-caption">Minimum cache size: ~32,768 tokens. Requires a <strong>paid tier</strong> — free-tier quota is zero.</p>
+  </div>
+
+  <div class="slide" data-module="11">
+    <h2>Worked example</h2>
+    <p>100-page PDF (50K tokens). 20 questions per hour.</p>
+    <table>
+      <thead><tr><th>Scenario</th><th>Cost per hour</th></tr></thead>
+      <tbody>
+        <tr><td>No caching</td><td>$0.075</td></tr>
+        <tr><td>Explicit caching (create + 20 hits + 1 hour storage)</td><td><strong>$0.013</strong></td></tr>
+      </tbody>
+    </table>
+    <p><strong>~6x cost reduction at 20 queries/hour.</strong> Scales further with more queries.</p>
+    <p style="color:var(--text-muted);font-size:0.9em;">Below 3-5 queries per document per hour, implicit caching (free, auto) covers most of the benefit. Above, explicit is clearly worth the extra code.</p>
+  </div>
+
+  <div class="slide" data-module="11" data-type="section-title" style="background:linear-gradient(135deg,var(--navy-dark) 0%,var(--navy) 100%);">
+    <div class="topic-badge">Pick your battle</div>
+    <h1>Native vs LiteLLM-wrapped</h1>
+    <p class="highlight-text">Different trade-offs per use case.</p>
+  </div>
+
+  <div class="slide" data-module="11">
+    <h2>Feature matrix</h2>
+    <table>
+      <thead><tr><th>Feature</th><th>Native</th><th>LiteLLM</th></tr></thead>
+      <tbody>
+        <tr><td>Basic chat / tool calls</td><td>✅</td><td>✅</td></tr>
+        <tr><td><code>google_search</code> built-in</td><td>✅</td><td>❌</td></tr>
+        <tr><td><code>BuiltInCodeExecutor</code></td><td>✅</td><td>❌</td></tr>
+        <tr><td>Context caching</td><td>✅</td><td>❌</td></tr>
+        <tr><td>Thinking budgets (M12)</td><td>✅</td><td>⚠️ partial</td></tr>
+        <tr><td>Live API (M13)</td><td>✅</td><td>❌</td></tr>
+        <tr><td>One-line swap to Claude/GPT/Qwen</td><td>❌</td><td>✅</td></tr>
+      </tbody>
+    </table>
+    <p><strong>Rule:</strong> native Gemini when you need a feature that doesn't translate through LiteLLM. Otherwise LiteLLM.</p>
+  </div>
+
+  <div class="slide" data-module="11" data-type="keyfact">
+    <h2 class="text-muted" style="border-bottom:none;font-size:1em;text-transform:uppercase;letter-spacing:0.08em;">Production pattern</h2>
+    <p>Have <strong>both</strong>.</p>
+    <p style="font-size:0.75em;color:var(--text-muted);margin-top:var(--space-4);">LiteLLM-wrapped for routine queries (portable, multi-model failover).<br>Native Gemini for grounding, long-context, Live API.</p>
+  </div>
+
+  <div class="slide" data-module="11" data-type="section-title" style="background:linear-gradient(135deg,var(--navy) 0%,var(--navy-light) 100%);">
+    <div class="topic-badge">Up next</div>
+    <h1>M12 &mdash; Thinking budgets</h1>
+    <p class="highlight-text">Trade latency for reasoning quality, one knob at a time.</p>
+  </div>
+
+  </main>
+
+  <script src="../shared/slides.js"></script>
+</body>
+</html>
