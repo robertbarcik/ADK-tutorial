@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ADK Course — M12: Thinking Budgets</title>
+  <link rel="stylesheet" href="../shared/shared.css">
+  <link rel="stylesheet" href="../shared/slides.css">
+</head>
+<body>
+  <nav class="progress-strip">
+    <a href="../../index.html" class="progress-home">Course</a>
+    <div class="progress-title">M12 — Thinking Budgets</div>
+    <div class="progress-meta">
+      <span class="slide-counter">1 / 1</span>
+      <button class="theme-toggle">Theme</button>
+    </div>
+  </nav>
+
+  <main class="slide-viewport">
+
+  <div class="slide active" data-module="12" data-type="section-title">
+    <div class="topic-badge">Module 12 &middot; Part 2 Gemini unlocks</div>
+    <h1>Thinking budgets</h1>
+    <h3>Trade latency for reasoning quality</h3>
+    <p class="highlight-text">One knob, big effect.</p>
+  </div>
+
+  <div class="slide" data-module="12">
+    <h2>What thinking is</h2>
+    <p>Gemini 2.5+ models do an <strong>internal reasoning pass</strong> before producing the final answer. The reasoning tokens don't appear in the output; they're counted separately as <code>thoughts_token_count</code>.</p>
+    <p>You set a <strong>budget</strong> — a ceiling on internal reasoning — and Gemini spends up to that much thinking.</p>
+    <pre class="diagram">user prompt ──▶ [internal thinking: up to N tokens] ──▶ final answer
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                      invisible in output; billed separately</pre>
+  </div>
+
+  <div class="slide" data-module="12">
+    <h2>The knob</h2>
+<pre class="diagram">ThinkingConfig(
+    thinking_budget=N,       # 0 = off; 2048+ = serious reasoning
+    include_thoughts=False,  # set True to see the reasoning in output
+)</pre>
+    <p>Or, on Gemini 3+, the coarser preset:</p>
+<pre class="diagram">ThinkingConfig(thinking_level=MINIMAL | LOW | MEDIUM | HIGH)</pre>
+    <p style="color:var(--text-muted);font-size:0.9em;">We use <code>thinking_budget</code> (int) — works on 2.5 and later.</p>
+  </div>
+
+  <div class="slide" data-module="12" data-type="section-title" style="background:linear-gradient(135deg,var(--amber-dark) 0%,var(--amber) 100%);">
+    <h1>Live</h1>
+    <h3>Same problem at budget=0 vs budget=4096</h3>
+    <p class="highlight-text" style="color:white;">Notebook cell 7</p>
+  </div>
+
+  <div class="slide" data-module="12">
+    <h2>Direct comparison</h2>
+<pre class="diagram">Problem: multi-step profit-margin calculation, 3 breads.
+
+── thinking_budget=0 ──
+latency: &lt;1s
+tokens — input: 158, thoughts: 0, output: 702
+
+── thinking_budget=4096 ──
+latency: 11.06s
+tokens — input: 158, thoughts: 1109, output: 702</pre>
+    <p><strong>Same input. Same output length. Big latency + token gap.</strong> The 1109 thoughts are reasoning the model did internally.</p>
+  </div>
+
+  <div class="slide" data-module="12">
+    <h2>The even-better demo</h2>
+<pre class="diagram">USER: What is the sum of all prime numbers between 20 and 50?
+
+── fast_agent (thinking=0)    0.76s
+   Answer: 255  ← wrong
+
+── thinking_agent (thinking=2048)    9.98s
+   Answer: enumerated primes (23, 29, 31, 37, 41, 43, 47),
+           sum = 251  ← correct</pre>
+    <p><strong>The fast agent got a different — and wrong — answer.</strong> That's the quality difference, visible.</p>
+  </div>
+
+  <div class="slide" data-module="12" data-type="code">
+    <h2>Inside an ADK agent — <code>BuiltInPlanner</code></h2>
+<pre><code>from google.adk.planners import BuiltInPlanner
+from google.genai import types
+
+thinking_agent = LlmAgent(
+    name="thinking_agent",
+    model="gemini-2.5-flash",
+    instruction="Reason carefully for multi-step problems.",
+    planner=BuiltInPlanner(
+        thinking_config=types.ThinkingConfig(thinking_budget=2048),
+    ),
+)</code></pre>
+    <p class="code-caption"><code>BuiltInPlanner</code> wraps <code>ThinkingConfig</code> so ADK plumbs it through to Gemini. Everything else about the agent is unchanged.</p>
+  </div>
+
+  <div class="slide" data-module="12">
+    <h2>When thinking earns its keep</h2>
+    <div class="callout callout-tip">
+      <div class="callout-title">Crank the budget for</div>
+      <ul style="margin:0;">
+        <li>Multi-step reasoning (the profit-margin problem)</li>
+        <li>Code debugging (trace through logic)</li>
+        <li>Hard math, proofs, arithmetic</li>
+        <li>Multi-constraint planning / scheduling</li>
+      </ul>
+    </div>
+    <div class="callout callout-success">
+      <div class="callout-title">Skip thinking for</div>
+      <ul style="margin:0;">
+        <li>Factual lookups ("capital of France")</li>
+        <li>Text transformations (summarize, translate, rewrite)</li>
+        <li>Simple classification (spam? yes/no)</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="slide" data-module="12" data-type="keyfact">
+    <h2 class="text-muted" style="border-bottom:none;font-size:1em;text-transform:uppercase;letter-spacing:0.08em;">Production pattern</h2>
+    <p>Route <strong>on query type</strong>.</p>
+    <p style="font-size:0.75em;color:var(--text-muted);margin-top:var(--space-4);">Cheap, fast router with thinking=0.<br>Delegates to a thinking-heavy specialist or a fast one per query.<br>M06 composition.</p>
+  </div>
+
+  <div class="slide" data-module="12">
+    <h2>Gemini 3+ — thinking_level</h2>
+    <table>
+      <thead><tr><th>Setting</th><th>Maps to roughly</th></tr></thead>
+      <tbody>
+        <tr><td><code>thinking_level=MINIMAL</code></td><td>Off / very low budget</td></tr>
+        <tr><td><code>thinking_level=LOW</code></td><td>~1K thought tokens</td></tr>
+        <tr><td><code>thinking_level=MEDIUM</code></td><td>~4K thought tokens</td></tr>
+        <tr><td><code>thinking_level=HIGH</code></td><td>Unlimited; model decides</td></tr>
+      </tbody>
+    </table>
+    <p>Use <code>thinking_level</code> on 3+ when you don't want to pick a number. Use <code>thinking_budget</code> on 2.5 (and 3+) when you want precise control.</p>
+  </div>
+
+  <div class="slide" data-module="12" data-type="keyfact">
+    <h2 class="text-muted" style="border-bottom:none;font-size:1em;text-transform:uppercase;letter-spacing:0.08em;">Gemini-only property</h2>
+    <p>Thought signatures <strong>persist across multi-turn tool calls</strong>.</p>
+    <p style="font-size:0.75em;color:var(--text-muted);margin-top:var(--space-4);">No reasoning reload. Thinking carries through the conversation.<br>No other frontier model ships this as of April 2026.</p>
+  </div>
+
+  <div class="slide" data-module="12">
+    <h2>LiteLLM parity — partial</h2>
+    <table>
+      <thead><tr><th>Provider</th><th>Equivalent</th><th>LiteLLM works?</th></tr></thead>
+      <tbody>
+        <tr><td>OpenAI (GPT-5, o3)</td><td><code>reasoning_effort=low/medium/high</code></td><td>✅ Passes through</td></tr>
+        <tr><td>Anthropic (Claude 4.5+)</td><td><code>thinking=...</code></td><td>⚠️ Works basic; breaks on tool calls</td></tr>
+        <tr><td>Qwen / DeepSeek</td><td>Reasoning variants; some accept <code>reasoning.effort</code></td><td>⚠️ Varies</td></tr>
+      </tbody>
+    </table>
+    <p>None as clean as Gemini's <code>ThinkingConfig</code>. If reasoning control is a first-class requirement, native Gemini wins.</p>
+  </div>
+
+  <div class="slide" data-module="12" data-type="keyfact">
+    <h2 class="text-muted" style="border-bottom:none;font-size:1em;text-transform:uppercase;letter-spacing:0.08em;">What to carry forward</h2>
+    <p><strong>Thinking is a knob, not a default.</strong></p>
+    <p style="font-size:0.75em;color:var(--text-muted);margin-top:var(--space-4);">Crank it for hard problems. Leave it at 0 for easy ones. Route per query.</p>
+  </div>
+
+  <div class="slide" data-module="12" data-type="section-title" style="background:linear-gradient(135deg,var(--navy) 0%,var(--navy-light) 100%);">
+    <div class="topic-badge">Up next</div>
+    <h1>M13 &mdash; Live API voice agent</h1>
+    <p class="highlight-text">Bidirectional audio streaming. The biggest Gemini unlock.</p>
+  </div>
+
+  </main>
+
+  <script src="../shared/slides.js"></script>
+</body>
+</html>
