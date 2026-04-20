@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ADK Course — M02: Tools as verbs</title>
+  <link rel="stylesheet" href="../shared/shared.css">
+  <link rel="stylesheet" href="../shared/slides.css">
+</head>
+<body>
+  <nav class="progress-strip">
+    <a href="../../index.html" class="progress-home">Course</a>
+    <div class="progress-title">M02 — Tools as verbs</div>
+    <div class="progress-meta">
+      <span class="slide-counter">1 / 1</span>
+      <button class="theme-toggle">Theme</button>
+    </div>
+  </nav>
+
+  <main class="slide-viewport">
+
+  <!-- 01 Title -->
+  <div class="slide active" data-module="02" data-type="section-title">
+    <div class="topic-badge">Module 02 &middot; Part 1 Vendor-agnostic</div>
+    <h1>Tools as verbs</h1>
+    <h3>Four flavors, one mental model, one design rule to carry forward</h3>
+    <p class="highlight-text">FunctionTool &middot; OpenAPI &middot; MCP &middot; AgentTool</p>
+  </div>
+
+  <!-- 02 Why tools -->
+  <div class="slide" data-module="02" data-type="keyfact">
+    <h2 class="text-muted" style="border-bottom:none;font-size:1em;text-transform:uppercase;letter-spacing:0.08em;">Without tools</h2>
+    <p>An agent is a <strong>chatbot</strong>.</p>
+    <h2 class="text-muted" style="border-bottom:none;font-size:1em;text-transform:uppercase;letter-spacing:0.08em;margin-top:var(--space-8);">With tools</h2>
+    <p>An agent is <strong>software</strong>.</p>
+  </div>
+
+  <!-- 03 Mental model diagram -->
+  <div class="slide" data-module="02">
+    <h2>The tool mental model</h2>
+<pre class="diagram">┌─────────────┐   "I need to know X"    ┌─────────────┐
+│     LLM     │────────────────────────▶│     ADK     │
+│   decides   │                         │  dispatch   │
+└─────────────┘                         └──────┬──────┘
+       ▲                                       │
+       │  "X is {...}"                         ▼
+       │                                 ┌─────────────┐
+       └─────────────────────────────────│  your tool  │
+                                         │ (any flavor)│
+                                         └─────────────┘</pre>
+    <p>The model sees a <strong>schema</strong> (tool name, description, argument types) and decides when to call and with what arguments. ADK handles dispatch: find the code, call it, wrap the return, feed it back as a tool-response event.</p>
+  </div>
+
+  <!-- 04 Four flavors overview -->
+  <div class="slide" data-module="02">
+    <h2>Four flavors differ only in two things</h2>
+    <table>
+      <thead>
+        <tr><th>Flavor</th><th>Schema comes from</th><th>Code lives in</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>FunctionTool</strong></td><td>Docstring + type hints</td><td>Your Python file</td></tr>
+        <tr><td><strong>OpenAPIToolset</strong></td><td>An OpenAPI spec</td><td>A remote HTTP API</td></tr>
+        <tr><td><strong>McpToolset</strong></td><td>MCP server's <code>list_tools</code></td><td>A separate process</td></tr>
+        <tr><td><strong>AgentTool</strong></td><td>Another agent's <code>name</code> + <code>description</code></td><td>That other agent</td></tr>
+      </tbody>
+    </table>
+    <p>Same abstraction to the model. Different integration targets. Build one of each.</p>
+  </div>
+
+  <!-- 05 Flavor 1 header -->
+  <div class="slide" data-module="02" data-type="section-title" style="background:linear-gradient(135deg,var(--navy-dark) 0%,var(--navy) 100%);">
+    <div class="topic-badge">Flavor 1</div>
+    <h1>FunctionTool</h1>
+    <p class="highlight-text">Plain Python functions.</p>
+  </div>
+
+  <!-- 06 Docstring is the schema -->
+  <div class="slide" data-module="02">
+    <h2>The docstring <em>is</em> the schema</h2>
+    <ul>
+      <li>ADK reads your function's docstring + type hints.</li>
+      <li>It builds the JSON schema the LLM provider expects.</li>
+      <li>Three consequences:</li>
+    </ul>
+    <div class="callout callout-tip">
+      <div class="callout-title">Tip</div>
+      <ul style="margin:0;">
+        <li>Write the docstring for the model, not for a human reviewer. The model has no channel to ask you what a parameter means.</li>
+        <li>Type hints are load-bearing. Missing hints degrade to <code>string</code>.</li>
+        <li>Return a JSON-serializable dict or string. Not a custom class, not a NumPy array.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 07 Code example -->
+  <div class="slide" data-module="02" data-type="code">
+    <h2>A FunctionTool with a rich docstring</h2>
+<pre><code>def get_weather(city: str, units: str = "celsius") -> dict:
+    """Look up today's weather for a city.
+
+    Args:
+        city: The city name in English (e.g. "Prague", "Munich").
+        units: Either "celsius" (default) or "fahrenheit". Use
+            "fahrenheit" only if the user explicitly asks for it.
+    """
+    ...</code></pre>
+    <p class="code-caption">The <code>Args:</code> block becomes the parameter descriptions. <code>str</code> becomes <code>"type": "string"</code>. The default value becomes <code>"required": false</code>.</p>
+  </div>
+
+  <!-- 08 Live demo 1 -->
+  <div class="slide" data-module="02" data-type="section-title" style="background:linear-gradient(135deg,var(--amber-dark) 0%,var(--amber) 100%);">
+    <h1>Live</h1>
+    <h3>FunctionTool: get_weather(city='Munich', units='fahrenheit')</h3>
+    <p class="highlight-text" style="color:white;">Notebook cell 13</p>
+  </div>
+
+  <!-- 09 Flavor 2 header -->
+  <div class="slide" data-module="02" data-type="section-title" style="background:linear-gradient(135deg,var(--navy-dark) 0%,var(--navy) 100%);">
+    <div class="topic-badge">Flavor 2</div>
+    <h1>OpenAPIToolset</h1>
+    <p class="highlight-text">Consume an entire REST API.</p>
+  </div>
+
+  <!-- 10 When to use OpenAPI -->
+  <div class="slide" data-module="02">
+    <h2>When your target is a REST API with a spec</h2>
+    <p>Don't hand-write a <code>FunctionTool</code> for every endpoint. Hand ADK the OpenAPI spec; get N tools automatically.</p>
+    <ul>
+      <li>The web frontend already uses this spec. The agent should too.</li>
+      <li>Works with any spec: JSON or YAML, dict or string.</li>
+      <li>ADK snake-cases the operationId: <code>getLatestRate</code> becomes <code>get_latest_rate</code>.</li>
+    </ul>
+  </div>
+
+  <!-- 11 OpenAPI code -->
+  <div class="slide" data-module="02" data-type="code">
+    <h2>Frankfurter currency API — three lines to integrate</h2>
+<pre><code>fx_toolset = OpenAPIToolset(spec_dict=FRANKFURTER_SPEC)
+
+fx_agent = LlmAgent(
+    ...,
+    tools=[fx_toolset],
+)</code></pre>
+    <p class="code-caption">The spec lives in a dict (or a JSON/YAML string). Every path becomes a tool. No per-endpoint glue code.</p>
+  </div>
+
+  <!-- 12 Live demo 2 -->
+  <div class="slide" data-module="02" data-type="section-title" style="background:linear-gradient(135deg,var(--amber-dark) 0%,var(--amber) 100%);">
+    <h1>Live</h1>
+    <h3>OpenAPI: CHF to JPY via Frankfurter</h3>
+    <p class="highlight-text" style="color:white;">Notebook cell 16</p>
+  </div>
+
+  <!-- 13 Flavor 3 header -->
+  <div class="slide" data-module="02" data-type="section-title" style="background:linear-gradient(135deg,var(--navy-dark) 0%,var(--navy) 100%);">
+    <div class="topic-badge">Flavor 3</div>
+    <h1>McpToolset</h1>
+    <p class="highlight-text">Talk to a separate tool server.</p>
+  </div>
+
+  <!-- 14 What is MCP -->
+  <div class="slide" data-module="02">
+    <h2>MCP in one paragraph</h2>
+    <p><strong>Model Context Protocol.</strong> Anthropic's standard for exposing tools to agents, donated to the Linux Foundation in December 2025. A de facto protocol for agent-to-tool communication across the industry. An MCP server is a separate process; your agent connects over stdio or HTTP and uses its tools as if they were local.</p>
+    <div class="callout callout-tip">
+      <div class="callout-title">Why this matters</div>
+      <p style="margin:0;">Your MCP server can be written in <strong>any language</strong>, run <strong>on any machine</strong>, own <strong>any state</strong> — database connections, API credentials, caches. The agent doesn't care. It speaks the protocol; the tools just work.</p>
+    </div>
+  </div>
+
+  <!-- 15 MCP code -->
+  <div class="slide" data-module="02" data-type="code">
+    <h2>Connect to an existing MCP server</h2>
+<pre><code>ticket_toolset = McpToolset(
+    connection_params=StdioConnectionParams(
+        server_params=StdioServerParameters(
+            command=sys.executable,
+            args=["mcp_servers/ticket_mcp_server.py"],
+        ),
+        timeout=20,
+    )
+)
+
+ticket_agent = LlmAgent(..., tools=[ticket_toolset])</code></pre>
+    <p class="code-caption">ADK spawns the server, speaks MCP, and discovers its tools. Five tools appear with no extra code.</p>
+  </div>
+
+  <!-- 16 Live demo 3 -->
+  <div class="slide" data-module="02" data-type="section-title" style="background:linear-gradient(135deg,var(--amber-dark) 0%,var(--amber) 100%);">
+    <h1>Live</h1>
+    <h3>MCP: search_tickets("WiFi") via stdio subprocess</h3>
+    <p class="highlight-text" style="color:white;">Notebook cell 19</p>
+  </div>
+
+  <!-- 17 Flavor 4 header -->
+  <div class="slide" data-module="02" data-type="section-title" style="background:linear-gradient(135deg,var(--navy-dark) 0%,var(--navy) 100%);">
+    <div class="topic-badge">Flavor 4</div>
+    <h1>AgentTool</h1>
+    <p class="highlight-text">Wrap an agent as a tool.</p>
+  </div>
+
+  <!-- 18 AgentTool vs sub_agents -->
+  <div class="slide" data-module="02" data-type="comparison">
+    <h2>The consultant pattern</h2>
+    <div class="comparison-layout">
+      <div class="vs-left">
+        <h3>AgentTool</h3>
+        <p style="font-size:0.95em;">Parent <strong>calls</strong> the specialist like a function. Parent stays in charge. Child answers, hands control back.</p>
+        <p style="font-size:0.9em;color:var(--text-muted);"><strong>When:</strong> child has a clean I/O contract; you want visibility in the parent's event stream.</p>
+      </div>
+      <div class="vs-divider">vs</div>
+      <div class="vs-right">
+        <h3>sub_agents</h3>
+        <p style="font-size:0.95em;">Parent <strong>transfers</strong> to the child. Child owns the conversation until <em>it</em> decides to hand back.</p>
+        <p style="font-size:0.9em;color:var(--text-muted);"><strong>When:</strong> child should own multiple turns of the dialog.</p>
+      </div>
+    </div>
+    <p style="margin-top:var(--space-4);text-align:center;color:var(--text-muted);">M06 will do this comparison in detail. Today: focus on the consultant pattern.</p>
+  </div>
+
+  <!-- 19 AgentTool code -->
+  <div class="slide" data-module="02" data-type="code">
+    <h2>A translator, called like a function</h2>
+<pre><code>translator = LlmAgent(
+    name="translator",
+    description="Translates English to Slovak. Input: phrase. Output: translation.",
+    instruction="You are a translation tool. Output the Slovak translation only.",
+    ...
+)
+
+orchestrator = LlmAgent(
+    name="orchestrator",
+    instruction="Call the translator when the user asks for a translation.",
+    tools=[AgentTool(agent=translator)],
+)</code></pre>
+  </div>
+
+  <!-- 20 Live demo 4 -->
+  <div class="slide" data-module="02" data-type="section-title" style="background:linear-gradient(135deg,var(--amber-dark) 0%,var(--amber) 100%);">
+    <h1>Live</h1>
+    <h3>AgentTool: orchestrator → translator</h3>
+    <p class="highlight-text" style="color:white;">Notebook cell 22</p>
+  </div>
+
+  <!-- 21 Interlude header -->
+  <div class="slide" data-module="02" data-type="section-title" style="background:linear-gradient(135deg,#6A1B9A 0%,#8E24AA 100%);">
+    <div class="topic-badge">Interlude &middot; Agentic Design Patterns</div>
+    <h1>Risk-based tool design</h1>
+    <p class="highlight-text">Not all tools are equal. Treat them like they aren't.</p>
+  </div>
+
+  <!-- 22 Risk tiers -->
+  <div class="slide" data-module="02">
+    <h2>Categorize tools by blast radius</h2>
+    <table>
+      <thead>
+        <tr><th>Tier</th><th>Characteristic</th><th>Example</th><th>Guard</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Read-only</td><td>No external change</td><td><code>get_weather</code>, <code>search_tickets</code></td><td>None</td></tr>
+        <tr><td>Mutating, reversible</td><td>Write, easy to undo</td><td><code>create_ticket</code>, <code>send_draft_email</code></td><td>Log every call</td></tr>
+        <tr><td>Mutating, irreversible</td><td>Hard to roll back</td><td><code>charge_card</code>, <code>post_to_slack</code></td><td><strong>Explicit confirmation</strong></td></tr>
+        <tr><td>Catastrophic</td><td>Loud, multi-user, destructive</td><td><code>drop_database</code>, <code>delete_user</code></td><td><strong>Human in the loop</strong></td></tr>
+      </tbody>
+    </table>
+    <p style="margin-top:var(--space-4);">The temptation is to treat every tool the same because the framework does. Don't.</p>
+  </div>
+
+  <!-- 23 Where to put the guard -->
+  <div class="slide" data-module="02" data-type="keyfact">
+    <h2 class="text-muted" style="border-bottom:none;font-size:1em;text-transform:uppercase;letter-spacing:0.08em;">The rule</h2>
+    <p>Put the guard in the <strong>tool code</strong>.</p>
+    <p style="font-size:0.7em;color:var(--text-muted);margin-top:var(--space-4);">Not in the instruction. An instruction is a polite request the model can ignore. Code is a wall.</p>
+  </div>
+
+  <!-- 24 Confirmation gate code -->
+  <div class="slide" data-module="02" data-type="code">
+    <h2>A delete tool with a confirmation gate</h2>
+<pre><code>def delete_ticket(ticket_id: str, confirmation_token: str = "") -> dict:
+    """Delete a support ticket. IRREVERSIBLE.
+
+    Args:
+        ticket_id: The ticket to delete.
+        confirmation_token: Must equal "CONFIRM_DELETE_&lt;id&gt;".
+            Empty or wrong → returns a preview, does nothing.
+    """
+    expected = f"CONFIRM_DELETE_{ticket_id}"
+    if confirmation_token != expected:
+        return {"status": "preview", "message": f"Pass token={expected} to proceed."}
+    ...</code></pre>
+  </div>
+
+  <!-- 25 Live demo 5 -->
+  <div class="slide" data-module="02" data-type="section-title" style="background:linear-gradient(135deg,var(--amber-dark) 0%,var(--amber) 100%);">
+    <h1>Live</h1>
+    <h3>Guarded tool: delete returns a preview, not the delete</h3>
+    <p class="highlight-text" style="color:white;">Notebook cell 25</p>
+  </div>
+
+  <!-- 26 Choosing between flavors -->
+  <div class="slide" data-module="02">
+    <h2>Choosing a flavor</h2>
+    <table>
+      <thead>
+        <tr><th>If you have...</th><th>Use...</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>A Python function that needs to run in-process</td><td><strong>FunctionTool</strong></td></tr>
+        <tr><td>An existing REST API with an OpenAPI spec</td><td><strong>OpenAPIToolset</strong></td></tr>
+        <tr><td>A tool server written in any language with its own state</td><td><strong>McpToolset</strong></td></tr>
+        <tr><td>A specialist sub-agent the parent should call like a function</td><td><strong>AgentTool</strong></td></tr>
+      </tbody>
+    </table>
+    <p style="color:var(--text-muted);font-size:0.9em;">The FunctionTool is the default. Reach for the others when you have a specific reason.</p>
+  </div>
+
+  <!-- 27 Gotchas -->
+  <div class="slide" data-module="02">
+    <h2>Gotchas worth knowing now</h2>
+    <div class="callout callout-gotcha">
+      <div class="callout-title">Built-in tools don't mix</div>
+      <p style="margin:0;font-size:0.9em;">Google Search, code execution, and Vertex Search can't coexist with other tools in the same agent. Exception for Search in ADK &ge; 1.16: <code>bypass_multi_tools_limit=True</code>. Workaround: wrap each as a sub-agent.</p>
+    </div>
+    <div class="callout callout-gotcha">
+      <div class="callout-title">MCP stdio in Jupyter / Colab</div>
+      <p style="margin:0;font-size:0.9em;">Jupyter replaces <code>sys.stderr</code> with an object without a <code>.fileno()</code>, which breaks subprocess spawn. Patch <code>sys.stderr</code> to a real fd before importing <code>McpToolset</code>. (The notebook does this automatically.)</p>
+    </div>
+    <div class="callout callout-gotcha">
+      <div class="callout-title">LiteLLM + tool-calls + streaming</div>
+      <p style="margin:0;font-size:0.9em;">Known flaky on non-Gemini models. Default <code>stream=False</code> for demos on OpenRouter. (ADK does this out of the box.)</p>
+    </div>
+  </div>
+
+  <!-- 28 Takeaway -->
+  <div class="slide" data-module="02" data-type="keyfact">
+    <h2 class="text-muted" style="border-bottom:none;font-size:1em;text-transform:uppercase;letter-spacing:0.08em;">What to carry forward</h2>
+    <p>Tools come in <strong>four flavors</strong>. Same abstraction to the model; different integration targets.</p>
+    <p style="font-size:0.85em;color:var(--text-muted);margin-top:var(--space-4);">And: <em>blast radius matters</em>. Put the guard in the tool code, not in the instruction.</p>
+  </div>
+
+  <!-- 29 Next -->
+  <div class="slide" data-module="02" data-type="section-title" style="background:linear-gradient(135deg,var(--navy) 0%,var(--navy-light) 100%);">
+    <div class="topic-badge">Up next</div>
+    <h1>M03 &mdash; Sessions, State, Events, Artifacts</h1>
+    <p class="highlight-text">Where the conversation's memory actually lives.</p>
+  </div>
+
+  </main>
+
+  <script src="../shared/slides.js"></script>
+</body>
+</html>
