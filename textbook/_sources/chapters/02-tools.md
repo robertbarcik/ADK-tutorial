@@ -74,16 +74,16 @@ Two things worth flagging:
 
 The production use case: your company already has an API with a spec. Point the agent at it. Every endpoint becomes an agent-callable tool with no per-endpoint glue.
 
-## Flavor 3 — MCPToolset
+## Flavor 3 — McpToolset
 
 Model Context Protocol is Anthropic's standard for exposing tools to agents. It was donated to the Linux Foundation in December 2025 and is now the de facto standard — Anthropic, Google, OpenAI, Microsoft, the open-source agent stack, every serious player ships MCP support. An MCP server is a separate process that exposes a set of tools; your agent connects to it over stdio or HTTP and uses its tools as if they were local.
 
 ```python
-from google.adk.tools.mcp_tool.mcp_toolset import MCPToolset
+from google.adk.tools.mcp_tool.mcp_toolset import McpToolset
 from google.adk.tools.mcp_tool.mcp_session_manager import StdioConnectionParams
 from mcp import StdioServerParameters
 
-ticket_toolset = MCPToolset(
+ticket_toolset = McpToolset(
     connection_params=StdioConnectionParams(
         server_params=StdioServerParameters(
             command=sys.executable,
@@ -101,7 +101,7 @@ Two practical notes:
 
 **Close the toolset when you're done.** The stdio subprocess lives until you close it. Long-running agents should manage the lifecycle explicitly; short-lived notebook demos should call `await toolset.close()` at the end.
 
-**Jupyter's `sys.stderr` doesn't have a `.fileno()`.** This is the most common gotcha. When you run an MCP stdio integration inside a Jupyter kernel (or Colab, or nbconvert), the subprocess spawn fails with a `fileno` error because ADK's MCP client tries to inherit the parent's stderr, and the parent's stderr is an ipykernel `OutStream` that lacks a file descriptor. The fix is to swap `sys.stderr` to an `os.devnull`-backed file before importing MCPToolset. Every notebook in this course that uses MCP does this in its setup cell.
+**Jupyter's `sys.stderr` doesn't have a `.fileno()`.** This is the most common gotcha. When you run an MCP stdio integration inside a Jupyter kernel (or Colab, or nbconvert), the subprocess spawn fails with a `fileno` error because ADK's MCP client tries to inherit the parent's stderr, and the parent's stderr is an ipykernel `OutStream` that lacks a file descriptor. The fix is to swap `sys.stderr` to an `os.devnull`-backed file before importing McpToolset. Every notebook in this course that uses MCP does this in its setup cell.
 
 ## Flavor 4 — AgentTool
 
@@ -184,7 +184,7 @@ A quick decision guide.
 
 - **Python function that runs in-process** → FunctionTool. The default.
 - **Existing REST API with an OpenAPI spec** → OpenAPIToolset. One line, N endpoints.
-- **Tool server in another language or with its own state** → MCPToolset. Language- and process-agnostic.
+- **Tool server in another language or with its own state** → McpToolset. Language- and process-agnostic.
 - **Specialist sub-agent that should be called, not delegated to** → AgentTool. Parent stays in charge.
 
 ## Gotchas worth naming now
@@ -199,7 +199,7 @@ Three real ones.
 
 ## What to carry forward
 
-Tools come in four flavors: **FunctionTool, OpenAPIToolset, MCPToolset, AgentTool**. Same abstraction to the model; different integration targets. FunctionTool is the default; reach for the others when you have a specific reason.
+Tools come in four flavors: **FunctionTool, OpenAPIToolset, McpToolset, AgentTool**. Same abstraction to the model; different integration targets. FunctionTool is the default; reach for the others when you have a specific reason.
 
 And the design rule from the Agentic Design Patterns interlude: **blast radius matters**. Categorize your tools by how much damage a mis-call can do. Put the guards for irreversible tools in the code, not in the instruction. An instruction is a polite request. Code is a wall.
 
