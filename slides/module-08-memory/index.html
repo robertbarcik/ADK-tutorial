@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ADK Course — M08: Memory</title>
+  <link rel="stylesheet" href="../shared/shared.css">
+  <link rel="stylesheet" href="../shared/slides.css">
+</head>
+<body>
+  <nav class="progress-strip">
+    <a href="../../index.html" class="progress-home">Course</a>
+    <div class="progress-title">M08 — Memory</div>
+    <div class="progress-meta">
+      <span class="slide-counter">1 / 1</span>
+      <button class="theme-toggle">Theme</button>
+    </div>
+  </nav>
+
+  <main class="slide-viewport">
+
+  <div class="slide active" data-module="08" data-type="section-title">
+    <div class="topic-badge">Module 08 &middot; Part 1 Vendor-agnostic</div>
+    <h1>Memory</h1>
+    <h3>Persistence across restarts. Recall across weeks.</h3>
+    <p class="highlight-text"><code>DatabaseSessionService</code> + <code>MemoryService</code> + <code>load_memory</code></p>
+  </div>
+
+  <div class="slide" data-module="08" data-type="keyfact">
+    <h2 class="text-muted" style="border-bottom:none;font-size:1em;text-transform:uppercase;letter-spacing:0.08em;">Seven modules, one problem</h2>
+    <p><code>InMemorySessionService</code> loses <strong>everything</strong> on process restart.</p>
+    <p style="font-size:0.7em;color:var(--text-muted);margin-top:var(--space-4);">Perfect for tutorials. Useless for production.</p>
+  </div>
+
+  <div class="slide" data-module="08">
+    <h2>Two different time scales</h2>
+    <table>
+      <thead><tr><th>Scale</th><th>Primitive</th><th>Use</th></tr></thead>
+      <tbody>
+        <tr><td>Within one conversation</td><td>Session state (M03)</td><td>Current turn context; <code>user:</code> for cross-session within one user</td></tr>
+        <tr><td><strong>Across weeks / unrelated sessions</strong></td><td><strong><code>MemoryService</code> + <code>load_memory</code></strong></td><td>Retrieve facts the agent has no session-level reason to know</td></tr>
+      </tbody>
+    </table>
+    <p>The boundary matters. Session state handles "today's conversation". MemoryService handles "what did we talk about last month?"</p>
+  </div>
+
+  <div class="slide" data-module="08" data-type="section-title" style="background:linear-gradient(135deg,var(--navy-dark) 0%,var(--navy) 100%);">
+    <div class="topic-badge">Part 1 — Persistence</div>
+    <h1><code>DatabaseSessionService</code></h1>
+    <p class="highlight-text">One-line swap. Sessions survive restarts.</p>
+  </div>
+
+  <div class="slide" data-module="08" data-type="code">
+    <h2>The swap</h2>
+<pre><code># Demo (M01-M07): loses on process restart
+session_service = InMemorySessionService()
+
+# Production: persists to disk
+session_service = DatabaseSessionService(
+    db_url="sqlite+aiosqlite:///app.db"
+)
+
+# For real production: Postgres / MySQL
+session_service = DatabaseSessionService(
+    db_url="postgresql+asyncpg://user:pass@host/db"
+)</code></pre>
+    <p class="code-caption">Everything else is unchanged. Same <code>Runner</code>, same agents, same event stream.</p>
+  </div>
+
+  <div class="slide" data-module="08">
+    <h2>Gotcha — the URL must be async</h2>
+    <div class="callout callout-gotcha">
+      <div class="callout-title">Do not use <code>sqlite://</code></div>
+      <p style="margin:0;">ADK's DatabaseSessionService uses SQLAlchemy's async engine. The plain <code>sqlite://</code> scheme hits a sync driver and fails. You must use <code>sqlite+aiosqlite://</code>.</p>
+    </div>
+    <div class="callout callout-tip">
+      <div class="callout-title">Install dependencies</div>
+      <p style="margin:0;"><code>pip install aiosqlite greenlet</code> — aiosqlite is the async driver; greenlet is a transitive SQLAlchemy async requirement.</p>
+    </div>
+  </div>
+
+  <div class="slide" data-module="08" data-type="section-title" style="background:linear-gradient(135deg,var(--amber-dark) 0%,var(--amber) 100%);">
+    <h1>Live</h1>
+    <h3>Write preference; restart; recall</h3>
+    <p class="highlight-text" style="color:white;">Notebook cells 11-13</p>
+  </div>
+
+  <div class="slide" data-module="08">
+    <h2>The demo in three steps</h2>
+<pre class="diagram">Instance 1 (DatabaseSessionService → sqlite://app.db)
+  USER: I prefer terse answers.
+  tool_call: note_preference('terse')
+  state write: user:preference = 'terse'
+  → SQLite file grows.
+
+════ simulated process restart ════
+
+Instance 2 (FRESH DatabaseSessionService → same app.db)
+  create_session('sess-after-restart'):
+    initial state: {user:preference: 'terse'}  ← loaded from disk
+  USER: What do I prefer?
+  Agent: terse</pre>
+    <p>State survives the restart because it was written via <code>output_key=</code> or <code>tool_context.state</code> — paths ADK persists via events.</p>
+  </div>
+
+  <div class="slide" data-module="08" data-type="section-title" style="background:linear-gradient(135deg,var(--navy-dark) 0%,var(--navy) 100%);">
+    <div class="topic-badge">Part 2 — Long-term memory</div>
+    <h1><code>MemoryService</code> + <code>load_memory</code></h1>
+    <p class="highlight-text">Explicit retrieval across unrelated sessions.</p>
+  </div>
+
+  <div class="slide" data-module="08">
+    <h2>The shape</h2>
+    <ol>
+      <li>During a conversation, things happen.</li>
+      <li>You <strong>archive</strong> the session: <code>await memory.add_session_to_memory(session)</code>.</li>
+      <li>In a fresh session later, the agent has access to <code>load_memory(query: str)</code>.</li>
+      <li>The agent calls it; memory service returns matching snippets; the agent grounds its answer.</li>
+    </ol>
+    <p style="color:var(--text-muted);font-size:0.9em;">Archiving is <strong>deliberate</strong>. ADK does not auto-archive. You decide when a session becomes searchable history.</p>
+  </div>
+
+  <div class="slide" data-module="08">
+    <h2>Two memory services ship</h2>
+    <table>
+      <thead><tr><th>Service</th><th>Backing</th><th>When</th></tr></thead>
+      <tbody>
+        <tr><td><code>InMemoryMemoryService</code></td><td>Python dict</td><td>Demos (this notebook)</td></tr>
+        <tr><td><code>VertexAiMemoryBankService</code></td><td>Google Cloud; LLM-distilled facts + consolidation</td><td>Production on Vertex (M10)</td></tr>
+      </tbody>
+    </table>
+    <p style="color:var(--text-muted);font-size:0.9em;">Memory Bank is the real-world path if you're on Google Cloud — it extracts facts, deduplicates, consolidates over time. For self-hosted production, you'd implement <code>BaseMemoryService</code> against Postgres + pgvector or similar.</p>
+  </div>
+
+  <div class="slide" data-module="08" data-type="section-title" style="background:linear-gradient(135deg,var(--amber-dark) 0%,var(--amber) 100%);">
+    <h1>Live</h1>
+    <h3>Past conversation archived; fresh session recalls it</h3>
+    <p class="highlight-text" style="color:white;">Notebook cells 18-22</p>
+  </div>
+
+  <div class="slide" data-module="08">
+    <h2>The event stream</h2>
+<pre class="diagram">USER (new session): What project am I working on?
+
+[tool_call] load_memory({'query': 'what project am I working on?'})
+[tool_resp] memories=[MemoryEntry(content='I'm working on RaspiKitchen...')]
+[FINAL]     I'm working on RaspiKitchen — a Pi 5 voice-controlled
+           recipe helper with an ESP32 microphone array.</pre>
+    <p>The facts came from a session that's <em>not in the current conversation's context</em>. The agent retrieved them via <code>load_memory</code>, then grounded its answer.</p>
+  </div>
+
+  <div class="slide" data-module="08" data-type="section-title" style="background:linear-gradient(135deg,#6A1B9A 0%,#8E24AA 100%);">
+    <div class="topic-badge">Interlude &middot; Agentic Design Patterns (revisited)</div>
+    <h1>Skeptical Memory — with teeth</h1>
+    <p class="highlight-text">Long-term memory is a journal, not a cache.</p>
+  </div>
+
+  <div class="slide" data-module="08">
+    <h2>The staleness problem at long horizons</h2>
+    <p>Three months ago: user said they work at Acme Corp. Memory stored. Today: agent searches, finds it, uses it to ground a reply.</p>
+    <p><strong>The user might have changed jobs.</strong> The memory is accurate as of the day it was stored. It is not accurate as of today. The agent, acting confidently on a three-month-old fact, is confidently wrong.</p>
+    <p style="color:var(--text-muted);">At long time horizons, <strong>staleness is the default</strong>, not the exception.</p>
+  </div>
+
+  <div class="slide" data-module="08">
+    <h2>Three defensive patterns</h2>
+    <div class="callout callout-tip">
+      <div class="callout-title">1. Retrieve-and-verify for high stakes</div>
+      <p style="margin:0;font-size:0.95em;">Before irreversible actions, call a read-only tool to re-verify the retrieved fact. <em>"Let me confirm — you're still at Acme, right?"</em></p>
+    </div>
+    <div class="callout callout-tip">
+      <div class="callout-title">2. Stamp memories with recency</div>
+      <p style="margin:0;font-size:0.95em;">Store the date alongside every <code>user:</code>/<code>app:</code> write. Surface the recency to the model so it can distrust old facts.</p>
+    </div>
+    <div class="callout callout-tip">
+      <div class="callout-title">3. Decay or consolidate</div>
+      <p style="margin:0;font-size:0.95em;">Memory Bank does this automatically. For <code>InMemoryMemoryService</code>, implement the policy yourself — delete or compress entries older than N days.</p>
+    </div>
+  </div>
+
+  <div class="slide" data-module="08" data-type="keyfact">
+    <h2 class="text-muted" style="border-bottom:none;font-size:1em;text-transform:uppercase;letter-spacing:0.08em;">The framing</h2>
+    <p>Long-term memory is a <strong>journal</strong>.</p>
+    <p style="font-size:0.75em;color:var(--text-muted);margin-top:var(--space-4);">Every retrieved fact is a claim from when it was written. Not a fact that is true now.</p>
+  </div>
+
+  <div class="slide" data-module="08" data-type="section-title" style="background:linear-gradient(135deg,var(--navy) 0%,var(--navy-light) 100%);">
+    <div class="topic-badge">Up next</div>
+    <h1>M09 &mdash; Evaluation</h1>
+    <p class="highlight-text">Does the agent work? Beyond eyeballing the event stream.</p>
+  </div>
+
+  </main>
+
+  <script src="../shared/slides.js"></script>
+</body>
+</html>

@@ -319,6 +319,7 @@ hr {
 <li><a href="#workflow-agents">5. Workflow agents</a></li>
 <li><a href="#multi-agent-hierarchies">6. Multi-agent hierarchies</a></li>
 <li><a href="#callbacks-as-middleware">7. Callbacks as middleware</a></li>
+<li><a href="#memory">8. Memory</a></li>
             </ul>
         </nav>
     </aside>
@@ -1533,6 +1534,144 @@ stock_agent = LlmAgent(
 <li><strong>Observability gap:</strong> callbacks don&rsquo;t automatically appear in OTel traces. Instrument manually if needed.</li>
 </ul>
 <p>Module 08 picks up <strong>memory</strong>. Session state was short-term memory — tied to one session, or at best carried across sessions within one user via scope prefixes. M08 is the long-term version: swapping <code>InMemorySessionService</code> for a SQLite-backed <code>DatabaseSessionService</code>, introducing <code>MemoryService</code> and the <code>load_memory</code> tool for explicit recall across time, and revisiting the Skeptical Memory pattern from Module 03 — now with teeth, because at long time horizons staleness is the default.</p>
+        </section>
+
+        <section class="chapter" id="memory">
+            <div class="chapter-number">Chapter 8</div>
+            <h1>Memory</h1>
+<p>Seven modules so far, every demo used <code>InMemorySessionService</code>. It is perfect for tutorials and useless for production. The moment your Python process restarts, every session your users had is gone. An agent that forgets every user on every deploy is not a product.</p>
+<p>This chapter fixes that in two parts. First, persistence — the one-line swap from <code>InMemorySessionService</code> to <code>DatabaseSessionService</code>, backed by SQLite or Postgres. Sessions survive restarts; the agent code doesn&rsquo;t change. Second, long-term memory — the <code>MemoryService</code> and <code>load_memory</code> tool, which handle the harder problem of recalling facts from sessions that aren&rsquo;t in the current conversation&rsquo;s context.</p>
+<p>And a return to the <strong>Skeptical Memory</strong> pattern from Module 03, which deserves more weight here — because at long time horizons, staleness is the default, and retrieved memories are often wrong.</p>
+<h2>Two time scales</h2>
+<p>Agents need to remember at two different time scales, and the boundary between them is the single most important distinction in this chapter.</p>
+<table>
+<thead>
+<tr>
+<th>Time scale</th>
+<th>Primitive</th>
+<th>Use case</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Within one conversation</strong></td>
+<td>Session state (M03)</td>
+<td>Current-turn context; <code>user:</code>-prefixed values carry across sessions within one service instance</td>
+</tr>
+<tr>
+<td><strong>Across weeks, across unrelated sessions</strong></td>
+<td><strong><code>MemoryService</code> + <code>load_memory</code></strong></td>
+<td>Retrieve facts from past conversations the agent has no session-level reason to know</td>
+</tr>
+</tbody>
+</table>
+<p>Session state handles &ldquo;today&rsquo;s conversation.&rdquo; MemoryService handles &ldquo;what did we discuss last Tuesday?&rdquo;</p>
+<h2>Part 1 — Persistence: <code>DatabaseSessionService</code></h2>
+<p>The swap is one line. Instead of <code>InMemorySessionService()</code>, use <code>DatabaseSessionService(db_url=...)</code>.</p>
+<pre><code class="language-python"># Demo backing (M01-M07)
+session_service = InMemorySessionService()
+
+# SQLite-backed persistence
+session_service = DatabaseSessionService(
+    db_url=&quot;sqlite+aiosqlite:///app.db&quot;
+)
+
+# Postgres-backed production
+session_service = DatabaseSessionService(
+    db_url=&quot;postgresql+asyncpg://user:pass@host/db&quot;
+)
+</code></pre>
+<p>Everything else is identical. Same <code>Runner</code>, same agents, same event stream, same state-writing patterns (<code>output_key=</code> and <code>tool_context.state</code>). The only change is where ADK&rsquo;s state persistence goes.</p>
+<h3>The async-URL gotcha</h3>
+<p>ADK&rsquo;s <code>DatabaseSessionService</code> uses SQLAlchemy&rsquo;s <strong>async engine</strong>. The plain <code>sqlite://</code> URL scheme fails because it resolves to a sync driver. You must use <code>sqlite+aiosqlite://</code> explicitly, and install the <code>aiosqlite</code> package (plus <code>greenlet</code>, a transitive SQLAlchemy async requirement).</p>
+<pre><code class="language-bash">pip install aiosqlite greenlet
+</code></pre>
+<p>For Postgres: <code>postgresql+asyncpg://</code> (install <code>asyncpg</code>). For MySQL: <code>mysql+aiomysql://</code> (install <code>aiomysql</code>).</p>
+<p>The error message when you pick the wrong driver is SQLAlchemy&rsquo;s <code>"The asyncio extension requires an async driver to be used"</code>. If you see that, the fix is the driver scheme, not ADK.</p>
+<h3>The demo — write, restart, recall</h3>
+<p>The pattern:</p>
+<ol>
+<li><strong>Instance 1</strong> of <code>DatabaseSessionService</code> creates a session for <code>alice</code>, handles a conversation, writes <code>user:preference = "terse"</code> via a tool. The state-delta goes through ADK&rsquo;s event path and lands in the SQLite file.</li>
+<li><strong>Simulated process restart.</strong> We discard the first instance and build a brand-new <code>DatabaseSessionService</code> against the same file path.</li>
+<li><strong>Instance 2</strong> creates a fresh session (different session ID) for <code>alice</code>. The session&rsquo;s initial state <em>already contains</em> <code>user:preference: "terse"</code> — loaded from disk by the service.</li>
+</ol>
+<p>The reason this works is the same mechanism from Module 03 and Module 07: ADK persists state via events. Both <code>output_key=</code> (on the agent) and <code>tool_context.state[key] = value</code> (inside a tool) generate state-delta events. The session service writes those deltas to its backing store. On session create/load, the service applies the persisted deltas to produce the session&rsquo;s state dict.</p>
+<p>Direct assignment to a returned session&rsquo;s <code>.state</code> dict — the anti-pattern from Module 03 — still silently fails with the database service, same as with the in-memory one. Use the two persisted patterns.</p>
+<h2>Part 2 — Long-term memory: <code>MemoryService</code> and <code>load_memory</code></h2>
+<p>Persistence gets you &ldquo;the user&rsquo;s preferences survive restarts.&rdquo; It does not get you &ldquo;remember what the user mentioned three sessions ago about their project.&rdquo; That&rsquo;s what <code>MemoryService</code> is for.</p>
+<p>The shape is explicit, in four steps:</p>
+<ol>
+<li><strong>During a conversation, things happen.</strong> User mentions a project. Agent logs some context. Tool calls generate outputs.</li>
+<li><strong>You archive the session to memory.</strong> <code>await memory_service.add_session_to_memory(session)</code>. This is deliberate — ADK does not auto-archive.</li>
+<li><strong>In a fresh, unrelated session later, the agent has <code>load_memory</code> in its tools list.</strong> A built-in tool that takes a query string and searches the memory store.</li>
+<li><strong>The agent calls <code>load_memory(query=...)</code></strong> when it thinks past context would help. The tool returns matching <code>MemoryEntry</code> snippets. The agent reads them and grounds its answer.</li>
+</ol>
+<p>Two memory services ship:</p>
+<ul>
+<li><strong><code>InMemoryMemoryService</code></strong> — dict-backed, for demos and tests.</li>
+<li><strong><code>VertexAiMemoryBankService</code></strong> — managed, Google-Cloud-only. Much more sophisticated — it uses an LLM to extract <em>distilled facts</em> from raw sessions, deduplicates, consolidates over time. Covered briefly in Module 10.</li>
+</ul>
+<p>For self-hosted production, you&rsquo;d implement <code>BaseMemoryService</code> against Postgres with pgvector or against your existing search infrastructure. The interface is stable; only the backing changes.</p>
+<h3>The demo — archive, recall</h3>
+<pre><code class="language-python">from google.adk.memory import InMemoryMemoryService
+from google.adk.tools import load_memory
+
+memory_svc = InMemoryMemoryService()
+
+memory_agent = LlmAgent(
+    name=&quot;memory_agent&quot;,
+    model=LiteLlm(model=MODEL_STRING),
+    instruction=(
+        &quot;When the user asks about something that might have come up in a &quot;
+        &quot;past conversation, call load_memory with a search query. &quot;
+        &quot;Base your answer on what it returns. If nothing relevant is found, &quot;
+        &quot;say so — do not invent facts.&quot;
+    ),
+    tools=[load_memory],
+)
+</code></pre>
+<p>The notebook runs a past conversation, archives it, then opens a fresh session:</p>
+<pre><code>USER (new session): What project am I working on, and what hardware?
+
+[tool_call] load_memory({'query': 'what project and hardware'})
+[tool_resp] memories=[MemoryEntry(content=&quot;I'm working on RaspiKitchen...&quot;),
+                     MemoryEntry(content=&quot;Pi 5 with 8GB, ESP32 microphone&quot;),
+                     ...]
+[FINAL]     RaspiKitchen — a Raspberry Pi 5 voice-controlled recipe helper,
+           running on 8GB of RAM with an ESP32 microphone array.
+</code></pre>
+<p>The facts came from a session that isn&rsquo;t in the current conversation&rsquo;s context. The agent retrieved them deliberately via <code>load_memory</code>, then grounded its answer in what it retrieved. <strong><code>load_memory</code> is explicit retrieval, not ambient recall</strong> — the model decides when to search, the tool returns what it finds.</p>
+<p>The &ldquo;do not invent facts&rdquo; clause in the instruction matters. Without it, some models will pattern-match an answer even when <code>load_memory</code> returns nothing useful. With it, the agent honestly says &ldquo;I don&rsquo;t have that context&rdquo; — which is almost always the right behavior.</p>
+<h2>Interlude revisited — Skeptical Memory at long time horizons</h2>
+<p>Module 03 introduced Skeptical Memory briefly, with the one-line summary: <em>stored state is a hint, not a fact.</em> At long time horizons, the pattern pays off in spades.</p>
+<p>Three months ago, the user told the agent they work at Acme Corp. The memory is stored. Today, when the agent searches memory for &ldquo;employer,&rdquo; it comes back. The agent uses it to ground a reply: <em>&ldquo;As an Acme employee, you&hellip;&rdquo;</em></p>
+<p>The problem: <strong>the user might have changed jobs.</strong> The memory is accurate as of the day it was stored. It is not accurate as of today. The agent, acting confidently on a three-month-old fact, is confidently wrong.</p>
+<p>At long time horizons — weeks, months — staleness is the default, not the exception. Most of what was true when written is still true. Some critical percentage isn&rsquo;t. Your agent needs to account for both.</p>
+<h3>Three defensive patterns, with teeth this time</h3>
+<p><strong>1. Retrieve-and-verify for high-stakes actions.</strong> Before the agent sends an email, makes a purchase, deploys code, or does anything with irreversible consequences, the next step after <code>load_memory</code> should be a tool call that re-verifies the fact the memory produced. <em>&ldquo;I&rsquo;m about to send an email to your Acme address — let me confirm you&rsquo;re still there before I do.&rdquo;</em> The cost of one extra verification call is trivial compared to the cost of acting on a stale fact.</p>
+<p><strong>2. Stamp memories with recency metadata.</strong> The publication&rsquo;s concrete recommendation: store the date alongside every <code>user:</code> or <code>app:</code>-scoped write. When the memory is retrieved, the model sees both the fact and when it was recorded. Models naturally distrust a fact stamped &ldquo;November 2025&rdquo; more than one stamped &ldquo;yesterday&rdquo; — if they see the stamp.</p>
+<p>Concretely, you update your note-writing tool to also write a timestamp:</p>
+<pre><code class="language-python">def note_preference(preference: str, tool_context: ToolContext) -&gt; dict:
+    from datetime import datetime
+    tool_context.state[&quot;user:preference&quot;] = preference
+    tool_context.state[&quot;user:preference_recorded_on&quot;] = datetime.now().isoformat()
+    return {&quot;saved&quot;: preference}
+</code></pre>
+<p>And surface the timestamp to the model in the instruction: <code>"The user's preference was recorded on {user:preference_recorded_on?}."</code></p>
+<p><strong>3. Decay or consolidate aggressively.</strong> Memory fills up. Let old entries age out — either delete them after N days or compress multiple entries into a single summary. Memory Bank does this automatically: it runs a periodic consolidation that extracts distilled facts, merges redundant entries, deletes stale ones. For <code>InMemoryMemoryService</code> or a custom implementation, you write the policy yourself.</p>
+<h3>The framing</h3>
+<p>The single most useful framing from the Agentic Design Patterns book: <strong>long-term memory is not a cache. It&rsquo;s a journal.</strong></p>
+<p>A cache is &ldquo;I already computed this; reuse it.&rdquo; A journal is &ldquo;this was true when I wrote it; it may or may not be true now.&rdquo; Treat every retrieved memory as a journal entry, not a cache hit. That shift alone prevents most of the confident-but-wrong failures agents make with long-term memory.</p>
+<h2>What to carry forward</h2>
+<ul>
+<li><strong><code>DatabaseSessionService</code> is a one-line swap</strong> from <code>InMemorySessionService</code>. URL must be async: <code>sqlite+aiosqlite:///app.db</code>, <code>postgresql+asyncpg://...</code>. Install <code>aiosqlite</code> + <code>greenlet</code> for SQLite.</li>
+<li><strong><code>MemoryService</code> + <code>load_memory</code></strong> is the long-term memory path. Archive is explicit (<code>add_session_to_memory</code>). Retrieval is explicit (the agent calls <code>load_memory</code>).</li>
+<li><strong>Two services ship</strong>: <code>InMemoryMemoryService</code> (demos), <code>VertexAiMemoryBankService</code> (managed, Vertex-only).</li>
+<li><strong><code>load_memory</code> is explicit retrieval</strong>, not ambient recall. The model decides when to search.</li>
+<li><strong>Skeptical Memory with teeth</strong>: retrieved facts are journal entries from when they were written. Retrieve-and-verify for high stakes; stamp with recency; decay aggressively.</li>
+<li><strong>The framing to carry</strong>: long-term memory is a journal, not a cache.</li>
+</ul>
+<p>Module 09 picks up <strong>evaluation</strong>. The first eight modules have been &ldquo;does the agent work?&rdquo; answered by eyeballing the event stream. Module 09 introduces ADK&rsquo;s evaluation framework — <code>AgentEvaluator</code>, <code>EvalSet</code>, trajectory metrics (did the agent call the right tools in the right order?), and the <code>adk eval</code> CLI loop (chat, save evalset, tweak prompt, rerun). Honest about ROUGE-1&rsquo;s limitations for production; gestures at LLM-as-judge as the upgrade path.</p>
         </section>
         </main>
     </div>
