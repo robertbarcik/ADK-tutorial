@@ -313,6 +313,7 @@ hr {
             <ul>
                 <li><a href="#introduction">Introduction</a></li>
 <li><a href="#why-agents-why-adk">1. Why agents, why ADK</a></li>
+<li><a href="#tools-as-verbs">2. Tools as verbs</a></li>
             </ul>
         </nav>
     </aside>
@@ -438,6 +439,183 @@ async for event in runner.run_async(
 <p>Four words. Agent, Runner, Event, Session.</p>
 <p>If you can say them out loud without looking at your notes, you&rsquo;re ready for the next module. If any of the four is still fuzzy, re-read this chapter, and then open the notebook and watch the event stream of the weather agent. Every concept in this chapter corresponds to something visible in that notebook&rsquo;s output, and the mapping between the concepts and the output is what makes the mental model real.</p>
 <p>Module two picks up tools as a first-class topic. You saw one flavor — a plain Python function — in the demo. ADK has three more: an OpenAPI specification consumed wholesale, an MCP server connected as a tool source, and another agent wrapped to look like a tool. Each of the four has a time it&rsquo;s the right answer. That&rsquo;s next.</p>
+        </section>
+
+        <section class="chapter" id="tools-as-verbs">
+            <div class="chapter-number">Chapter 2</div>
+            <h1>Tools as verbs</h1>
+<p>If Module 01 gave you the mental model of an agent, this chapter is where the agent starts doing things. An agent without tools is a chatbot — it can only produce text. An agent with tools can look up data, call APIs, run code, talk to other agents. All the interesting properties of agent software come from the tool boundary, and almost all the interesting bugs do too. This chapter covers the four flavors of tools ADK supports, when to reach for each, and one design rule that applies across all of them.</p>
+<h2>The tool mental model</h2>
+<p>Regardless of flavor, here is what happens when your agent calls a tool.</p>
+<p>The model sees a <strong>schema</strong> — a JSON description with a tool name, a human-readable description, and a list of typed arguments. The model decides when the schema applies to the current user request, and emits a structured call: the name of the tool it wants to run, and the arguments it wants to pass. ADK catches the call before it leaves the agent. It looks up the Python code behind that schema, runs it with the arguments the model picked, wraps the return value, and feeds it back into the conversation as a tool-response event. The model reads that response and produces a natural-language answer.</p>
+<p>That is the whole protocol. Four flavors of tools differ only in two places: where the schema comes from, and where the code lives.</p>
+<pre><code>┌─────────────┐   &quot;I need to know X&quot;    ┌─────────────┐
+│     LLM     │────────────────────────▶│     ADK     │
+│   decides   │                         │  dispatch   │
+└─────────────┘                         └──────┬──────┘
+       ▲                                       │
+       │  &quot;X is {...}&quot;                         ▼
+       │                                 ┌─────────────┐
+       └─────────────────────────────────│  your tool  │
+                                         │ (any flavor)│
+                                         └─────────────┘
+</code></pre>
+<h2>Flavor 1 — FunctionTool</h2>
+<p>The default flavor. You write a Python function; ADK turns it into a tool. The schema comes from your function&rsquo;s docstring and type hints; the code runs in the same Python process as the agent.</p>
+<pre><code class="language-python">def get_weather(city: str, units: str = &quot;celsius&quot;) -&gt; dict:
+    &quot;&quot;&quot;Look up today's weather for a city.
+
+    Args:
+        city: The city name in English (e.g. &quot;Prague&quot;, &quot;Munich&quot;).
+        units: Either &quot;celsius&quot; (default) or &quot;fahrenheit&quot;.
+    &quot;&quot;&quot;
+    ...
+    return {&quot;city&quot;: city, &quot;temperature&quot;: ..., &quot;condition&quot;: ..., &quot;units&quot;: units}
+</code></pre>
+<p>Three things to internalize:</p>
+<p><strong>The docstring is the schema the model sees.</strong> Your job when writing a tool function&rsquo;s docstring is not to help a human code reviewer understand the code — your job is to help the model, which has no Slack channel to ask you what a parameter means. Every argument gets an explicit description. Ambiguity in the docstring becomes unpredictable behavior at inference time.</p>
+<p><strong>Type hints are load-bearing.</strong> ADK reads them to build the JSON schema&rsquo;s types. A missing hint degrades to <code>"type": "string"</code>, often silently. Always type your tool functions. If you&rsquo;re returning a dict, consider a TypedDict or at least document the shape in the docstring.</p>
+<p><strong>Return JSON-serializable data.</strong> A dict, a list, a string, a number. Not a Pandas DataFrame, not a NumPy array, not a custom class. The return value is sent verbatim to the model as a tool-response event, and anything unserializable crashes the dispatch.</p>
+<p>When to reach for FunctionTool: almost always. It is the right default. The other three flavors exist for specific scenarios the default can&rsquo;t cover.</p>
+<h2>Flavor 2 — OpenAPIToolset</h2>
+<p>When the thing you want to call is a REST API, and that API has an OpenAPI specification, you do not want to hand-write a FunctionTool per endpoint. <code>OpenAPIToolset</code> takes a full spec and turns every operation into a tool automatically.</p>
+<pre><code class="language-python">from google.adk.tools.openapi_tool import OpenAPIToolset
+
+fx_toolset = OpenAPIToolset(spec_dict=FRANKFURTER_SPEC)
+
+fx_agent = LlmAgent(
+    ...,
+    tools=[fx_toolset],   # every path in the spec → one tool
+)
+</code></pre>
+<p>The spec can be a dict, a JSON string, or a YAML string. Every path in the spec becomes a tool. Parameters become tool arguments. The <code>summary</code> and <code>description</code> fields become what the model sees. The <code>servers[0].url</code> becomes the base URL.</p>
+<p>Two things worth flagging:</p>
+<p><strong>ADK snake-cases operationIds.</strong> A spec that declares <code>operationId: getLatestRate</code> produces a tool named <code>get_latest_rate</code>. If you instruct the model to call a camelCase name, it won&rsquo;t find the tool. If a tool call isn&rsquo;t happening and you&rsquo;re sure the instruction is right, check whether ADK renamed the tool.</p>
+<p><strong>The tool-response event is the raw API payload.</strong> ADK does not transform the API&rsquo;s output before handing it to the model. That is a feature, not a bug — you can debug your API&rsquo;s contract directly in the event stream. But it means the model needs to be able to read the shape the API returns. If the API returns deeply nested JSON, consider a small wrapper tool that flattens it.</p>
+<p>The production use case: your company already has an API with a spec. Point the agent at it. Every endpoint becomes an agent-callable tool with no per-endpoint glue.</p>
+<h2>Flavor 3 — MCPToolset</h2>
+<p>Model Context Protocol is Anthropic&rsquo;s standard for exposing tools to agents. It was donated to the Linux Foundation in December 2025 and is now the de facto standard — Anthropic, Google, OpenAI, Microsoft, the open-source agent stack, every serious player ships MCP support. An MCP server is a separate process that exposes a set of tools; your agent connects to it over stdio or HTTP and uses its tools as if they were local.</p>
+<pre><code class="language-python">from google.adk.tools.mcp_tool.mcp_toolset import MCPToolset
+from google.adk.tools.mcp_tool.mcp_session_manager import StdioConnectionParams
+from mcp import StdioServerParameters
+
+ticket_toolset = MCPToolset(
+    connection_params=StdioConnectionParams(
+        server_params=StdioServerParameters(
+            command=sys.executable,
+            args=[&quot;mcp_servers/ticket_mcp_server.py&quot;],
+        ),
+    )
+)
+</code></pre>
+<p>What happens when that toolset runs: ADK spawns the server script as a subprocess, speaks the MCP handshake over stdio, and calls the server&rsquo;s <code>list_tools</code> method. Whatever tools the server exposes are registered as if they were local. From the agent&rsquo;s perspective there is no difference.</p>
+<p>This is the most valuable property of the flavor. <strong>The MCP server can be written in any language</strong>, run on any machine, own any state — database connections, API credentials, caches. The agent doesn&rsquo;t care. It speaks the protocol; the tools show up.</p>
+<p>Two practical notes:</p>
+<p><strong>Close the toolset when you&rsquo;re done.</strong> The stdio subprocess lives until you close it. Long-running agents should manage the lifecycle explicitly; short-lived notebook demos should call <code>await toolset.close()</code> at the end.</p>
+<p><strong>Jupyter&rsquo;s <code>sys.stderr</code> doesn&rsquo;t have a <code>.fileno()</code>.</strong> This is the most common gotcha. When you run an MCP stdio integration inside a Jupyter kernel (or Colab, or nbconvert), the subprocess spawn fails with a <code>fileno</code> error because ADK&rsquo;s MCP client tries to inherit the parent&rsquo;s stderr, and the parent&rsquo;s stderr is an ipykernel <code>OutStream</code> that lacks a file descriptor. The fix is to swap <code>sys.stderr</code> to an <code>os.devnull</code>-backed file before importing MCPToolset. Every notebook in this course that uses MCP does this in its setup cell.</p>
+<h2>Flavor 4 — AgentTool</h2>
+<p>The fourth flavor is the most conceptually interesting. <strong><code>AgentTool</code> takes any existing agent and makes it callable as a tool from another agent.</strong></p>
+<pre><code class="language-python">from google.adk.tools.agent_tool import AgentTool
+
+translator = LlmAgent(
+    name=&quot;translator&quot;,
+    description=&quot;Translates English to Slovak. Input: phrase. Output: translation.&quot;,
+    instruction=&quot;You are a translation tool. Output the Slovak translation only.&quot;,
+    ...
+)
+
+orchestrator = LlmAgent(
+    ...,
+    tools=[AgentTool(agent=translator)],
+)
+</code></pre>
+<p>The parent&rsquo;s model sees <code>translator</code> as a tool — the tool name is the child&rsquo;s name, the tool description is the child&rsquo;s description. When the parent decides to call, the child runs as its own LLM call with its own instruction, produces a response, and that response comes back to the parent as a tool-response event.</p>
+<p>This is the <strong>consultant pattern</strong>. The parent calls the specialist like a function. The parent stays in charge. The child answers one question, and control goes back to the parent automatically.</p>
+<p>The alternative pattern is <code>sub_agents</code>, where the parent <em>transfers</em> the conversation to the child. The child owns the dialog — for one turn or many — until it itself decides to transfer back. That is delegation, not a function call. M06 will make the distinction crisp with a side-by-side demo; for now, the rule of thumb:</p>
+<ul>
+<li><strong>AgentTool</strong> when the child has a clean input-output contract and you want it to be visible as a tool call in the parent&rsquo;s event stream.</li>
+<li><strong>sub_agents</strong> when the child should own the conversation for a stretch of turns.</li>
+</ul>
+<h2>Interlude — Risk-based tool design</h2>
+<p>This is the first of the Agentic Design Patterns interludes. The pattern is drawn from the <em>Agentic Design Patterns</em> publication (Chapter 4: Tool Design and Constraint Architecture). The content here is a condensed version; the publication is worth reading in full.</p>
+<p>Not all tools are equal. A tool that reads the ticket database is not in the same category as a tool that deletes the database. The difference is <strong>blast radius</strong> — the scope of damage a misfiring tool call can do before anyone notices.</p>
+<p>A practical taxonomy:</p>
+<table>
+<thead>
+<tr>
+<th>Risk tier</th>
+<th>Characteristic</th>
+<th>Example</th>
+<th>Guard</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Read-only</strong></td>
+<td>No external change</td>
+<td><code>get_weather</code>, <code>search_tickets</code></td>
+<td>None</td>
+</tr>
+<tr>
+<td><strong>Mutating, reversible</strong></td>
+<td>Writes, easy to undo</td>
+<td><code>create_ticket</code>, <code>send_draft_email</code></td>
+<td>Log every call</td>
+</tr>
+<tr>
+<td><strong>Mutating, irreversible</strong></td>
+<td>Writes that can&rsquo;t be rolled back</td>
+<td><code>charge_card</code>, <code>post_to_slack</code></td>
+<td><strong>Explicit confirmation</strong></td>
+</tr>
+<tr>
+<td><strong>Catastrophic</strong></td>
+<td>Destructive, multi-user, loud</td>
+<td><code>drop_database</code>, <code>delete_user</code></td>
+<td><strong>Human in the loop</strong></td>
+</tr>
+</tbody>
+</table>
+<p>The temptation is to treat every tool the same because the framework treats them the same. Don&rsquo;t. Put the guards in the tool&rsquo;s implementation, not in the instruction.</p>
+<p><strong>The design rule: an instruction is a polite request the model can ignore. A code-level check is a wall.</strong></p>
+<p>Concretely: here is what an irreversible-tier tool looks like, with a code-level confirmation gate.</p>
+<pre><code class="language-python">def delete_ticket(ticket_id: str, confirmation_token: str = &quot;&quot;) -&gt; dict:
+    &quot;&quot;&quot;Delete a support ticket. IRREVERSIBLE.
+
+    Args:
+        ticket_id: The ticket to delete.
+        confirmation_token: Must equal &quot;CONFIRM_DELETE_&lt;ticket_id&gt;&quot;.
+            Empty or wrong → returns a preview, does nothing.
+    &quot;&quot;&quot;
+    expected = f&quot;CONFIRM_DELETE_{ticket_id}&quot;
+    if confirmation_token != expected:
+        return {
+            &quot;status&quot;: &quot;preview&quot;,
+            &quot;ticket_id&quot;: ticket_id,
+            &quot;message&quot;: f&quot;Not executed. Pass token={expected} to proceed.&quot;,
+        }
+    ...  # actually delete
+</code></pre>
+<p>Now the instruction can say &ldquo;call with an empty token first to preview, show the user, confirm, and only retry with the real token if they explicitly agree.&rdquo; But if the model skips any of that — if it decides to short-cut — the tool returns a preview anyway. The data is safe.</p>
+<p>Notice the subtle detail: the expected token is computed from the ticket ID. A model that somehow learned a fixed token string from training data or system-prompt exfiltration can&rsquo;t just hardcode it.</p>
+<p>This pattern — <strong>code-level gates for irreversible tools</strong> — scales. You can apply it to <code>send_email</code> (require the user to see a draft first), to <code>transfer_funds</code> (require a signed approval token), to <code>post_to_social</code> (require a dry-run preview). The specific guard changes; the principle doesn&rsquo;t.</p>
+<h2>Choosing a flavor</h2>
+<p>A quick decision guide.</p>
+<ul>
+<li><strong>Python function that runs in-process</strong> → FunctionTool. The default.</li>
+<li><strong>Existing REST API with an OpenAPI spec</strong> → OpenAPIToolset. One line, N endpoints.</li>
+<li><strong>Tool server in another language or with its own state</strong> → MCPToolset. Language- and process-agnostic.</li>
+<li><strong>Specialist sub-agent that should be called, not delegated to</strong> → AgentTool. Parent stays in charge.</li>
+</ul>
+<h2>Gotchas worth naming now</h2>
+<p>Three real ones.</p>
+<p><strong>Built-in Google tools don&rsquo;t mix.</strong> Google Search, the built-in code executor, and Vertex AI Search cannot coexist with other tools in the same agent. The exception is Search, on ADK 1.16 or later, via <code>bypass_multi_tools_limit=True</code>. The general workaround is to wrap each built-in tool as an <code>AgentTool</code> and compose them through sub-agents. Module 11 will hit this directly when we use Search grounding.</p>
+<p><strong>MCP stdio in Jupyter / Colab / nbconvert needs a patched <code>sys.stderr</code>.</strong> The ipykernel environment replaces <code>sys.stderr</code> with an object that lacks <code>.fileno()</code>. The MCP subprocess spawn tries to inherit stderr and calls <code>.fileno()</code> on it. That throws. The fix is a three-line stanza in the notebook setup cell that swaps <code>sys.stderr</code> to <code>os.devnull</code> when the current stderr doesn&rsquo;t have a usable fileno. Every MCP-touching notebook in this course does this automatically.</p>
+<p><strong>LiteLLM plus streaming plus tool calls is known flaky on non-Gemini models.</strong> There are several open adk-python issues documenting this — #187, #2065, #3665, #3697, and more. The practical guidance for OpenRouter-backed demos: default <code>stream=False</code>. ADK does this out of the box for non-streaming runners. If you turn streaming on for production on an OpenRouter model, test the tool paths hard before shipping.</p>
+<h2>What to carry forward</h2>
+<p>Tools come in four flavors: <strong>FunctionTool, OpenAPIToolset, MCPToolset, AgentTool</strong>. Same abstraction to the model; different integration targets. FunctionTool is the default; reach for the others when you have a specific reason.</p>
+<p>And the design rule from the Agentic Design Patterns interlude: <strong>blast radius matters</strong>. Categorize your tools by how much damage a mis-call can do. Put the guards for irreversible tools in the code, not in the instruction. An instruction is a polite request. Code is a wall.</p>
+<p>Module 03 picks up where the event stream leaves off. Every tool call you just saw went into the session&rsquo;s event history; Module 03 makes sessions, state, and events the subject.</p>
         </section>
         </main>
     </div>
