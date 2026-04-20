@@ -315,6 +315,7 @@ hr {
 <li><a href="#why-agents-why-adk">1. Why agents, why ADK</a></li>
 <li><a href="#tools-as-verbs">2. Tools as verbs</a></li>
 <li><a href="#sessions-state-events-artifacts">3. Sessions, State, Events, Artifacts</a></li>
+<li><a href="#the-one-line-model-swap">4. The one-line model swap</a></li>
             </ul>
         </nav>
     </aside>
@@ -773,6 +774,205 @@ agent = LlmAgent(
 <li><strong>Skeptical Memory</strong>: stored state is a hint, not a fact. Verify before acting on high-stakes decisions.</li>
 </ul>
 <p>Module 04 opens up the <code>LiteLlm</code> wrapper we&rsquo;ve been using since M01. The one-line model swap: Claude, GPT, Qwen via OpenRouter, and a locally-hosted Ollama model — same agent code, different provider — plus the one prefix gotcha that causes infinite tool-call loops if you get it wrong.</p>
+        </section>
+
+        <section class="chapter" id="the-one-line-model-swap">
+            <div class="chapter-number">Chapter 4</div>
+            <h1>The one-line model swap</h1>
+<p>Three chapters into this course, every example has used a single model string: <code>openrouter/google/gemini-2.5-flash-lite</code>. This chapter opens that abstraction up. By the end of the matching notebook, the <em>same</em> agent code will have run on five different providers — Claude, GPT, Gemini, Qwen, and Llama — with one line of configuration changing each time. The rest of the code is untouched.</p>
+<p>That is the shape of vendor-neutrality in ADK. This chapter explains how it works, when to use it, and the one prefix gotcha that bites anyone who tries to run a local model without reading the docs first.</p>
+<h2>What <code>LiteLlm</code> actually is</h2>
+<p>ADK was written by Google. It speaks Gemini natively — pass <code>model="gemini-2.5-flash"</code> to an <code>LlmAgent</code> and ADK goes directly to the <code>google-genai</code> SDK. No wrappers, no translation, just a native call.</p>
+<p>Every other model needs a translation layer. That layer is <strong>LiteLLM</strong> — an independent open-source library maintained by a separate team. It sits between your code and roughly one hundred LLM providers. Requests come in shaped like OpenAI&rsquo;s API; LiteLLM translates them to whatever the target expects; responses come back translated the other way.</p>
+<p>ADK&rsquo;s <code>LiteLlm</code> wrapper is a thin adapter that exposes LiteLLM as an ADK-compatible model. Google wrote this adapter precisely so they didn&rsquo;t have to write a custom shim per vendor. Every time LiteLLM adds support for a new provider, ADK inherits it for free.</p>
+<p>At runtime, a call to <code>model=LiteLlm(model="openrouter/anthropic/claude-haiku-4-5")</code> goes through two translations — OpenAI-shape in, Anthropic-shape out to the provider, Anthropic-shape response back, OpenAI-shape delivered to ADK:</p>
+<pre><code>ADK Agent
+    │ OpenAI-shaped request
+    ▼
+LiteLlm wrapper
+    │
+    ▼
+LiteLLM ─── Anthropic format ──▶ OpenRouter ──▶ Anthropic API
+    ▲                                              │
+    └───── Anthropic response ◀── OpenRouter ◀─────┘
+    │ OpenAI-shaped response
+    ▼
+ADK Agent
+</code></pre>
+<p>Small overhead. One very real catch: <strong>the translation is version-sensitive</strong>. Bump <code>google-adk</code> independently of <code>litellm</code> and the shapes of tool-call payloads can drift — adk-python issues #3713 and #4367 in early 2026 were exactly this, with <code>litellm ≥ 1.81.3</code> sending a <code>responseJsonSchema</code> field that the older ADK wrapper wasn&rsquo;t expecting. The fix was to pin both versions together in <code>requirements.txt</code>. Bump them as a pair, never one alone.</p>
+<h2>The OpenRouter model-string convention</h2>
+<p>OpenRouter is a meta-provider. It routes your request to the actual vendor behind a single billing account and a single API key. Five provider keys becomes one OpenRouter key; per-token prices are within about 5% of hitting the providers direct.</p>
+<p>The model string has a fixed shape:</p>
+<pre><code>openrouter/&lt;provider&gt;/&lt;model&gt;[:tier]
+</code></pre>
+<p>The providers we use across this course:</p>
+<table>
+<thead>
+<tr>
+<th>Provider</th>
+<th>Model string</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Google</td>
+<td><code>openrouter/google/gemini-2.5-flash-lite</code></td>
+</tr>
+<tr>
+<td>OpenAI</td>
+<td><code>openrouter/openai/gpt-4o-mini</code></td>
+</tr>
+<tr>
+<td>Anthropic</td>
+<td><code>openrouter/anthropic/claude-haiku-4-5</code></td>
+</tr>
+<tr>
+<td>Qwen</td>
+<td><code>openrouter/qwen/qwen3-32b</code></td>
+</tr>
+<tr>
+<td>Meta</td>
+<td><code>openrouter/meta-llama/llama-3.1-8b-instruct</code></td>
+</tr>
+</tbody>
+</table>
+<p>The optional <code>:tier</code> suffix picks between <code>:free</code>, <code>:beta</code>, or <code>:nitro</code>. Skip it for real work. Free tiers on OpenRouter are aggressively rate-limited and often flaky — they&rsquo;re fine for kicking the tires once, not for a demo that runs reliably every time you open the notebook. The full catalog lives at <a href="https://openrouter.ai/models">openrouter.ai/models</a>.</p>
+<h2>The five-provider demo</h2>
+<p>The notebook for this chapter ships the complete version. The essential shape:</p>
+<pre><code class="language-python">INSTRUCTION = &quot;You explain technical concepts briefly and clearly. Respond in exactly two sentences.&quot;
+
+def make_agent(model_string: str) -&gt; LlmAgent:
+    return LlmAgent(
+        name=&quot;swap_tester&quot;,
+        model=LiteLlm(model=model_string),
+        description=&quot;Explains concepts in two sentences.&quot;,
+        instruction=INSTRUCTION,
+    )
+
+MODELS = [
+    &quot;openrouter/google/gemini-2.5-flash-lite&quot;,
+    &quot;openrouter/openai/gpt-4o-mini&quot;,
+    &quot;openrouter/anthropic/claude-haiku-4-5&quot;,
+    &quot;openrouter/qwen/qwen3-32b&quot;,
+    &quot;openrouter/meta-llama/llama-3.1-8b-instruct&quot;,
+]
+
+for m in MODELS:
+    agent = make_agent(m)
+    answer, elapsed = await ask(agent, &quot;What is a tool-calling agent?&quot;)
+    print(m, elapsed, answer)
+</code></pre>
+<p>Three things to notice when you run this.</p>
+<p><strong>Answers vary in style, converge on content.</strong> Every model explains tool-calling; none hallucinate badly on a vanilla concept. Real quality differences only show up on hard prompts — obscure math, edge-case code, domain-specific reasoning. For common concepts, you cannot pick &ldquo;the best model&rdquo; from its answer quality; you pick on latency, cost, or refusal behavior.</p>
+<p><strong>Latency varies by about three times.</strong> Open-weight models served by their current hosting providers are generally slower than the hosted frontier models. For a tool-heavy agent that makes ten sequential tool calls in a turn, three-times-slower multiplies — what was a 2-second turn becomes 6 seconds, which crosses the UX boundary into &ldquo;this feels broken.&rdquo; For question-answering, barely noticeable.</p>
+<p><strong>Reasoning traces leak from some models.</strong> Qwen and the DeepSeek-R1 variants emit their chain-of-thought even when you didn&rsquo;t ask. You can suppress it with a specific <code>extra_body={"reasoning": {"effort": "low"}}</code> parameter, or pick a non-reasoning variant of the model. For a user-facing agent, be aware of this before shipping — you don&rsquo;t want a raw thought stream showing up in your product UI.</p>
+<h2>Local models via Ollama — and the prefix gotcha</h2>
+<p>The most useful trick for offline development: run an open-weight model on your own machine via <a href="https://ollama.com">Ollama</a> and point ADK at it. Zero cost per call, no network, fully offline. Great for iterating on an agent before you commit to cloud inference costs.</p>
+<p>Setup is three commands:</p>
+<pre><code class="language-bash">brew install ollama      # or download from ollama.com
+ollama serve             # runs http://localhost:11434
+ollama pull qwen3:8b     # downloads the model
+</code></pre>
+<p>Then in your ADK code:</p>
+<pre><code class="language-python">agent = LlmAgent(
+    model=LiteLlm(model=&quot;ollama_chat/qwen3:8b&quot;),
+    ...
+)
+</code></pre>
+<p><strong>The gotcha</strong> — and this is the single most important sentence in this chapter — LiteLLM supports two Ollama prefixes and they do different things:</p>
+<table>
+<thead>
+<tr>
+<th>Prefix</th>
+<th>Hits</th>
+<th>Tool calls</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ollama/qwen3:8b</code></td>
+<td>Completions API</td>
+<td>Rendered as text the model must produce verbatim. Causes infinite tool-call loops.</td>
+</tr>
+<tr>
+<td><code>ollama_chat/qwen3:8b</code></td>
+<td>Chat-completions API</td>
+<td>Proper function-calling. <strong>This is what you want.</strong></td>
+</tr>
+</tbody>
+</table>
+<p>Use <code>ollama_chat/</code>, always. You will not see the bug on the plain prefix until the agent has tools — without tools, the two prefixes behave identically. The first time you add a tool is when it breaks, and the error message is unhelpful. This is the single most reported issue in the adk-python repository.</p>
+<p>If your Ollama server is on a non-standard port, set <code>OLLAMA_API_BASE=http://localhost:11434</code> as an environment variable. The default works for most people.</p>
+<h2>Native Gemini vs LiteLLM-wrapped Gemini</h2>
+<p>A clarification that comes up almost every time someone looks closely at the model strings. You can use Gemini two ways in ADK:</p>
+<pre><code class="language-python"># Native — via google-genai SDK
+model=&quot;gemini-2.5-flash&quot;
+
+# LiteLLM-wrapped — through OpenRouter, OpenAI-shaped
+model=LiteLlm(model=&quot;openrouter/google/gemini-2.5-flash-lite&quot;)
+</code></pre>
+<p>Both work. The native form is the default if you pass a plain string. All Gemini-specific features are available there: Google Search grounding, thinking budgets, the Live API, long-context caching. Module 11 through Module 13 use this form exclusively, because those modules teach Gemini-only features that don&rsquo;t exist in the OpenAI-shaped interface.</p>
+<p>The LiteLLM-wrapped form is what lets you use Gemini interchangeably with Claude and GPT. Students who only have an OpenRouter key can still run every Part 1 demo. You lose access to Gemini-specific features, but you gain portability.</p>
+<p><strong>Rule of thumb:</strong> LiteLLM-wrapped for Part 1 of this course (vendor-agnostic). Native for Part 2 (Gemini-specific unlocks).</p>
+<h2>Interlude — Prompt priority tiers</h2>
+<p><em>From the Agentic Design Patterns publication, Chapter 5. Relevant here because model-swapping exposes a subtlety about how different models weight prompts differently.</em></p>
+<p>When you swap models, instructions that worked on one model sometimes partially fail on another. Not because the second model is worse — because models weight different parts of the prompt differently. Claude reads through evenly; GPT prioritizes earliest tokens; Gemini has its own pattern. And long instructions get truncated under context pressure: long system prompt plus long tool descriptions plus long chat history can force ADK to drop parts of what you wrote.</p>
+<p>The pattern: <strong>structure your system instruction in priority tiers</strong> so if any tier is lost or de-weighted, the rest still produces acceptable behavior.</p>
+<p>Three tiers, read top to bottom:</p>
+<p><strong>Tier 1 — Invariants.</strong> Rules the agent must obey under any circumstance. Safety gates, hard refusals, format constraints. Top of the instruction. Short, declarative, non-negotiable.</p>
+<blockquote>
+<p><em>&ldquo;Never include credit card numbers in output.&rdquo;</em>
+<em>&ldquo;Refuse to generate API keys, secrets, or credentials.&rdquo;</em>
+<em>&ldquo;Always respond in valid JSON.&rdquo;</em></p>
+</blockquote>
+<p><strong>Tier 2 — Core behavior.</strong> The main job description. What the agent is for, what its goals are, what steps it follows.</p>
+<blockquote>
+<p><em>&ldquo;You help engineers debug build failures by reading logs and suggesting fixes. For any failure: identify the tool that failed, quote the failing line, and propose one fix to try first.&rdquo;</em></p>
+</blockquote>
+<p><strong>Tier 3 — Preferences.</strong> How the agent communicates — length, tone, markdown versus plaintext, bullet points versus prose. Lowest priority. OK to lose first.</p>
+<blockquote>
+<p><em>&ldquo;Prefer bullet points over paragraphs when listing.&rdquo;</em>
+<em>&ldquo;Keep prose short; engineers prefer code they can read.&rdquo;</em></p>
+</blockquote>
+<p>When ADK truncates the instruction under pressure, the earliest tokens survive. Put the things you cannot afford to lose at the top.</p>
+<p>A concrete example:</p>
+<pre><code class="language-python">PRIORITY_TIERED_INSTRUCTION = &quot;&quot;&quot;
+# INVARIANTS (highest priority; never violate)
+- Do not execute code; only suggest code to run.
+- Refuse to generate credentials, API keys, or secrets.
+- If asked about a language you don't know, say so; do not guess.
+
+# CORE BEHAVIOR
+You are a coding-help assistant for a small engineering team.
+For any code question:
+1. Identify the programming language.
+2. Give a minimal, runnable example that solves the stated problem.
+3. Explain the example in 2-3 sentences.
+
+# PREFERENCES
+- Use fenced code blocks for code.
+- Keep prose short; engineers prefer code they can read.
+- When multiple approaches exist, pick one and note alternatives in a trailing line.
+&quot;&quot;&quot;
+</code></pre>
+<p>The payoff shows up in failure modes, not happy paths. Ask a priority-tiered agent to generate an AWS access key and it refuses, even if the last turn of the conversation tried to jailbreak the style preference. Tier 1 survives pressure on Tier 3.</p>
+<h2>When to swap models in production</h2>
+<p>Vendor-neutrality is a <strong>capability</strong>, not a habit. You don&rsquo;t swap models because you can. You swap for specific reasons. Three scenarios where it actually earns its keep.</p>
+<p><strong>Failover.</strong> A provider has an outage. Claude&rsquo;s API goes down, which happens every few months; GPT rate-limits you during a traffic spike; Gemini has a regional incident. A one-line config change sends traffic to a surviving provider. This is the main reason most production ADK deployments bother with LiteLLM at all. Done well, your users don&rsquo;t notice the failover happened.</p>
+<p><strong>Per-task capability.</strong> Different models are genuinely good at different things. GPT-5 reasons better through obscure math. Claude Opus writes cleaner code in several languages. Gemini grounds in live web results natively (a Gemini-only feature, see Module 11). Instead of forcing one model to do everything, compose with <code>sub_agents</code> or <code>AgentTool</code> (Module 06) and give each sub-agent the model best suited to its task.</p>
+<p><strong>Cost optimization.</strong> A coarse version: route cheap queries to Haiku / GPT-4o-mini / Flash-lite (cents per million tokens); route hard queries to Opus / GPT-5 / Pro (dollars per million). The agent&rsquo;s model parameter can be different per sub-agent. Module 07 (callbacks as middleware) and Module 09 (evaluation) give you the hooks to measure which queries are &ldquo;hard&rdquo; and route accordingly.</p>
+<p>What you should <strong>not</strong> do: A/B-test model swaps on live users without measurement. Different models have different refusal patterns, different formatting biases, different accuracy profiles on your specific task. What looks like an improvement on your own eye-test can be a regression on 5% of your real user queries you never see. Always swap with eval.</p>
+<h2>What to carry forward</h2>
+<p>Six things from this chapter:</p>
+<ul>
+<li><strong><code>LiteLlm</code> is a translation layer.</strong> It translates OpenAI-shaped requests to whatever the target provider expects. Version-pin <code>google-adk</code> and <code>litellm</code> together.</li>
+<li><strong>OpenRouter model strings</strong> follow <code>openrouter/&lt;provider&gt;/&lt;model&gt;</code>. One key replaces five provider keys. Skip <code>:free</code> tiers for real work.</li>
+<li><strong>Ollama prefix rule:</strong> always <code>ollama_chat/...</code>, never <code>ollama/...</code>. The plain prefix causes infinite tool-call loops.</li>
+<li><strong>Native vs LiteLLM-wrapped Gemini:</strong> native unlocks Gemini-specific features (Part 2 of this course). LiteLLM-wrapped keeps your code portable (Part 1).</li>
+<li><strong>Priority tiers in instructions:</strong> invariants → core behavior → preferences. Top survives pressure.</li>
+<li><strong>Swap models for failover, per-task capability, or cost.</strong> Always with evaluation, never on hunches.</li>
+</ul>
+<p>Module 05 picks up composition. One agent is enough for toy demos; real work needs composition. Sequential, Parallel, Loop — three first-class composition primitives. And the canonical ADK wow demo: a Generator+Critic pair refining a draft in a loop until the critic says it&rsquo;s good enough.</p>
         </section>
         </main>
     </div>
