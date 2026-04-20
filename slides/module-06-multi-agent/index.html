@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ADK Course — M06: Multi-Agent Hierarchies</title>
+  <link rel="stylesheet" href="../shared/shared.css">
+  <link rel="stylesheet" href="../shared/slides.css">
+</head>
+<body>
+  <nav class="progress-strip">
+    <a href="../../index.html" class="progress-home">Course</a>
+    <div class="progress-title">M06 — Multi-Agent Hierarchies</div>
+    <div class="progress-meta">
+      <span class="slide-counter">1 / 1</span>
+      <button class="theme-toggle">Theme</button>
+    </div>
+  </nav>
+
+  <main class="slide-viewport">
+
+  <div class="slide active" data-module="06" data-type="section-title">
+    <div class="topic-badge">Module 06 &middot; Part 1 Vendor-agnostic</div>
+    <h1>Multi-agent hierarchies</h1>
+    <h3>Two ways to compose agents with LLM-driven routing</h3>
+    <p class="highlight-text"><code>sub_agents</code> (transfer) &nbsp;·&nbsp; <code>AgentTool</code> (consultant)</p>
+  </div>
+
+  <div class="slide" data-module="06">
+    <h2>Three ways to combine agents</h2>
+    <table>
+      <thead><tr><th>Pattern</th><th>Control flow</th><th>When</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Workflow agent</strong> (M05)</td><td>Declarative — Sequential, Parallel, Loop</td><td>You can name the workflow</td></tr>
+        <tr><td><strong><code>sub_agents</code></strong></td><td>LLM decides — via <em>transfer</em></td><td>Specialist should own the dialog</td></tr>
+        <tr><td><strong><code>AgentTool</code></strong></td><td>LLM decides — via <em>function call</em></td><td>Coordinator stays in charge</td></tr>
+      </tbody>
+    </table>
+    <p>Workflow agents were M05. Today: the two LLM-driven patterns.</p>
+  </div>
+
+  <div class="slide" data-module="06" data-type="keyfact">
+    <h2 class="text-muted" style="border-bottom:none;font-size:1em;text-transform:uppercase;letter-spacing:0.08em;">The one question</h2>
+    <p>Who is in charge of the conversation <strong>after</strong> the specialist finishes?</p>
+    <p style="font-size:0.7em;color:var(--text-muted);margin-top:var(--space-4);">That is the only meaningful difference between the two patterns.</p>
+  </div>
+
+  <div class="slide" data-module="06" data-type="section-title" style="background:linear-gradient(135deg,var(--navy-dark) 0%,var(--navy) 100%);">
+    <div class="topic-badge">Pattern 1</div>
+    <h1><code>sub_agents</code></h1>
+    <p class="highlight-text">The org-chart transfer. Specialist owns the response.</p>
+  </div>
+
+  <div class="slide" data-module="06">
+    <h2>How it works</h2>
+    <ul>
+      <li>Coordinator has <code>sub_agents=[...]</code>.</li>
+      <li>ADK automatically injects <code>transfer_to_agent(agent_name=...)</code> as a callable.</li>
+      <li>The coordinator's LLM emits <code>transfer_to_agent('weather_specialist')</code>.</li>
+      <li>ADK <strong>transfers control</strong> to the named child. The child produces the final response.</li>
+      <li>The child remains active for follow-up turns — unless it transfers again.</li>
+    </ul>
+    <p style="color:var(--text-muted);font-size:0.9em;">Think org chart. The coordinator is the manager; the specialist takes the meeting.</p>
+  </div>
+
+  <div class="slide" data-module="06" data-type="code">
+    <h2>Coordinator with <code>sub_agents</code></h2>
+<pre><code>greeter = LlmAgent(name="greeter",
+    description="Handles greetings and casual chat.",
+    instruction="Respond warmly in one short sentence.")
+
+weather_specialist = LlmAgent(name="weather_specialist",
+    description="Handles weather questions for any city.",
+    instruction="Produce a plausible one-sentence weather report.")
+
+coordinator = LlmAgent(
+    name="coordinator",
+    instruction="Delegate greetings to greeter, weather to weather_specialist.",
+    sub_agents=[greeter, weather_specialist],   # ← here
+)</code></pre>
+    <p class="code-caption">The child's <code>description=</code> is what the coordinator's LLM reads to decide routing. Write descriptions for the model.</p>
+  </div>
+
+  <div class="slide" data-module="06" data-type="section-title" style="background:linear-gradient(135deg,var(--amber-dark) 0%,var(--amber) 100%);">
+    <h1>Live</h1>
+    <h3>Transfer routing in action</h3>
+    <p class="highlight-text" style="color:white;">Notebook cells 12-13</p>
+  </div>
+
+  <div class="slide" data-module="06">
+    <h2>The event stream</h2>
+<pre class="diagram">USER: What's the weather in Prague?
+
+[coordinator_subagents] → transfer_to_agent({'agent_name': 'weather_specialist'})
+[weather_specialist]    The weather in Prague is partly cloudy with a gentle
+                        breeze and a temperature of 15 degrees Celsius.
+                        ^^^ final response comes from the SPECIALIST</pre>
+  </div>
+
+  <div class="slide" data-module="06" data-type="section-title" style="background:linear-gradient(135deg,var(--navy-dark) 0%,var(--navy) 100%);">
+    <div class="topic-badge">Pattern 2</div>
+    <h1><code>AgentTool</code></h1>
+    <p class="highlight-text">The consultant pattern. Coordinator stays in charge.</p>
+  </div>
+
+  <div class="slide" data-module="06">
+    <h2>How it works</h2>
+    <ul>
+      <li>Wrap each specialist in <code>AgentTool(agent=...)</code>.</li>
+      <li>Put those in the coordinator's <code>tools=[...]</code>, not <code>sub_agents=[...]</code>.</li>
+      <li>Coordinator's LLM emits a <strong>regular function call</strong> — same mechanism as <code>get_weather</code> or <code>search_tickets</code>.</li>
+      <li>ADK runs the specialist, captures its output as a tool-response event.</li>
+      <li>The coordinator <strong>reads the response and produces the final reply itself</strong>.</li>
+    </ul>
+  </div>
+
+  <div class="slide" data-module="06" data-type="code">
+    <h2>Coordinator with <code>AgentTool</code></h2>
+<pre><code>from google.adk.tools.agent_tool import AgentTool
+
+# Same specialists.
+greeter = LlmAgent(name="greeter", description="...", instruction="...")
+weather_specialist = LlmAgent(name="weather_specialist", ...)
+
+coordinator = LlmAgent(
+    name="coordinator",
+    instruction="Call greeter or weather_specialist; wrap the result.",
+    tools=[
+        AgentTool(agent=greeter),
+        AgentTool(agent=weather_specialist),
+    ],
+)</code></pre>
+    <p class="code-caption">Specialists are in <code>tools=</code>, not <code>sub_agents=</code>. To the coordinator's LLM, they look like function tools.</p>
+  </div>
+
+  <div class="slide" data-module="06" data-type="section-title" style="background:linear-gradient(135deg,var(--amber-dark) 0%,var(--amber) 100%);">
+    <h1>Live</h1>
+    <h3>Consultant call in action</h3>
+    <p class="highlight-text" style="color:white;">Notebook cells 18-19</p>
+  </div>
+
+  <div class="slide" data-module="06">
+    <h2>The event stream — note the author</h2>
+<pre class="diagram">USER: What's the weather in Prague?
+
+[coordinator_tools] → weather_specialist({'request': 'Prague'})
+[tool_resp]            {'result': 'Prague will experience partly cloudy
+                        skies with a high of 18 degrees Celsius today.'}
+[coordinator_tools]    The weather in Prague will be partly cloudy with
+                        a high of 18 degrees Celsius today.
+                        ^^^ final response comes from the COORDINATOR,
+                            wrapping the specialist's output</pre>
+  </div>
+
+  <div class="slide" data-module="06" data-type="keyfact">
+    <h2 class="text-muted" style="border-bottom:none;font-size:1em;text-transform:uppercase;letter-spacing:0.08em;">Tell-tale sign</h2>
+    <p>Look at the <strong>author</strong> of the final response.</p>
+    <p style="font-size:0.8em;color:var(--text-muted);margin-top:var(--space-4);">Specialist → transfer. Coordinator → consultant.</p>
+  </div>
+
+  <div class="slide" data-module="06" data-type="comparison">
+    <h2>When to pick which</h2>
+    <div class="comparison-layout">
+      <div class="vs-left">
+        <h3><code>sub_agents</code> — transfer</h3>
+        <ul style="font-size:0.9em;">
+          <li>Specialist should own the dialog</li>
+          <li>Might take multiple turns before handing back</li>
+          <li>Topic shifts — the specialist is the right partner for the whole topic</li>
+          <li>User <em>perceives</em> talking to a specialist</li>
+        </ul>
+      </div>
+      <div class="vs-divider">vs</div>
+      <div class="vs-right">
+        <h3><code>AgentTool</code> — consultant</h3>
+        <ul style="font-size:0.9em;">
+          <li>Specialist answers one question and steps back</li>
+          <li>Clean input/output contract</li>
+          <li>Coordinator composes specialist output with other sources</li>
+          <li>User <em>perceives</em> one assistant with specialists behind the scenes</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="slide" data-module="06">
+    <h2>Concrete examples</h2>
+    <div class="callout callout-tip">
+      <div class="callout-title"><code>sub_agents</code> scenario — IT support desk</div>
+      <p style="margin:0;font-size:0.95em;">Coordinator routes "laptop won't boot" to hardware specialist. Over the next five turns, hardware specialist walks user through diagnosis. That's an extended conversation the coordinator shouldn't mediate.</p>
+    </div>
+    <div class="callout callout-tip">
+      <div class="callout-title"><code>AgentTool</code> scenario — coding assistant</div>
+      <p style="margin:0;font-size:0.95em;">Orchestrator wraps a code-analyzer, a docs-lookup, a test-runner. User asks "why is my test failing?". Orchestrator calls all three, synthesizes one answer. Each specialist contributes a single structured response.</p>
+    </div>
+  </div>
+
+  <div class="slide" data-module="06" data-type="section-title" style="background:linear-gradient(135deg,#6A1B9A 0%,#8E24AA 100%);">
+    <div class="topic-badge">Interlude &middot; Agentic Design Patterns</div>
+    <h1>Multi-agent decomposition</h1>
+    <p class="highlight-text">Before you decompose, consider the coordination tax.</p>
+  </div>
+
+  <div class="slide" data-module="06">
+    <h2>The coordination tax has three parts</h2>
+    <ol>
+      <li><strong>Extra LLM calls.</strong> Every transfer or <code>AgentTool</code> call is an additional model invocation. Two-specialist system = 2+ calls per turn. Five specialists = 10+. Compounds latency and cost.</li>
+      <li><strong>Routing errors.</strong> Every routing decision is a chance to pick the wrong specialist. More specialists → wider miss surface.</li>
+      <li><strong>Context fragmentation.</strong> Each child has its own system prompt. Information you put in the coordinator doesn't automatically reach children. Specialists fail sometimes because they lack context the coordinator had.</li>
+    </ol>
+  </div>
+
+  <div class="slide" data-module="06">
+    <h2>Three tests before you decompose</h2>
+    <div class="callout callout-tip">
+      <div class="callout-title">Test 1 — Reuse</div>
+      <p style="margin:0;font-size:0.95em;">Will any specialist be used elsewhere — different product, different top-level agent? If yes, decomposition is worth it. If no, consider one agent with more tools.</p>
+    </div>
+    <div class="callout callout-tip">
+      <div class="callout-title">Test 2 — Model heterogeneity</div>
+      <p style="margin:0;font-size:0.95em;">Does each specialist benefit from a <em>different</em> model? Routing on Haiku, resolving on Opus? If yes, separate agents let you mix per task. If all share one model, less payoff.</p>
+    </div>
+    <div class="callout callout-tip">
+      <div class="callout-title">Test 3 — Instruction scale</div>
+      <p style="margin:0;font-size:0.95em;">Is a single system prompt getting unmanageable — 500 lines with overlapping rules? Breaking it up is legitimate. But if your prompt is 30 lines, don't split for sport.</p>
+    </div>
+  </div>
+
+  <div class="slide" data-module="06" data-type="keyfact">
+    <h2 class="text-muted" style="border-bottom:none;font-size:1em;text-transform:uppercase;letter-spacing:0.08em;">If none of the three tests pass</h2>
+    <p>Keep it to <strong>one agent with tools</strong>.</p>
+    <p style="font-size:0.75em;color:var(--text-muted);margin-top:var(--space-4);">Multi-agent is the right answer sometimes. Not by default.</p>
+  </div>
+
+  <div class="slide" data-module="06" data-type="section-title" style="background:linear-gradient(135deg,var(--navy) 0%,var(--navy-light) 100%);">
+    <div class="topic-badge">Up next</div>
+    <h1>M07 &mdash; Callbacks as middleware</h1>
+    <p class="highlight-text">Six lifecycle hooks. Return-to-override. The blocklist-guardrail demo.</p>
+  </div>
+
+  </main>
+
+  <script src="../shared/slides.js"></script>
+</body>
+</html>

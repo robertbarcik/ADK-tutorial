@@ -317,6 +317,7 @@ hr {
 <li><a href="#sessions-state-events-artifacts">3. Sessions, State, Events, Artifacts</a></li>
 <li><a href="#the-one-line-model-swap">4. The one-line model swap</a></li>
 <li><a href="#workflow-agents">5. Workflow agents</a></li>
+<li><a href="#multi-agent-hierarchies">6. Multi-agent hierarchies</a></li>
             </ul>
         </nav>
     </aside>
@@ -1180,6 +1181,157 @@ pipeline = SequentialAgent(
 <li><strong>Name it if you can.</strong> If you can name the workflow, use a workflow agent. If you can&rsquo;t, that&rsquo;s what M06 is for — LLM-driven routing.</li>
 </ul>
 <p>Module 06 picks up where this one leaves off. Where workflow agents give you control flow by declaration, <code>sub_agents</code> and <code>AgentTool</code> give you control flow driven by the LLM&rsquo;s judgment. Two patterns, different trade-offs, same underlying machinery.</p>
+        </section>
+
+        <section class="chapter" id="multi-agent-hierarchies">
+            <div class="chapter-number">Chapter 6</div>
+            <h1>Multi-agent hierarchies</h1>
+<p>Chapter 05 gave you workflow agents — named, declarative control flow. <code>SequentialAgent</code>, <code>ParallelAgent</code>, <code>LoopAgent</code>. You use them when you can name the workflow: &ldquo;always summarize, then translate,&rdquo; &ldquo;always fan out these three researchers,&rdquo; &ldquo;always refine with critic feedback.&rdquo;</p>
+<p>This chapter gives you the other half. <strong>LLM-driven</strong> control flow. When the user&rsquo;s input decides which specialist runs, you don&rsquo;t want a workflow agent. You want the LLM to route. ADK has two patterns for this.</p>
+<p>They look superficially similar. Both let the LLM decide which specialist fires next. They behave very differently once you pay attention to who is in charge of the conversation <em>after</em> the specialist finishes.</p>
+<ul>
+<li><strong><code>sub_agents</code></strong> — the coordinator <em>transfers</em> control to a specialist. The specialist owns the conversation. Call it the <strong>org-chart</strong> pattern.</li>
+<li><strong><code>AgentTool</code></strong> — the coordinator <em>calls</em> a specialist like a function. The coordinator stays in charge. Call it the <strong>consultant</strong> pattern.</li>
+</ul>
+<p>By the end of this chapter the same coordinator-plus-two-specialists team will be wired up both ways. The user&rsquo;s final-facing output looks identical; the event stream tells you which pattern is running.</p>
+<h2>The one question that separates them</h2>
+<p>There is exactly one meaningful difference between <code>sub_agents</code> and <code>AgentTool</code>. Memorize it now; everything else is mechanics.</p>
+<p><strong>Who is in charge of the conversation after the specialist finishes?</strong></p>
+<p>If the specialist is — use <code>sub_agents</code>. If the coordinator is — use <code>AgentTool</code>. That&rsquo;s the whole decision.</p>
+<h2>Pattern 1 — <code>sub_agents</code>: the org-chart transfer</h2>
+<p>The coordinator has a list of children in its <code>sub_agents=</code> parameter. ADK automatically injects a built-in tool called <code>transfer_to_agent</code> — you don&rsquo;t register it, it&rsquo;s just there whenever <code>sub_agents=</code> is set.</p>
+<p>When the coordinator&rsquo;s LLM reads the user&rsquo;s message and decides a specialist is more appropriate, it emits a structured call: <code>transfer_to_agent(agent_name='weather_specialist')</code>. ADK catches that call and routes control to the named child. The child runs, produces a response, and <strong>the child&rsquo;s response is what the user sees</strong>.</p>
+<p>After the transfer, the child remains the active agent for the rest of the session by default. If the user sends a follow-up, it goes to the specialist — not back to the coordinator. The specialist owns the conversation from that point, unless it itself transfers again.</p>
+<pre><code class="language-python">greeter = LlmAgent(
+    name=&quot;greeter&quot;,
+    model=MODEL,
+    description=&quot;Handles greetings and casual chat.&quot;,
+    instruction=&quot;Respond warmly in one short sentence.&quot;,
+)
+
+weather_specialist = LlmAgent(
+    name=&quot;weather_specialist&quot;,
+    model=MODEL,
+    description=&quot;Handles weather questions for any city.&quot;,
+    instruction=&quot;Produce a plausible one-sentence weather report.&quot;,
+)
+
+coordinator = LlmAgent(
+    name=&quot;coordinator&quot;,
+    model=MODEL,
+    description=&quot;Routes user queries to specialists.&quot;,
+    instruction=&quot;Delegate greetings to greeter, weather questions to weather_specialist.&quot;,
+    sub_agents=[greeter, weather_specialist],   # ← the org chart
+)
+</code></pre>
+<p>One production-sensitive detail: <strong>the child&rsquo;s <code>description=</code> field is what the coordinator&rsquo;s LLM reads to decide routing.</strong> Write descriptions for the model, not for a human reviewer. Ambiguous descriptions produce ambiguous routing.</p>
+<h3>The event stream of a transfer</h3>
+<pre><code>USER: What's the weather in Prague?
+
+[coordinator_subagents] → transfer_to_agent({'agent_name': 'weather_specialist'})
+[weather_specialist]    The weather in Prague is partly cloudy with a gentle
+                        breeze and a temperature of 15 degrees Celsius.
+                        ^^^ final response comes from the SPECIALIST
+</code></pre>
+<p>Two observations. The coordinator emitted <code>transfer_to_agent</code> as a tool call; ADK caught it and routed. And the final response&rsquo;s author is <code>weather_specialist</code>, not <code>coordinator</code>. That is the tell-tale sign of the transfer pattern.</p>
+<h2>Pattern 2 — <code>AgentTool</code>: the consultant pattern</h2>
+<p>Same team, different wiring. Instead of placing the specialists in <code>sub_agents=</code>, you wrap each as an <code>AgentTool</code> and put them in the coordinator&rsquo;s <code>tools=</code> list.</p>
+<p>Now — from the coordinator&rsquo;s LLM&rsquo;s perspective — the specialists look like <strong>tools</strong>. No different from a <code>FunctionTool</code>, an <code>OpenAPIToolset</code> entry, an MCP-server tool. When the coordinator decides a specialist is needed, it emits a regular function call. ADK runs the specialist, captures its output as a tool-response event, and feeds that back to the coordinator. <strong>The coordinator reads the response and produces the final user-facing reply itself.</strong></p>
+<pre><code class="language-python">from google.adk.tools.agent_tool import AgentTool
+
+coordinator = LlmAgent(
+    name=&quot;coordinator&quot;,
+    model=MODEL,
+    instruction=(
+        &quot;You have exactly two tools: `greeter` and `weather_specialist`. &quot;
+        &quot;Call one of them per user message; wrap their result in your own reply.&quot;
+    ),
+    tools=[
+        AgentTool(agent=greeter),
+        AgentTool(agent=weather_specialist),
+    ],
+)
+</code></pre>
+<p>Specialists in <code>tools=</code>, not <code>sub_agents=</code>. That single-word difference in the constructor is the whole behavioral difference.</p>
+<h3>The event stream of a consultant call</h3>
+<pre><code>USER: What's the weather in Prague?
+
+[coordinator_tools] → weather_specialist({'request': 'Prague'})
+[tool_resp]            {'result': 'Prague will experience partly cloudy skies
+                        with a high of 18 degrees Celsius today.'}
+[coordinator_tools]    The weather in Prague will be partly cloudy with a
+                        high of 18 degrees Celsius today.
+                        ^^^ final response comes from the COORDINATOR,
+                            wrapping the specialist's output
+</code></pre>
+<p>Same user input. Same team. Different final-response author. The coordinator called the specialist like a function, got the result, and produced the reply itself — wrapping the specialist&rsquo;s output in its own voice.</p>
+<h2>The diagnostic</h2>
+<p>To tell which pattern is running, look at the author of the final response.</p>
+<ul>
+<li><strong>Specialist → transfer</strong> (<code>sub_agents</code>).</li>
+<li><strong>Coordinator → consultant</strong> (<code>AgentTool</code>).</li>
+</ul>
+<p>Print the event stream, read the last author, you know which pattern is in use.</p>
+<h2>When to pick which</h2>
+<table>
+<thead>
+<tr>
+<th>Use <code>sub_agents</code> (transfer) when&hellip;</th>
+<th>Use <code>AgentTool</code> (consultant) when&hellip;</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>The specialist should <strong>own the conversation</strong> after routing</td>
+<td>The specialist should <strong>answer one question and step back</strong></td>
+</tr>
+<tr>
+<td>The child might take <strong>multiple turns</strong> with the user before handing back</td>
+<td>The child has a clean <strong>input/output contract</strong></td>
+</tr>
+<tr>
+<td><strong>Topic shifts</strong> — the specialist is the right partner for the whole topic</td>
+<td>The coordinator needs to <strong>compose</strong> the specialist&rsquo;s output with other sources</td>
+</tr>
+<tr>
+<td>User <strong>perceives</strong> talking to a specialist</td>
+<td>User <strong>perceives</strong> one assistant with specialists behind the scenes</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Rule:</strong> if the specialist&rsquo;s work is part of a larger answer that incorporates other information, use <code>AgentTool</code>. If the specialist&rsquo;s work <em>is</em> the answer, use <code>sub_agents</code>.</p>
+<p>Two concrete examples to ground the rule.</p>
+<p><strong><code>sub_agents</code> scenario — IT support desk.</strong> Billing specialist and hardware specialist. User says &ldquo;my laptop won&rsquo;t boot.&rdquo; Coordinator routes to hardware. Over the next five turns of the session, the hardware specialist walks the user through diagnosis — power, cables, BIOS, boot order. That&rsquo;s an extended conversation the coordinator shouldn&rsquo;t mediate. Transfer once; let the specialist own the topic.</p>
+<p><strong><code>AgentTool</code> scenario — coding assistant.</strong> Orchestrator wraps a code-analyzer specialist, a docs-lookup specialist, and a test-runner specialist. User asks &ldquo;why is my test failing?&rdquo; The orchestrator decides all three are relevant, calls all three in one turn, reads their three tool-responses, synthesizes one answer. Each specialist contributes a single structured response; the orchestrator owns composition.</p>
+<h2>Interlude — Multi-agent decomposition</h2>
+<p><em>From &ldquo;Agentic Design Patterns,&rdquo; Chapter 8. Two minutes on when to build multi-agent architectures — and when not to.</em></p>
+<p>Multi-agent architectures are fashionable. They are also expensive. Before you decompose a task into several specialists, consider whether the <strong>coordination tax</strong> is worth paying.</p>
+<p>The tax has three parts:</p>
+<ol>
+<li><strong>Extra LLM calls.</strong> Every transfer, every <code>AgentTool</code> call, is an additional model invocation. A two-specialist system makes at least two calls per turn. A five-specialist system can make ten or more. This compounds latency and API cost in production in ways that don&rsquo;t show up in a demo notebook.</li>
+<li><strong>Routing errors.</strong> Every routing decision is a chance to pick the wrong specialist. The more specialists, the wider the miss surface. You must design descriptions carefully and evaluate routing accuracy separately from answer accuracy.</li>
+<li><strong>Context fragmentation.</strong> Each child has its own system prompt. Information you put in the coordinator doesn&rsquo;t automatically reach the children. Specialists fail sometimes because they lack context the coordinator had.</li>
+</ol>
+<p>The publication proposes three tests before you decompose.</p>
+<h3>Test 1 — Reuse</h3>
+<p>Will any of the specialists be used elsewhere — by a different top-level agent, in a different product, by a different team? If yes, decomposition is worth it — the specialists become reusable components with independent interfaces. If no, consider keeping everything in one agent with more tools.</p>
+<h3>Test 2 — Model heterogeneity</h3>
+<p>Does each specialist benefit from a different model? Cheap routing decisions on Haiku, hard resolutions on Opus — that mix is only possible if you decompose. If all your specialists would use the same model anyway, the decomposition buys you less; the main win evaporates.</p>
+<h3>Test 3 — Instruction scale</h3>
+<p>Is a single system prompt getting unmanageable — five hundred lines with overlapping rules for different scenarios? Breaking it up into specialists with narrower prompts is a legitimate way to reduce each prompt to its core job. But if your single-agent prompt is thirty lines, don&rsquo;t split it for sport.</p>
+<h3>If none of the three tests pass</h3>
+<p><strong>Keep it to one agent with tools.</strong> A single well-written agent with eight tools is almost always simpler, cheaper, and faster than a coordinator-plus-specialists architecture doing the same work. Multi-agent is sometimes the right answer. It is not the right answer by default.</p>
+<p>This is the most important takeaway from the chapter, and the one most commonly missed: multi-agent architectures are a means, not an end. The pattern only earns its complexity when at least one of the three tests passes.</p>
+<h2>What to carry forward</h2>
+<ul>
+<li><strong><code>sub_agents</code> is the transfer pattern.</strong> Coordinator&rsquo;s LLM emits <code>transfer_to_agent(name=...)</code>; ADK routes; the specialist owns the response.</li>
+<li><strong><code>AgentTool</code> is the consultant pattern.</strong> Coordinator calls a specialist like a function; the coordinator composes the final reply.</li>
+<li><strong>The diagnostic:</strong> final-response author = specialist → transfer; coordinator → consultant.</li>
+<li><strong>Child&rsquo;s <code>description=</code></strong> is the routing schema the coordinator&rsquo;s LLM reads. Write descriptions for the model.</li>
+<li><strong>Multi-agent decomposition has a coordination tax.</strong> Decompose only when the reuse, model-heterogeneity, or instruction-scale tests pass.</li>
+<li><strong>Default:</strong> one agent with tools. Multi-agent is a deliberate choice.</li>
+</ul>
+<p>Module 07 picks up callbacks. Six lifecycle hooks — <code>before_agent</code>, <code>after_agent</code>, <code>before_model</code>, <code>after_model</code>, <code>before_tool</code>, <code>after_tool</code> — that let you intercept, log, transform, or short-circuit any step in an agent&rsquo;s lifecycle. It is the cleanest mechanism in the framework for guardrails, caching, PII redaction, and per-agent-specific cross-cutting concerns.</p>
         </section>
         </main>
     </div>
