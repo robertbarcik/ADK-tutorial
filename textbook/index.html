@@ -493,13 +493,13 @@ fx_agent = LlmAgent(
 <p><strong>ADK snake-cases operationIds.</strong> A spec that declares <code>operationId: getLatestRate</code> produces a tool named <code>get_latest_rate</code>. If you instruct the model to call a camelCase name, it won&rsquo;t find the tool. If a tool call isn&rsquo;t happening and you&rsquo;re sure the instruction is right, check whether ADK renamed the tool.</p>
 <p><strong>The tool-response event is the raw API payload.</strong> ADK does not transform the API&rsquo;s output before handing it to the model. That is a feature, not a bug — you can debug your API&rsquo;s contract directly in the event stream. But it means the model needs to be able to read the shape the API returns. If the API returns deeply nested JSON, consider a small wrapper tool that flattens it.</p>
 <p>The production use case: your company already has an API with a spec. Point the agent at it. Every endpoint becomes an agent-callable tool with no per-endpoint glue.</p>
-<h2>Flavor 3 — MCPToolset</h2>
+<h2>Flavor 3 — McpToolset</h2>
 <p>Model Context Protocol is Anthropic&rsquo;s standard for exposing tools to agents. It was donated to the Linux Foundation in December 2025 and is now the de facto standard — Anthropic, Google, OpenAI, Microsoft, the open-source agent stack, every serious player ships MCP support. An MCP server is a separate process that exposes a set of tools; your agent connects to it over stdio or HTTP and uses its tools as if they were local.</p>
-<pre><code class="language-python">from google.adk.tools.mcp_tool.mcp_toolset import MCPToolset
+<pre><code class="language-python">from google.adk.tools.mcp_tool.mcp_toolset import McpToolset
 from google.adk.tools.mcp_tool.mcp_session_manager import StdioConnectionParams
 from mcp import StdioServerParameters
 
-ticket_toolset = MCPToolset(
+ticket_toolset = McpToolset(
     connection_params=StdioConnectionParams(
         server_params=StdioServerParameters(
             command=sys.executable,
@@ -512,7 +512,7 @@ ticket_toolset = MCPToolset(
 <p>This is the most valuable property of the flavor. <strong>The MCP server can be written in any language</strong>, run on any machine, own any state — database connections, API credentials, caches. The agent doesn&rsquo;t care. It speaks the protocol; the tools show up.</p>
 <p>Two practical notes:</p>
 <p><strong>Close the toolset when you&rsquo;re done.</strong> The stdio subprocess lives until you close it. Long-running agents should manage the lifecycle explicitly; short-lived notebook demos should call <code>await toolset.close()</code> at the end.</p>
-<p><strong>Jupyter&rsquo;s <code>sys.stderr</code> doesn&rsquo;t have a <code>.fileno()</code>.</strong> This is the most common gotcha. When you run an MCP stdio integration inside a Jupyter kernel (or Colab, or nbconvert), the subprocess spawn fails with a <code>fileno</code> error because ADK&rsquo;s MCP client tries to inherit the parent&rsquo;s stderr, and the parent&rsquo;s stderr is an ipykernel <code>OutStream</code> that lacks a file descriptor. The fix is to swap <code>sys.stderr</code> to an <code>os.devnull</code>-backed file before importing MCPToolset. Every notebook in this course that uses MCP does this in its setup cell.</p>
+<p><strong>Jupyter&rsquo;s <code>sys.stderr</code> doesn&rsquo;t have a <code>.fileno()</code>.</strong> This is the most common gotcha. When you run an MCP stdio integration inside a Jupyter kernel (or Colab, or nbconvert), the subprocess spawn fails with a <code>fileno</code> error because ADK&rsquo;s MCP client tries to inherit the parent&rsquo;s stderr, and the parent&rsquo;s stderr is an ipykernel <code>OutStream</code> that lacks a file descriptor. The fix is to swap <code>sys.stderr</code> to an <code>os.devnull</code>-backed file before importing McpToolset. Every notebook in this course that uses MCP does this in its setup cell.</p>
 <h2>Flavor 4 — AgentTool</h2>
 <p>The fourth flavor is the most conceptually interesting. <strong><code>AgentTool</code> takes any existing agent and makes it callable as a tool from another agent.</strong></p>
 <pre><code class="language-python">from google.adk.tools.agent_tool import AgentTool
@@ -604,7 +604,7 @@ orchestrator = LlmAgent(
 <ul>
 <li><strong>Python function that runs in-process</strong> → FunctionTool. The default.</li>
 <li><strong>Existing REST API with an OpenAPI spec</strong> → OpenAPIToolset. One line, N endpoints.</li>
-<li><strong>Tool server in another language or with its own state</strong> → MCPToolset. Language- and process-agnostic.</li>
+<li><strong>Tool server in another language or with its own state</strong> → McpToolset. Language- and process-agnostic.</li>
 <li><strong>Specialist sub-agent that should be called, not delegated to</strong> → AgentTool. Parent stays in charge.</li>
 </ul>
 <h2>Gotchas worth naming now</h2>
@@ -613,7 +613,7 @@ orchestrator = LlmAgent(
 <p><strong>MCP stdio in Jupyter / Colab / nbconvert needs a patched <code>sys.stderr</code>.</strong> The ipykernel environment replaces <code>sys.stderr</code> with an object that lacks <code>.fileno()</code>. The MCP subprocess spawn tries to inherit stderr and calls <code>.fileno()</code> on it. That throws. The fix is a three-line stanza in the notebook setup cell that swaps <code>sys.stderr</code> to <code>os.devnull</code> when the current stderr doesn&rsquo;t have a usable fileno. Every MCP-touching notebook in this course does this automatically.</p>
 <p><strong>LiteLLM plus streaming plus tool calls is known flaky on non-Gemini models.</strong> There are several open adk-python issues documenting this — #187, #2065, #3665, #3697, and more. The practical guidance for OpenRouter-backed demos: default <code>stream=False</code>. ADK does this out of the box for non-streaming runners. If you turn streaming on for production on an OpenRouter model, test the tool paths hard before shipping.</p>
 <h2>What to carry forward</h2>
-<p>Tools come in four flavors: <strong>FunctionTool, OpenAPIToolset, MCPToolset, AgentTool</strong>. Same abstraction to the model; different integration targets. FunctionTool is the default; reach for the others when you have a specific reason.</p>
+<p>Tools come in four flavors: <strong>FunctionTool, OpenAPIToolset, McpToolset, AgentTool</strong>. Same abstraction to the model; different integration targets. FunctionTool is the default; reach for the others when you have a specific reason.</p>
 <p>And the design rule from the Agentic Design Patterns interlude: <strong>blast radius matters</strong>. Categorize your tools by how much damage a mis-call can do. Put the guards for irreversible tools in the code, not in the instruction. An instruction is a polite request. Code is a wall.</p>
 <p>Module 03 picks up where the event stream leaves off. Every tool call you just saw went into the session&rsquo;s event history; Module 03 makes sessions, state, and events the subject.</p>
         </section>

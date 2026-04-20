@@ -61,7 +61,7 @@
       <tbody>
         <tr><td><strong>FunctionTool</strong></td><td>Docstring + type hints</td><td>Your Python file</td></tr>
         <tr><td><strong>OpenAPIToolset</strong></td><td>An OpenAPI spec</td><td>A remote HTTP API</td></tr>
-        <tr><td><strong>MCPToolset</strong></td><td>MCP server's <code>list_tools</code></td><td>A separate process</td></tr>
+        <tr><td><strong>McpToolset</strong></td><td>MCP server's <code>list_tools</code></td><td>A separate process</td></tr>
         <tr><td><strong>AgentTool</strong></td><td>Another agent's <code>name</code> + <code>description</code></td><td>That other agent</td></tr>
       </tbody>
     </table>
@@ -155,7 +155,7 @@ fx_agent = LlmAgent(
   <!-- 13 Flavor 3 header -->
   <div class="slide" data-module="02" data-type="section-title" style="background:linear-gradient(135deg,var(--navy-dark) 0%,var(--navy) 100%);">
     <div class="topic-badge">Flavor 3</div>
-    <h1>MCPToolset</h1>
+    <h1>McpToolset</h1>
     <p class="highlight-text">Talk to a separate tool server.</p>
   </div>
 
@@ -172,7 +172,7 @@ fx_agent = LlmAgent(
   <!-- 15 MCP code -->
   <div class="slide" data-module="02" data-type="code">
     <h2>Connect to an existing MCP server</h2>
-<pre><code>ticket_toolset = MCPToolset(
+<pre><code>ticket_toolset = McpToolset(
     connection_params=StdioConnectionParams(
         server_params=StdioServerParameters(
             command=sys.executable,
@@ -308,7 +308,7 @@ orchestrator = LlmAgent(
       <tbody>
         <tr><td>A Python function that needs to run in-process</td><td><strong>FunctionTool</strong></td></tr>
         <tr><td>An existing REST API with an OpenAPI spec</td><td><strong>OpenAPIToolset</strong></td></tr>
-        <tr><td>A tool server written in any language with its own state</td><td><strong>MCPToolset</strong></td></tr>
+        <tr><td>A tool server written in any language with its own state</td><td><strong>McpToolset</strong></td></tr>
         <tr><td>A specialist sub-agent the parent should call like a function</td><td><strong>AgentTool</strong></td></tr>
       </tbody>
     </table>
@@ -324,7 +324,7 @@ orchestrator = LlmAgent(
     </div>
     <div class="callout callout-gotcha">
       <div class="callout-title">MCP stdio in Jupyter / Colab</div>
-      <p style="margin:0;font-size:0.9em;">Jupyter replaces <code>sys.stderr</code> with an object without a <code>.fileno()</code>, which breaks subprocess spawn. Patch <code>sys.stderr</code> to a real fd before importing <code>MCPToolset</code>. (The notebook does this automatically.)</p>
+      <p style="margin:0;font-size:0.9em;">Jupyter replaces <code>sys.stderr</code> with an object without a <code>.fileno()</code>, which breaks subprocess spawn. Patch <code>sys.stderr</code> to a real fd before importing <code>McpToolset</code>. (The notebook does this automatically.)</p>
     </div>
     <div class="callout callout-gotcha">
       <div class="callout-title">LiteLLM + tool-calls + streaming</div>

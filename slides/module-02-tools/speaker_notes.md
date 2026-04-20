@@ -32,7 +32,7 @@ FunctionTool — the schema comes from your Python function's docstring and type
 
 OpenAPIToolset — the schema comes from an OpenAPI specification. The code lives in a remote HTTP API.
 
-MCPToolset — the schema comes from an MCP server's list-tools response. The code lives in a separate process.
+McpToolset — the schema comes from an MCP server's list-tools response. The code lives in a separate process.
 
 AgentTool — the schema comes from another agent's name and description. The code is that other agent.
 
@@ -106,7 +106,7 @@ ADK doesn't transform the API's output — it passes it through as-is. That's us
 
 ## Slide 13 — Flavor 3 header
 
-Flavor three. MCPToolset. Talk to a separate tool server.
+Flavor three. McpToolset. Talk to a separate tool server.
 
 ---
 
@@ -122,7 +122,7 @@ The reason MCP matters: the server can be written in any language. TypeScript, G
 
 ## Slide 15 — MCP code
 
-Connect to an MCP server — two concepts. The connection parameters say how to reach it: stdio, which language to run the server in, what script file. Then MCPToolset spawns the server, speaks the handshake, and lists its tools.
+Connect to an MCP server — two concepts. The connection parameters say how to reach it: stdio, which language to run the server in, what script file. Then McpToolset spawns the server, speaks the handshake, and lists its tools.
 
 This repo ships three ready-made MCP servers in the `mcp_servers/` folder — one for tickets, one for a knowledge base, one for system monitoring. We're using the ticket server here. It exposes five tools; five tools appear in the agent with no extra code.
 
@@ -220,7 +220,7 @@ The agent calls `delete_ticket` without a confirmation token. The tool returns a
 
 ## Slide 26 — Choosing a flavor
 
-A quick reference before we wrap. If the thing you want is a Python function running in-process — FunctionTool. If it's an existing REST API with a spec — OpenAPIToolset. If it's a tool server written in any language with its own state — MCPToolset. If it's a specialist sub-agent the parent should call like a function — AgentTool.
+A quick reference before we wrap. If the thing you want is a Python function running in-process — FunctionTool. If it's an existing REST API with a spec — OpenAPIToolset. If it's a tool server written in any language with its own state — McpToolset. If it's a specialist sub-agent the parent should call like a function — AgentTool.
 
 The FunctionTool is the default. Reach for the others when you have a specific reason — a language mismatch, an existing spec, a shared tool catalog.
 
@@ -240,7 +240,7 @@ Three: LiteLLM plus tool calls plus streaming is known-flaky on non-Gemini model
 
 ## Slide 28 — Takeaway
 
-What to carry forward. Tools come in four flavors. Same abstraction to the model; different integration targets. FunctionTool, OpenAPIToolset, MCPToolset, AgentTool.
+What to carry forward. Tools come in four flavors. Same abstraction to the model; different integration targets. FunctionTool, OpenAPIToolset, McpToolset, AgentTool.
 
 And the design rule. Blast radius matters. Put the guard in the tool code, not in the instruction.
 
