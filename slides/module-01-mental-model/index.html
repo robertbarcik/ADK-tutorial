@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ADK Course — M01: Why agents, why ADK</title>
+  <link rel="stylesheet" href="../shared/shared.css">
+  <link rel="stylesheet" href="../shared/slides.css">
+</head>
+<body>
+  <nav class="progress-strip">
+    <a href="../../index.html" class="progress-home">Course</a>
+    <div class="progress-title">M01 — Why agents, why ADK</div>
+    <div class="progress-meta">
+      <span class="slide-counter">1 / 1</span>
+      <button class="theme-toggle">Theme</button>
+    </div>
+  </nav>
+
+  <main class="slide-viewport">
+
+  <!-- 01 Title -->
+  <div class="slide active" data-module="01" data-type="section-title">
+    <div class="topic-badge">Module 01 &middot; Part 1 Vendor-agnostic</div>
+    <h1>Why agents, why ADK</h1>
+    <h3>The four primitives you will see in every later module</h3>
+    <p class="highlight-text">Agent &middot; Runner &middot; Event &middot; Session</p>
+  </div>
+
+  <!-- 02 What ADK is (and is not) -->
+  <div class="slide" data-module="01">
+    <h2>What ADK is</h2>
+    <p>A code-first Python framework for building LLM-driven agents. Google wrote it. Open source. 1.0 GA May 2025, now on v1.31. Python is the reference SDK; Java, Go, and TypeScript exist.</p>
+    <h3>What ADK is not</h3>
+    <ul>
+      <li><strong>Not a model.</strong> You bring your own &mdash; Gemini, Claude, GPT, Qwen, Gemma.</li>
+      <li><strong>Not a cloud.</strong> Runs on your laptop, on Cloud Run, on AWS, on a Raspberry Pi.</li>
+      <li><strong>Not a UI.</strong> It ships a dev UI (<code>adk web</code>), but the output is code you deploy.</li>
+      <li><strong>Not a graph DSL.</strong> You write typed Python, not a JSON DAG.</li>
+    </ul>
+  </div>
+
+  <!-- 03 Why a framework at all -->
+  <div class="slide" data-module="01">
+    <h2>Why a framework at all</h2>
+    <p>The first time someone writes an "agent" by hand, they end up writing the same sixty lines every time:</p>
+    <ul>
+      <li>A retry loop around the LLM call.</li>
+      <li>A JSON-shaped output parser that crashes on edge cases.</li>
+      <li>A manual conversation history that outgrows the context window.</li>
+      <li>A switch statement that dispatches tool calls to Python functions.</li>
+      <li>Error handling when the model asks for a tool that doesn't exist.</li>
+    </ul>
+    <p>A framework lets you stop writing those sixty lines. You write the things that are actually yours &mdash; the instruction, the tools, the business logic &mdash; and the framework handles the rest.</p>
+  </div>
+
+  <!-- 04 Key equation -->
+  <div class="slide" data-module="01" data-type="keyfact">
+    <h2 class="text-muted" style="border-bottom:none;font-size:1em;text-transform:uppercase;letter-spacing:0.08em;">The agent equation</h2>
+    <p><strong>LLM</strong> + instruction + tools + memory + a loop = <strong>agent</strong></p>
+    <p style="font-size:0.7em;color:var(--text-muted);margin-top:var(--space-6);">ADK gives you the loop and the plumbing. You bring the other four.</p>
+  </div>
+
+  <!-- 05 Four primitives overview -->
+  <div class="slide" data-module="01" data-type="grid">
+    <h2>The four primitives</h2>
+    <div class="grid-layout">
+      <div class="grid-card highlight">
+        <div class="grid-card-title">Agent</div>
+        <div class="grid-card-body">An LLM wired to a model, an instruction, and optional tools. You define one.</div>
+      </div>
+      <div class="grid-card highlight">
+        <div class="grid-card-title">Runner</div>
+        <div class="grid-card-body">The event loop that drives the conversation. You call <code>.run_async()</code>.</div>
+      </div>
+      <div class="grid-card highlight">
+        <div class="grid-card-title">Event</div>
+        <div class="grid-card-body">Every message, tool call, tool response, and state change. You read them.</div>
+      </div>
+      <div class="grid-card highlight">
+        <div class="grid-card-title">Session</div>
+        <div class="grid-card-body">The conversation's memory &mdash; event history plus a state dict. One per chat.</div>
+      </div>
+    </div>
+    <p style="margin-top:var(--space-4);color:var(--text-muted);font-size:0.9em;">Every later concept &mdash; workflow agents, multi-agent hierarchies, callbacks, memory services, evaluation &mdash; composes on top of these four.</p>
+  </div>
+
+  <!-- 06 Agent primitive -->
+  <div class="slide" data-module="01" data-type="code">
+    <h2>Primitive 1 &mdash; <code>Agent</code></h2>
+    <p>Four required arguments: name, model, description, instruction. An optional <code>tools</code> list. That's it.</p>
+<pre><code>from google.adk.agents import Agent
+from google.adk.models.lite_llm import LiteLlm
+
+greeter = Agent(
+    name="greeter",
+    model=LiteLlm(model="openrouter/google/gemini-2.5-flash-lite"),
+    description="Greets the user in a friendly way.",
+    instruction="You are a friendly greeter. Respond in one short sentence.",
+)</code></pre>
+    <p class="code-caption">The <code>LiteLlm</code> wrapper is what makes ADK vendor-neutral. Swap the model string and the rest doesn't change.</p>
+  </div>
+
+  <!-- 07 Runner primitive -->
+  <div class="slide" data-module="01" data-type="code">
+    <h2>Primitive 2 &mdash; <code>Runner</code></h2>
+    <p>An agent on its own does nothing. The Runner wires it to a session service and hands you back an async event stream.</p>
+<pre><code>runner = Runner(agent=greeter, app_name="demo", session_service=sessions)
+
+async for event in runner.run_async(
+    user_id="student",
+    session_id="s1",
+    new_message=types.Content(role="user", parts=[types.Part(text="hi")]),
+):
+    print(event)</code></pre>
+    <p class="code-caption">Think of the Runner as a game engine's main loop, and your agent as the entity it ticks.</p>
+  </div>
+
+  <!-- 08 Event primitive -->
+  <div class="slide" data-module="01">
+    <h2>Primitive 3 &mdash; <code>Event</code></h2>
+    <p>Every communication inside an agent run is an Event. This is the feature most frameworks skip and ADK gets right.</p>
+    <ul>
+      <li>User message in &rarr; event.</li>
+      <li>Model text response &rarr; event.</li>
+      <li>Model decides to call a tool &rarr; event.</li>
+      <li>Tool returns a value &rarr; event.</li>
+      <li>Agent hands off to a sub-agent &rarr; event.</li>
+      <li>State changes &rarr; event.</li>
+    </ul>
+    <p>Read the events and you can see exactly what the agent did and why. This is the <em>debugger</em> for agent work.</p>
+  </div>
+
+  <!-- 09 Session primitive -->
+  <div class="slide" data-module="01">
+    <h2>Primitive 4 &mdash; <code>Session</code></h2>
+    <p>A session holds the event history and a <code>state</code> dict, keyed by <code>(app_name, user_id, session_id)</code>. Three session services ship with ADK:</p>
+    <table>
+      <thead><tr><th>Service</th><th>Backing</th><th>When</th></tr></thead>
+      <tbody>
+        <tr><td><code>InMemorySessionService</code></td><td>Python dict</td><td>Demos and tests</td></tr>
+        <tr><td><code>DatabaseSessionService</code></td><td>SQLAlchemy (Postgres, SQLite)</td><td>Self-hosted production</td></tr>
+        <tr><td><code>VertexAiSessionService</code></td><td>Google Cloud</td><td>If you're on Vertex</td></tr>
+      </tbody>
+    </table>
+    <p style="color:var(--text-muted);font-size:0.9em;">We'll use in-memory for M01&ndash;M07 and swap to database in M08 when memory becomes the point.</p>
+  </div>
+
+  <!-- 10 Live demo 1 -->
+  <div class="slide" data-module="01" data-type="section-title" style="background:linear-gradient(135deg,var(--amber-dark) 0%,var(--amber) 100%);">
+    <h1>Live</h1>
+    <h3>One agent, no tools, one event</h3>
+    <p class="highlight-text" style="color:white;">Notebook cells 1&ndash;7</p>
+  </div>
+
+  <!-- 11 Event stream: simplest case -->
+  <div class="slide" data-module="01">
+    <h2>The simplest event stream</h2>
+<pre class="diagram">USER: Hi, what's your name?
+
+[FINAL] greeter: Hello there!</pre>
+    <p>One event. Final response. That's the minimum a conversation can produce.</p>
+  </div>
+
+  <!-- 12 Add a tool -->
+  <div class="slide" data-module="01" data-type="code">
+    <h2>Add a tool</h2>
+    <p>Tools are Python functions. The docstring and type hints <em>are</em> the JSON schema the model sees. No decorators, no config.</p>
+<pre><code>def get_weather(city: str) -> dict:
+    """Look up today's weather for a city."""
+    fake = {"Bratislava": "Sunny, 18C", "Prague": "Cloudy, 14C"}
+    return {"city": city, "report": fake.get(city, "Unknown.")}
+
+weather_agent = Agent(
+    name="weather_agent",
+    model=MODEL,
+    instruction="Call get_weather and report what it returns. Be brief.",
+    tools=[get_weather],
+)</code></pre>
+  </div>
+
+  <!-- 13 Live demo 2 -->
+  <div class="slide" data-module="01" data-type="section-title" style="background:linear-gradient(135deg,var(--amber-dark) 0%,var(--amber) 100%);">
+    <h1>Live</h1>
+    <h3>Add a tool; three events appear</h3>
+    <p class="highlight-text" style="color:white;">Notebook cells 8&ndash;10</p>
+  </div>
+
+  <!-- 14 Event stream with tool -->
+  <div class="slide" data-module="01">
+    <h2>The event stream with a tool</h2>
+<pre class="diagram">USER: What's the weather in Prague?
+
+[tool_call] get_weather({'city': 'Prague'})
+[tool_resp] {'city': 'Prague', 'report': 'Cloudy, 14C'}
+[FINAL]     weather_agent: Prague is cloudy and 14 degrees.</pre>
+    <p>Three events. You can see the decision, the execution, and the synthesis. If the agent had called the wrong tool, you'd see it here. If it had called two tools, you'd see both.</p>
+  </div>
+
+  <!-- 15 adk web -->
+  <div class="slide" data-module="01">
+    <h2>The visual version: <code>adk web</code></h2>
+    <p>Run <code>adk web</code> in a folder with your agent and it opens a chat UI with the same event stream rendered as a clickable timeline. Same data, friendlier for exploration.</p>
+    <div class="callout callout-tip">
+      <div class="callout-title">Tip</div>
+      <p style="margin:0;">Keep <code>adk web</code> open while you develop. When an agent misbehaves, its reason is almost always obvious from the timeline &mdash; a tool returned the wrong shape, an instruction was ambiguous, a state key was stale.</p>
+    </div>
+  </div>
+
+  <!-- 16 Against the competitors -->
+  <div class="slide" data-module="01" data-type="comparison">
+    <h2>ADK vs. the obvious alternatives</h2>
+    <div class="comparison-layout">
+      <div class="vs-left">
+        <h3>LangGraph</h3>
+        <ul style="font-size:0.9em;">
+          <li>Graph DSL; explicit nodes and edges.</li>
+          <li>Great for complex control flow, heavier for a simple agent.</li>
+          <li>~34M monthly downloads.</li>
+        </ul>
+      </div>
+      <div class="vs-divider">vs</div>
+      <div class="vs-right">
+        <h3>CrewAI</h3>
+        <ul style="font-size:0.9em;">
+          <li>Role-playing DSL (<em>Researcher</em>, <em>Writer</em>).</li>
+          <li>Fast on demos, opinionated on metaphor.</li>
+          <li>~44K stars.</li>
+        </ul>
+      </div>
+    </div>
+    <p style="margin-top:var(--space-4);">ADK's pitch: <strong>typed Python, not a DSL. Explicit primitives, not metaphors.</strong> Smaller community (~18K stars, ~202 contributors) but the clearest event-level observability in the category.</p>
+  </div>
+
+  <!-- 17 Vendor lock in, addressed -->
+  <div class="slide" data-module="01" data-type="code">
+    <h2>"But it's a Google framework"</h2>
+    <p>The single most common objection. It is a Google framework, and Google uses it to sell Gemini and Vertex. But the model abstraction is a one-line swap:</p>
+<pre><code># Gemini via Google AI Studio
+model = "gemini-2.5-flash"
+
+# Claude via OpenRouter
+model = LiteLlm(model="openrouter/anthropic/claude-haiku-4-5")
+
+# GPT-4o-mini via OpenRouter
+model = LiteLlm(model="openrouter/openai/gpt-4o-mini")
+
+# Qwen3 running locally via Ollama
+model = LiteLlm(model="ollama_chat/qwen3:8b")</code></pre>
+    <p>Part 1 of this course uses LiteLLM against OpenRouter for exactly this reason. We only switch to direct Gemini in Part 2, where Gemini-only features earn it.</p>
+  </div>
+
+  <!-- 18 Course arc -->
+  <div class="slide" data-module="01" data-type="split">
+    <h2>The arc of this course</h2>
+    <div class="split-layout">
+      <div>
+        <h3>Part 1 &mdash; Vendor-agnostic (M01&ndash;M10)</h3>
+        <p>The portable spine. Agent, tools, sessions, workflow agents, multi-agent, callbacks, memory, evaluation, deployment. Runs on anything LiteLLM reaches.</p>
+      </div>
+      <div>
+        <h3>Part 2 &mdash; Gemini unlocks (M11&ndash;M13) + A2A (M14)</h3>
+        <p>What you lose if you don't use Gemini: search grounding, long-context caching, thinking budgets, the Live voice API. Then a short side step into the A2A agent-to-agent protocol.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 19 Per-module shape -->
+  <div class="slide" data-module="01">
+    <h2>Each module ships four artifacts</h2>
+    <ul>
+      <li><strong>Slides</strong> (this deck) &mdash; the mental model, on screen.</li>
+      <li><strong>Speaker notes</strong> &mdash; what gets said while the slides play. Readable straight into a microphone.</li>
+      <li><strong>Textbook chapter</strong> &mdash; the long-form version, in English, with examples.</li>
+      <li><strong>Jupyter notebook</strong> &mdash; the code you ran in the demo, runnable top-to-bottom against your own API key.</li>
+    </ul>
+    <p>All four are aligned. A term defined in the textbook is the same term used on the slide is the same term used in the notebook.</p>
+  </div>
+
+  <!-- 20 Takeaway -->
+  <div class="slide" data-module="01" data-type="keyfact">
+    <h2 class="text-muted" style="border-bottom:none;font-size:1em;text-transform:uppercase;letter-spacing:0.08em;">Write these four down</h2>
+    <p><strong>Agent &middot; Runner &middot; Event &middot; Session</strong></p>
+    <p style="font-size:0.7em;color:var(--text-muted);margin-top:var(--space-6);">If any of them is still fuzzy, re-read the event-stream output in the notebook before moving to M02.</p>
+  </div>
+
+  </main>
+
+  <script src="../shared/slides.js"></script>
+</body>
+</html>

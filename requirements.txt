@@ -1,24 +1,31 @@
-# Google Agent Development Kit (ADK) - Tutorial Series Requirements
-# This file contains all dependencies needed for the ADK tutorials
+# Google ADK Course — Python dependencies
+# Pin google-adk and litellm together (adk-python #3713/#4367 structured-output drift).
+# If you bump one, bump the other at the same time.
 
-# Core ADK framework for building AI agents
+# ─── Core ADK stack (pinned for classroom reproducibility) ──────────────
 google-adk==1.28.0
-
-# LiteLLM for using OpenAI and other LLM providers with ADK
 litellm==1.83.4
-
-# OpenAI Python client library
 openai==2.30.0
-
-# Python dotenv for environment variable management (optional, for local development)
 python-dotenv==1.0.1
-
-# Nest asyncio for handling async in Jupyter/Colab notebooks
 nest-asyncio==1.6.0
-
-# Deprecated decorator (ADK dependency)
 deprecated==1.2.18
 
-# Notebook 06 only: MCP integration
+# ─── Model Context Protocol (M02 tools, M14 A2A demos) ─────────────────
 mcp==1.27.0
 httpx==0.28.1
+
+# ─── Google GenAI SDK (Part 2: M11-M13 grounding, caching, thinking, Live API) ─
+google-genai>=1.0.0,<2.0.0
+
+# ─── A2A protocol SDK (M14 — pinned to 0.3.x until ADK catches up to 1.0) ──
+a2a-sdk>=0.3.24,<0.4.0
+
+# ─── Notebook plumbing (local dev; Colab pre-installs Jupyter) ─────────
+jupyter>=1.0.0
+ipykernel>=6.0.0
+
+# ─── Textbook build (Markdown → HTML) ──────────────────────────────────
+markdown>=3.5.0
+
+# ─── Evaluation helpers (M09) ──────────────────────────────────────────
+pytest>=8.0.0
