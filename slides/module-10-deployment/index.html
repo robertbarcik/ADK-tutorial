@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ADK Course — M10: Deployment</title>
+  <link rel="stylesheet" href="../shared/shared.css">
+  <link rel="stylesheet" href="../shared/slides.css">
+</head>
+<body>
+  <nav class="progress-strip">
+    <a href="../../index.html" class="progress-home">Course</a>
+    <div class="progress-title">M10 — Deployment</div>
+    <div class="progress-meta">
+      <span class="slide-counter">1 / 1</span>
+      <button class="theme-toggle">Theme</button>
+    </div>
+  </nav>
+
+  <main class="slide-viewport">
+
+  <div class="slide active" data-module="10" data-type="section-title">
+    <div class="topic-badge">Module 10 &middot; Part 1 final</div>
+    <h1>Deployment</h1>
+    <h3>From notebook to HTTP service</h3>
+    <p class="highlight-text">Cloud Run &middot; vanilla Docker &middot; Agent Engine</p>
+  </div>
+
+  <div class="slide" data-module="10" data-type="keyfact">
+    <h2 class="text-muted" style="border-bottom:none;font-size:1em;text-transform:uppercase;letter-spacing:0.08em;">Nine modules</h2>
+    <p>of agents that run in <strong>notebooks</strong>.</p>
+    <h2 class="text-muted" style="border-bottom:none;font-size:1em;text-transform:uppercase;letter-spacing:0.08em;margin-top:var(--space-6);">Module 10</h2>
+    <p>turns them into <strong>products</strong>.</p>
+  </div>
+
+  <div class="slide" data-module="10">
+    <h2>Three deployment paths</h2>
+    <table>
+      <thead><tr><th>Path</th><th>Effort</th><th>Lock-in</th></tr></thead>
+      <tbody>
+        <tr><td><code>adk deploy cloud_run</code></td><td>One command</td><td>GCP only</td></tr>
+        <tr><td>Vanilla Docker</td><td>Write a Dockerfile</td><td>None — any container platform</td></tr>
+        <tr><td>Vertex AI Agent Engine</td><td>One command; most batteries included</td><td>Deep GCP</td></tr>
+      </tbody>
+    </table>
+    <p>All three produce the same thing at the agent layer. They differ only in who runs the container and what batteries come with it.</p>
+  </div>
+
+  <div class="slide" data-module="10" data-type="section-title" style="background:linear-gradient(135deg,var(--navy-dark) 0%,var(--navy) 100%);">
+    <div class="topic-badge">The foundation</div>
+    <h1>The deployable repo layout</h1>
+    <p class="highlight-text">One folder, one <code>agent.py</code>, one <code>root_agent</code>.</p>
+  </div>
+
+  <div class="slide" data-module="10" data-type="code">
+    <h2>The shape every tool expects</h2>
+<pre><code>my_agent/
+├── __init__.py          # empty; makes it a package
+├── agent.py             # exports `root_agent`
+├── requirements.txt     # pinned Python deps
+└── .env                 # optional; OPENROUTER_API_KEY etc.</code></pre>
+    <p><code>adk api_server</code>, <code>adk web</code>, <code>adk deploy cloud_run</code>, <code>AgentEvaluator.evaluate</code> — all of them look for <code>root_agent</code> in <code>agent.py</code>.</p>
+    <p style="color:var(--text-muted);font-size:0.9em;">Convention, not hard requirement. <code>adk create</code> scaffolds it for you.</p>
+  </div>
+
+  <div class="slide" data-module="10" data-type="section-title" style="background:linear-gradient(135deg,var(--navy-dark) 0%,var(--navy) 100%);">
+    <div class="topic-badge">Path 1</div>
+    <h1><code>adk api_server</code></h1>
+    <p class="highlight-text">See your agent as an HTTP service locally.</p>
+  </div>
+
+  <div class="slide" data-module="10" data-type="code">
+    <h2>Start it</h2>
+<pre><code># From the parent of the agent folder
+adk api_server .
+
+# Starts a FastAPI server at http://localhost:8000
+# Hosts every agent folder it finds (each must have agent.py → root_agent)</code></pre>
+    <h2 style="margin-top:var(--space-6);">Hit it</h2>
+<pre><code># Discover what's hosted
+curl http://localhost:8000/list-apps
+
+# Create a session, send a message, get events
+curl -X POST http://localhost:8000/run \
+  -H "Content-Type: application/json" \
+  -d '{"app_name": "my_weather_agent", "user_id": "u", "session_id": "s1",
+       "new_message": {"role": "user", "parts": [{"text": "Weather in Prague?"}]}}'</code></pre>
+  </div>
+
+  <div class="slide" data-module="10" data-type="section-title" style="background:linear-gradient(135deg,var(--amber-dark) 0%,var(--amber) 100%);">
+    <h1>Live</h1>
+    <h3>adk api_server + real HTTP calls</h3>
+    <p class="highlight-text" style="color:white;">Notebook cells 7-9</p>
+  </div>
+
+  <div class="slide" data-module="10" data-type="keyfact">
+    <h2 class="text-muted" style="border-bottom:none;font-size:1em;text-transform:uppercase;letter-spacing:0.08em;">What you saw</h2>
+    <p>This is <strong>the production shape</strong>.</p>
+    <p style="font-size:0.75em;color:var(--text-muted);margin-top:var(--space-4);">Cloud Run is the same FastAPI app, running somewhere else. Swap the URL; the client code doesn't change.</p>
+  </div>
+
+  <div class="slide" data-module="10" data-type="section-title" style="background:linear-gradient(135deg,var(--navy-dark) 0%,var(--navy) 100%);">
+    <div class="topic-badge">Path 2</div>
+    <h1>Vanilla Docker</h1>
+    <p class="highlight-text">Deploy to any container platform.</p>
+  </div>
+
+  <div class="slide" data-module="10" data-type="code">
+    <h2>The Dockerfile — 10 lines</h2>
+<pre><code>FROM python:3.12-slim
+
+WORKDIR /app
+
+COPY my_agent/requirements.txt ./requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY my_agent/ ./my_agent/
+
+ENV PORT=8080
+CMD ["sh", "-c", "adk api_server /app --host 0.0.0.0 --port ${PORT}"]</code></pre>
+    <p><strong>No ADK-specific platform code.</strong> Just FastAPI-in-a-container. Deploys anywhere containers run.</p>
+  </div>
+
+  <div class="slide" data-module="10">
+    <h2>Where you can ship the image</h2>
+    <ul>
+      <li><strong>AWS Fargate / App Runner</strong> — <code>aws ecr</code> push, point a service at the image.</li>
+      <li><strong>Azure Container Apps</strong> — <code>az acr build</code>, <code>az containerapp create</code>.</li>
+      <li><strong>Fly.io</strong> — <code>fly launch --dockerfile ./Dockerfile</code>.</li>
+      <li><strong>Kubernetes</strong> — your usual Helm chart or Kustomize manifest.</li>
+      <li><strong>Your own server</strong> — <code>docker run</code>.</li>
+    </ul>
+    <p style="color:var(--text-muted);font-size:0.9em;">The important property: <strong>there's no ADK-specific deployment story for non-Google clouds.</strong> Regular container deployment.</p>
+  </div>
+
+  <div class="slide" data-module="10" data-type="section-title" style="background:linear-gradient(135deg,var(--navy-dark) 0%,var(--navy) 100%);">
+    <div class="topic-badge">Path 3</div>
+    <h1><code>adk deploy cloud_run</code></h1>
+    <p class="highlight-text">One command. Minutes to prod.</p>
+  </div>
+
+  <div class="slide" data-module="10" data-type="code">
+    <h2>The one-liner</h2>
+<pre><code>adk deploy cloud_run \\
+    --project YOUR_GCP_PROJECT \\
+    --region europe-west1 \\
+    --service_name my-weather-agent \\
+    my_weather_agent</code></pre>
+    <p style="font-size:0.9em;color:var(--text-muted);">Under the hood: ADK generates a Dockerfile, builds via Cloud Build, pushes to Artifact Registry, deploys a Cloud Run service.</p>
+    <p><strong>Pro:</strong> fast path on GCP; sensible defaults; integrates with Cloud Trace + Cloud Logging.<br>
+       <strong>Con:</strong> Google Cloud only; less control; pay the Cloud Run runtime margin.</p>
+  </div>
+
+  <div class="slide" data-module="10" data-type="section-title" style="background:linear-gradient(135deg,var(--navy-dark) 0%,var(--navy) 100%);">
+    <div class="topic-badge">Path 4 (mention only)</div>
+    <h1>Vertex AI Agent Engine</h1>
+    <p class="highlight-text">The opinionated managed path.</p>
+  </div>
+
+  <div class="slide" data-module="10">
+    <h2>What Agent Engine adds over Cloud Run</h2>
+    <ul>
+      <li><strong>Managed sessions</strong> — no separate database needed.</li>
+      <li><strong>Memory Bank</strong> — LLM-distilled long-term memory, auto-consolidation, auto-decay. Real upgrade over M08.</li>
+      <li><strong>Agent Identity</strong> — per-agent IAM principals with certificate-bound creds. Strongest enterprise-governance primitive Google ships.</li>
+      <li><strong>Built-in evaluation + observability</strong> — integrates with Gen AI Evaluation Service.</li>
+    </ul>
+  </div>
+
+  <div class="slide" data-module="10">
+    <h2>Pricing picture (April 2026)</h2>
+    <table>
+      <thead><tr><th>Component</th><th>Rate</th></tr></thead>
+      <tbody>
+        <tr><td>Runtime</td><td>$0.0864/vCPU-hour + $0.0090/GiB-hour (same as Cloud Run)</td></tr>
+        <tr><td>Sessions</td><td>$0.25 per 1,000 events</td></tr>
+        <tr><td>Memory Bank storage</td><td>$0.25 per 1,000 memories/month</td></tr>
+        <tr><td>Memory Bank retrieval</td><td>$0.50 per 1,000 (first 1,000/month free)</td></tr>
+      </tbody>
+    </table>
+    <p><strong>When to pick Agent Engine:</strong> you want Memory Bank and Agent Identity without building them yourself. That's the real pitch.<br>
+       <strong>When not:</strong> you want portability, or you're not on Google Cloud.</p>
+  </div>
+
+  <div class="slide" data-module="10" data-type="section-title" style="background:linear-gradient(135deg,var(--navy-dark) 0%,var(--navy) 100%);">
+    <div class="topic-badge">One more thing</div>
+    <h1>Plugins</h1>
+    <p class="highlight-text">The production cross-cutting mechanism.</p>
+  </div>
+
+  <div class="slide" data-module="10" data-type="comparison">
+    <h2>Callbacks vs Plugins</h2>
+    <div class="comparison-layout">
+      <div class="vs-left">
+        <h3>Callbacks (M07)</h3>
+        <ul style="font-size:0.9em;">
+          <li>Per-agent</li>
+          <li>Attached to <code>LlmAgent(...)</code></li>
+          <li>Good for agent-specific guards</li>
+        </ul>
+      </div>
+      <div class="vs-divider">vs</div>
+      <div class="vs-right">
+        <h3>Plugins</h3>
+        <ul style="font-size:0.9em;">
+          <li>Whole Runner, all agents</li>
+          <li>Attached to <code>Runner(..., plugins=[...])</code></li>
+          <li>Good for org-wide policy</li>
+        </ul>
+      </div>
+    </div>
+    <p style="margin-top:var(--space-4);">Rule: <strong>callbacks for agent-specific logic; plugins for app-wide policy.</strong> Audit logging, per-user rate-limits, token-budget enforcement, org-wide PII redaction → plugins.</p>
+  </div>
+
+  <div class="slide" data-module="10">
+    <h2>Production readiness checklist</h2>
+    <ul>
+      <li><strong>Persistence</strong> — <code>DatabaseSessionService</code> → managed Postgres (not ephemeral SQLite)</li>
+      <li><strong>Secrets</strong> — out of the container; Cloud Run secrets / AWS Secrets Manager / etc.</li>
+      <li><strong>Callbacks</strong> for guardrails (blocklist, PII, mocking-in-tests)</li>
+      <li><strong>Plugins</strong> for audit logging, cost tracking, rate-limiting</li>
+      <li><strong>Eval in CI</strong> — <code>adk eval</code> on every PR</li>
+      <li><strong>Trace backend</strong> — Cloud Trace, Langfuse, Arize, or your own OTel collector</li>
+      <li><strong>Auth</strong> — API gateway in front, or authenticated subnet</li>
+    </ul>
+    <p style="color:var(--text-muted);font-size:0.9em;">None of these are ADK-specific. They're what any Python service needs.</p>
+  </div>
+
+  <div class="slide" data-module="10" data-type="section-title" style="background:linear-gradient(135deg,var(--navy-dark) 0%,var(--navy-light) 100%);">
+    <div class="topic-badge">Part 1 wrap</div>
+    <h1>Ten modules.</h1>
+    <p class="highlight-text" style="color:white;">From "what is an agent" to "how do I ship one."</p>
+  </div>
+
+  <div class="slide" data-module="10">
+    <h2>What you can build now</h2>
+    <ul>
+      <li>Agents with tools (function, OpenAPI, MCP, agent-tool) — M02</li>
+      <li>Persistent state with scope prefixes — M03, M08</li>
+      <li>Vendor-neutral model swapping — M04</li>
+      <li>Compositions: Sequential, Parallel, Loop; LLM-driven routing — M05, M06</li>
+      <li>Guardrails, caches, PII redaction via callbacks — M07</li>
+      <li>Long-term memory via <code>MemoryService</code> — M08</li>
+      <li>Automated eval with trajectory + LLM-judge — M09</li>
+      <li>Deployable as an HTTP service anywhere — this module</li>
+    </ul>
+    <p><strong>On any model. Claude, GPT, Gemini, Qwen, Gemma.</strong></p>
+  </div>
+
+  <div class="slide" data-module="10" data-type="section-title" style="background:linear-gradient(135deg,var(--amber-dark) 0%,var(--amber) 100%);">
+    <div class="topic-badge">Up next &middot; Part 2 begins</div>
+    <h1>M11 &mdash; Gemini unlocks</h1>
+    <p class="highlight-text" style="color:white;">Search grounding. Long context + caching. Thinking budgets. Live voice.</p>
+  </div>
+
+  </main>
+
+  <script src="../shared/slides.js"></script>
+</body>
+</html>
