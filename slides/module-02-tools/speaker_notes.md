@@ -1,7 +1,5 @@
 # M02 — Speaker notes
 
-Written as spoken delivery. Read one section per slide.
-
 ---
 
 ## Slide 1 — Title

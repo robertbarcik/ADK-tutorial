@@ -1,7 +1,5 @@
 # M05 — Speaker notes
 
-One section per slide. Spoken delivery.
-
 ---
 
 ## Slide 1 — Title

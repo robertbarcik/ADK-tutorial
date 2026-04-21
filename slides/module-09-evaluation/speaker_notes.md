@@ -1,7 +1,5 @@
 # M09 — Speaker notes
 
-Spoken delivery. One section per slide.
-
 ---
 
 ## Slide 1 — Title
