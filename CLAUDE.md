@@ -9,6 +9,32 @@ A full course on Google's Agent Development Kit (ADK). Four aligned components p
 - **Side step — A2A protocol (M14).** 30 min on agent-to-agent communication. Tested against OpenRouter.
 - **Agentic Design Patterns interludes.** Selected concepts from `barcik-training-publications/_sources/agentic-design-patterns/` appear as 1–2 slide interludes embedded in relevant modules, not standalone.
 
+## Two learner paths
+
+The README now exposes two paths. Any ⚡ marker you see — in the portal, in slide decks, in textbook chapters, in notebooks — is part of this.
+
+- **Full path** — all 14 modules, 6-8 hours.
+- **Quick path (~1 hour)** — **M01 → M02 → M05 → M11**. These four modules are marked ⚡ throughout the artifacts. If asked to modify the Quick path selection, update consistently across:
+  - `README.md` (tables + suggested reading order)
+  - `index.html` (portal — `.quick-path` classes + the amber callout)
+  - `slides/module-*/index.html` (progress-strip badge)
+  - `textbook/_sources/tools/build_html.py` → `QUICK_PATH_FILES` set
+  - `notebooks/*.ipynb` (first-cell blockquote)
+
+## Video-recording workflow (why `render_slides.py` exists)
+
+Robert's production workflow for the course videos:
+
+1. Record audio only, reading from `slides/module-*/speaker_notes.md`.
+2. Import into a video editor (Premiere / Resolve / etc.).
+3. Drop the matching slide image from `slides-jpg/module-*/NN.jpg` onto the timeline at each slide transition.
+4. No on-screen presenter, no browser capture — just clean 1920×1080 stills timed to narration.
+
+This means:
+- **Speaker notes must read like spoken delivery.** One section per slide, no filler, no "let's look at this slide now" meta-language. Token Economics voice.
+- **Slide stills need to be production-clean.** The progress strip and font controls are hidden during render — no UI chrome to crop out in post.
+- **Slides should be information-complete.** The audio narrates what's on the slide; the slide carries the content. No speaker-notes-only information.
+
 ## Folder conventions
 
 ```
