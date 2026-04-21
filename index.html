@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Google ADK — A Practical Course</title>
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap');
+
     :root {
       --navy: #1E3A5F;
       --navy-light: #2A5280;
@@ -27,7 +29,7 @@
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html { scroll-behavior: smooth; }
     body {
-      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      font-family: 'Nunito', 'Segoe UI', system-ui, -apple-system, sans-serif;
       color: var(--text);
       background: var(--bg);
       line-height: 1.55;
@@ -213,6 +215,40 @@
     .module .status.soon { background: var(--soon-bg); color: var(--soon); }
     .module.soon { opacity: 0.6; }
 
+    /* Quick-path markers on selected modules (1-hour survey). */
+    .qn.quick-path {
+      border-left: 3px solid var(--amber);
+    }
+    .qn.quick-path .num::after {
+      content: '  ⚡';
+      color: var(--amber-dark);
+    }
+    .module.quick-path {
+      border-left: 3px solid var(--amber);
+    }
+    .module.quick-path .num::after {
+      content: ' ⚡';
+      color: var(--amber-dark);
+    }
+    .quick-path-callout {
+      background: #fffbeb;
+      border: 1px solid #fde68a;
+      border-left: 4px solid var(--amber);
+      border-radius: 8px;
+      padding: 1rem 1.3rem;
+      margin-bottom: 1.2rem;
+    }
+    .quick-path-callout strong {
+      color: var(--amber-dark);
+      display: block;
+      margin-bottom: 0.3rem;
+      font-size: 0.95rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .quick-path-callout span { font-size: 0.9rem; color: var(--text); line-height: 1.5; }
+    .quick-path-callout .modules-list { color: var(--navy); font-weight: 700; }
+
     /* ── Resources ────────────────────────────────────────────── */
     .resources {
       display: grid;
@@ -278,13 +314,17 @@
 <!-- Quick-nav grid — all 14 decks in one glance, above the fold.    -->
 <!-- ═══════════════════════════════════════════════════════════════ -->
 <section>
+  <div class="quick-path-callout">
+    <strong>⚡ Just want a 1-hour intro?</strong>
+    <span>Follow the four <span class="modules-list">⚡</span>-marked modules below — <span class="modules-list">M01 → M02 → M05 → M11</span>. You'll leave with the core ADK mental model, the four tool flavors, the canonical composition wow demo, and a taste of what Gemini unlocks. The rest deepens each area.</span>
+  </div>
   <h2>Slide decks</h2>
   <div class="quick-nav">
-    <a class="qn" href="slides/module-01-mental-model/index.html">
+    <a class="qn quick-path" href="slides/module-01-mental-model/index.html">
       <div class="num">M01</div>
       <div class="title">Why agents, why ADK</div>
     </a>
-    <a class="qn" href="slides/module-02-tools/index.html">
+    <a class="qn quick-path" href="slides/module-02-tools/index.html">
       <div class="num">M02</div>
       <div class="title">Tools as verbs</div>
     </a>
@@ -296,7 +336,7 @@
       <div class="num">M04</div>
       <div class="title">One-line model swap</div>
     </a>
-    <a class="qn" href="slides/module-05-workflow-agents/index.html">
+    <a class="qn quick-path" href="slides/module-05-workflow-agents/index.html">
       <div class="num">M05</div>
       <div class="title">Workflow agents</div>
     </a>
@@ -320,7 +360,7 @@
       <div class="num">M10</div>
       <div class="title">Deployment</div>
     </a>
-    <a class="qn" href="slides/module-11-gemini-grounding/index.html">
+    <a class="qn quick-path" href="slides/module-11-gemini-grounding/index.html">
       <div class="num">M11 &middot; Part 2</div>
       <div class="title">Gemini grounding + caching</div>
     </a>
@@ -349,7 +389,7 @@
   <div class="section-label">Part 1 — Vendor-agnostic spine (OpenRouter)</div>
   <div class="modules">
 
-    <a class="module" href="slides/module-01-mental-model/index.html">
+    <a class="module quick-path" href="slides/module-01-mental-model/index.html">
       <div class="num">M01</div>
       <div>
         <div class="title">Why agents, why ADK</div>
@@ -362,7 +402,7 @@
       <div class="status ready">Ready</div>
     </a>
 
-    <a class="module" href="slides/module-02-tools/index.html">
+    <a class="module quick-path" href="slides/module-02-tools/index.html">
       <div class="num">M02</div>
       <div>
         <div class="title">Tools as verbs</div>
@@ -401,7 +441,7 @@
       <div class="status ready">Ready</div>
     </a>
 
-    <a class="module" href="slides/module-05-workflow-agents/index.html">
+    <a class="module quick-path" href="slides/module-05-workflow-agents/index.html">
       <div class="num">M05</div>
       <div>
         <div class="title">Workflow agents</div>
@@ -484,7 +524,7 @@
   <div class="section-label">Part 2 — Gemini unlocks (Google AI Studio)</div>
   <div class="modules">
 
-    <a class="module" href="slides/module-11-gemini-grounding/index.html">
+    <a class="module quick-path" href="slides/module-11-gemini-grounding/index.html">
       <div class="num">M11</div>
       <div>
         <div class="title">Grounding, long context, caching</div>

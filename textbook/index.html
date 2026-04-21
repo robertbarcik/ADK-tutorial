@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Google ADK — A Practical Course</title>
     <style>
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap');
+
 :root {
     --navy: #1e3a5f;
     --navy-light: #2a5280;
@@ -63,7 +65,7 @@ body {
 }
 
 #sidebar-header h2 {
-    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-family: 'Nunito', 'Helvetica Neue', Arial, sans-serif;
     font-size: 0.95rem;
     font-weight: 700;
     color: var(--navy);
@@ -86,7 +88,7 @@ body {
 #sidebar nav ul li a {
     display: block;
     padding: 0.55rem 1.5rem;
-    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-family: 'Nunito', 'Helvetica Neue', Arial, sans-serif;
     font-size: 0.85rem;
     color: var(--text-light);
     text-decoration: none;
@@ -146,7 +148,7 @@ body {
 }
 
 .chapter-number {
-    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-family: 'Nunito', 'Helvetica Neue', Arial, sans-serif;
     font-size: 0.82rem;
     font-weight: 700;
     color: var(--amber-dark);
@@ -155,8 +157,27 @@ body {
     margin-bottom: 0.5rem;
 }
 
+.chapter-number .quick-path-badge {
+    display: inline-block;
+    background: var(--amber);
+    color: white;
+    font-size: 0.68rem;
+    font-weight: 800;
+    padding: 0.18rem 0.55rem;
+    border-radius: 9999px;
+    margin-left: 0.6rem;
+    vertical-align: 1px;
+    letter-spacing: 0.06em;
+}
+
+#sidebar nav ul li a.quick-path::after {
+    content: '⚡';
+    margin-left: 0.4rem;
+    color: var(--amber-dark);
+}
+
 h1 {
-    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-family: 'Nunito', 'Helvetica Neue', Arial, sans-serif;
     font-size: 2.2rem;
     font-weight: 700;
     color: var(--navy);
@@ -165,7 +186,7 @@ h1 {
 }
 
 h2 {
-    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-family: 'Nunito', 'Helvetica Neue', Arial, sans-serif;
     font-size: 1.6rem;
     font-weight: 700;
     color: var(--navy);
@@ -175,7 +196,7 @@ h2 {
 }
 
 h3 {
-    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-family: 'Nunito', 'Helvetica Neue', Arial, sans-serif;
     font-size: 1.2rem;
     font-weight: 600;
     color: var(--navy-light);
@@ -229,7 +250,7 @@ table {
 thead { background: var(--navy); color: white; }
 
 th {
-    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-family: 'Nunito', 'Helvetica Neue', Arial, sans-serif;
     font-weight: 600;
     padding: 0.75rem 1rem;
     text-align: left;
@@ -312,17 +333,17 @@ hr {
         <nav>
             <ul>
                 <li><a href="#introduction">Introduction</a></li>
-<li><a href="#why-agents-why-adk">1. Why agents, why ADK</a></li>
-<li><a href="#tools-as-verbs">2. Tools as verbs</a></li>
+<li><a href="#why-agents-why-adk" class="quick-path">1. Why agents, why ADK</a></li>
+<li><a href="#tools-as-verbs" class="quick-path">2. Tools as verbs</a></li>
 <li><a href="#sessions-state-events-artifacts">3. Sessions, State, Events, Artifacts</a></li>
 <li><a href="#the-one-line-model-swap">4. The one-line model swap</a></li>
-<li><a href="#workflow-agents">5. Workflow agents</a></li>
+<li><a href="#workflow-agents" class="quick-path">5. Workflow agents</a></li>
 <li><a href="#multi-agent-hierarchies">6. Multi-agent hierarchies</a></li>
 <li><a href="#callbacks-as-middleware">7. Callbacks as middleware</a></li>
 <li><a href="#memory">8. Memory</a></li>
 <li><a href="#evaluation">9. Evaluation</a></li>
 <li><a href="#deployment">10. Deployment</a></li>
-<li><a href="#gemini-unlocks-grounding-and-context-caching">11. Gemini unlocks — grounding and context caching</a></li>
+<li><a href="#gemini-unlocks-grounding-and-context-caching" class="quick-path">11. Gemini unlocks — grounding and context caching</a></li>
 <li><a href="#thinking-budgets">12. Thinking budgets</a></li>
 <li><a href="#live-api-voice-agent">13. Live API voice agent</a></li>
 <li><a href="#a2a-protocol-the-side-step">14. A2A protocol — the side step</a></li>
@@ -362,7 +383,7 @@ hr {
         </section>
 
         <section class="chapter" id="why-agents-why-adk">
-            <div class="chapter-number">Chapter 1</div>
+            <div class="chapter-number">Chapter 1<span class="quick-path-badge">⚡ Quick path</span></div>
             <h1>Why agents, why ADK</h1>
 <p>The first time anyone builds an agent by hand, they end up writing roughly the same sixty lines of code. A retry loop around the LLM call because the API occasionally times out. A JSON-output parser that crashes on the fourth edge case and needs a try-except wrapper. A manual conversation-history list that outgrows the context window after twelve turns and starts costing money in ways that surprise the billing department. A switch statement that dispatches tool calls to Python functions, because the model keeps emitting structured tool requests and somebody has to execute them. Error handling for the day the model hallucinates a tool that doesn&rsquo;t exist, and the handler that prompts it to try again without the hallucination.</p>
 <p>Sixty lines. Every time.</p>
@@ -454,7 +475,7 @@ async for event in runner.run_async(
         </section>
 
         <section class="chapter" id="tools-as-verbs">
-            <div class="chapter-number">Chapter 2</div>
+            <div class="chapter-number">Chapter 2<span class="quick-path-badge">⚡ Quick path</span></div>
             <h1>Tools as verbs</h1>
 <p>If Module 01 gave you the mental model of an agent, this chapter is where the agent starts doing things. An agent without tools is a chatbot — it can only produce text. An agent with tools can look up data, call APIs, run code, talk to other agents. All the interesting properties of agent software come from the tool boundary, and almost all the interesting bugs do too. This chapter covers the four flavors of tools ADK supports, when to reach for each, and one design rule that applies across all of them.</p>
 <h2>The tool mental model</h2>
@@ -986,7 +1007,7 @@ For any code question:
         </section>
 
         <section class="chapter" id="workflow-agents">
-            <div class="chapter-number">Chapter 5</div>
+            <div class="chapter-number">Chapter 5<span class="quick-path-badge">⚡ Quick path</span></div>
             <h1>Workflow agents</h1>
 <p>Four chapters in, every example has featured one agent doing the work. One agent is enough for toy problems, and nothing more. Real agent software is composition — several agents arranged into pipelines, fan-outs, refinement loops — because the interesting problems never fit one prompt.</p>
 <p>This chapter introduces ADK&rsquo;s three first-class composition primitives: <code>SequentialAgent</code>, <code>ParallelAgent</code>, and <code>LoopAgent</code>. Each takes a list of child agents and runs them according to a fixed control-flow pattern. You don&rsquo;t write orchestration code; you name the pattern.</p>
@@ -2074,7 +2095,7 @@ runner = Runner(
         </section>
 
         <section class="chapter" id="gemini-unlocks-grounding-and-context-caching">
-            <div class="chapter-number">Chapter 11</div>
+            <div class="chapter-number">Chapter 11<span class="quick-path-badge">⚡ Quick path</span></div>
             <h1>Gemini unlocks — grounding and context caching</h1>
 <p><strong>Part 2 of the course starts here.</strong></p>
 <p>Ten chapters of vendor-neutral ADK. Everything ran on whichever model you picked — Claude, GPT, Qwen, Gemma, Gemini — via the <code>LiteLlm</code> wrapper. Part 2 is honest about what you give up by staying neutral. Three Gemini-specific capabilities earn their own chapters because nothing else in the market replicates them:</p>

@@ -53,6 +53,20 @@ body {
   text-align: center;
 }
 
+.progress-title .quick-path-badge {
+  display: inline-block;
+  background: var(--amber);
+  color: var(--navy-dark);
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 0.15rem 0.55rem;
+  border-radius: 9999px;
+  margin-left: 0.6rem;
+  vertical-align: 2px;
+}
+
 .progress-meta {
   display: flex;
   align-items: center;

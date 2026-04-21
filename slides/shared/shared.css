@@ -2,6 +2,8 @@
    Adapted from barcik-training-exin-ai-foundation/css/shared.css.
    Family-consistent navy with amber accent (distinct from EXIN gold). */
 
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap');
+
 :root {
   /* Brand colors */
   --navy: #1E3A5F;
@@ -42,7 +44,7 @@
   --info-bg: #E3F2FD;
 
   /* Typography */
-  --font-sans: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --font-sans: 'Nunito', 'Segoe UI', system-ui, -apple-system, sans-serif;
   --font-mono: 'SF Mono', 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
   --text-xs: 0.75rem;
   --text-sm: 0.875rem;
