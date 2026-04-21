@@ -37,6 +37,17 @@ Fix: each `slides/module-NN-slug/index.html` has the shared CSS/JS **inlined** b
 
 A banner comment at the top of each generated deck says: `<!-- Built by slides/build_slides.py — shared CSS/JS inlined for file:// portability. -->`. Don't hand-edit the inlined blocks; edit the shared source and re-run the builder.
 
+## Rendering slides as images
+
+`slides/render_slides.py` drives a headless Chromium (via Playwright) to produce per-slide JPG/PNG stills at 1920×1080, for video-editor workflows. Output goes to `slides-jpg/module-NN-slug/NN.jpg` (gitignored by default).
+
+One-time: `pip install playwright && python3 -m playwright install chromium`.
+Then: `python3 slides/render_slides.py` renders all 14 decks in ~45 seconds.
+
+CLI flags: `--module 05`, `--format png`, `--width 1280 --height 720`, `--quality 88`.
+
+The renderer hides the progress strip so each frame is a clean full-viewport slide.
+
 ## Writing voice — read this before writing content
 
 Two voices. Use the right one for the artifact.

@@ -101,6 +101,30 @@ open textbook/index.html
 
 Quick-path chapters are marked with **⚡** in the sidebar and chapter headers.
 
+### Render slides as images (for video editing)
+
+If you're recording a voiceover and need per-slide 1920×1080 stills for a video editor, `slides/render_slides.py` generates them in a headless browser via Playwright. Takes under a minute for all 14 decks (~274 slides).
+
+```bash
+# One-time setup
+pip install playwright
+python3 -m playwright install chromium
+
+# Render all decks as JPG at 1920×1080 → slides-jpg/module-NN-slug/NN.jpg
+python3 slides/render_slides.py
+
+# Just one module
+python3 slides/render_slides.py --module 05
+
+# PNG instead of JPG (lossless, bigger)
+python3 slides/render_slides.py --format png
+
+# Different resolution
+python3 slides/render_slides.py --width 1280 --height 720
+```
+
+The progress strip and on-screen controls are hidden in rendered output so each frame uses the full canvas. Output is `.gitignore`'d by default (re-generating is cheap); remove the entry if you want to commit stills alongside the source.
+
 ---
 
 ## Repository layout
@@ -109,7 +133,9 @@ Quick-path chapters are marked with **⚡** in the sidebar and chapter headers.
 index.html                  slides portal / course front page (deployable to S3)
 slides/shared/              canonical CSS/JS — edit here
 slides/build_slides.py      inlines shared/*.{css,js} into each deck (run after edits)
+slides/render_slides.py     renders every slide as a 1920×1080 JPG/PNG for video editing
 slides/module-NN-slug/      per-module deck (self-contained) + speaker_notes.md
+slides-jpg/                 (generated; gitignored) per-slide image renders
 textbook/_sources/chapters/ chapter markdown (canonical)
 textbook/_sources/tools/    build_html.py
 textbook/index.html         generated booklet (do not hand-edit)
