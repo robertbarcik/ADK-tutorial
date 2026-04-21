@@ -19,6 +19,8 @@ BOOK_TITLE = "Google ADK — A Practical Course"
 BOOK_SUBTITLE = "Vendor-agnostic agent development with the Google Agent Development Kit"
 
 CSS = """
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap');
+
 :root {
     --navy: #1e3a5f;
     --navy-light: #2a5280;
@@ -77,7 +79,7 @@ body {
 }
 
 #sidebar-header h2 {
-    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-family: 'Nunito', 'Helvetica Neue', Arial, sans-serif;
     font-size: 0.95rem;
     font-weight: 700;
     color: var(--navy);
@@ -100,7 +102,7 @@ body {
 #sidebar nav ul li a {
     display: block;
     padding: 0.55rem 1.5rem;
-    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-family: 'Nunito', 'Helvetica Neue', Arial, sans-serif;
     font-size: 0.85rem;
     color: var(--text-light);
     text-decoration: none;
@@ -160,7 +162,7 @@ body {
 }
 
 .chapter-number {
-    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-family: 'Nunito', 'Helvetica Neue', Arial, sans-serif;
     font-size: 0.82rem;
     font-weight: 700;
     color: var(--amber-dark);
@@ -169,8 +171,27 @@ body {
     margin-bottom: 0.5rem;
 }
 
+.chapter-number .quick-path-badge {
+    display: inline-block;
+    background: var(--amber);
+    color: white;
+    font-size: 0.68rem;
+    font-weight: 800;
+    padding: 0.18rem 0.55rem;
+    border-radius: 9999px;
+    margin-left: 0.6rem;
+    vertical-align: 1px;
+    letter-spacing: 0.06em;
+}
+
+#sidebar nav ul li a.quick-path::after {
+    content: '⚡';
+    margin-left: 0.4rem;
+    color: var(--amber-dark);
+}
+
 h1 {
-    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-family: 'Nunito', 'Helvetica Neue', Arial, sans-serif;
     font-size: 2.2rem;
     font-weight: 700;
     color: var(--navy);
@@ -179,7 +200,7 @@ h1 {
 }
 
 h2 {
-    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-family: 'Nunito', 'Helvetica Neue', Arial, sans-serif;
     font-size: 1.6rem;
     font-weight: 700;
     color: var(--navy);
@@ -189,7 +210,7 @@ h2 {
 }
 
 h3 {
-    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-family: 'Nunito', 'Helvetica Neue', Arial, sans-serif;
     font-size: 1.2rem;
     font-weight: 600;
     color: var(--navy-light);
@@ -243,7 +264,7 @@ table {
 thead { background: var(--navy); color: white; }
 
 th {
-    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-family: 'Nunito', 'Helvetica Neue', Arial, sans-serif;
     font-weight: 600;
     padding: 0.75rem 1rem;
     text-align: left;
@@ -401,6 +422,15 @@ def build():
         print(f"No chapter files found in {CHAPTERS_DIR}")
         return
 
+    # Filenames that belong to the 1-hour Quick path. Marked with a badge in
+    # both the sidebar and the chapter header. See README "Quick path".
+    QUICK_PATH_FILES = {
+        "01-mental-model.md",
+        "02-tools.md",
+        "05-workflow-agents.md",
+        "11-gemini-grounding-caching.md",
+    }
+
     chapters = []
     for f in files:
         with open(f, "r", encoding="utf-8") as fh:
@@ -408,17 +438,23 @@ def build():
         title = extract_title(content) or os.path.basename(f).replace(".md", "").replace("_", " ")
         html_content = md_to_html(content)
         ch_id = make_id(title)
-        chapters.append((title, ch_id, html_content))
+        is_quick = os.path.basename(f) in QUICK_PATH_FILES
+        chapters.append((title, ch_id, html_content, is_quick))
 
     nav_items = []
-    for i, (title, ch_id, _) in enumerate(chapters):
+    for i, (title, ch_id, _, is_quick) in enumerate(chapters):
         label = title if i == 0 else f"{i}. {title}"
-        nav_items.append(f'<li><a href="#{ch_id}">{label}</a></li>')
+        cls = ' class="quick-path"' if is_quick else ''
+        nav_items.append(f'<li><a href="#{ch_id}"{cls}>{label}</a></li>')
     nav_html = "\n".join(nav_items)
 
     sections = []
-    for i, (title, ch_id, html_content) in enumerate(chapters):
-        ch_num = "" if i == 0 else f'<div class="chapter-number">Chapter {i}</div>'
+    for i, (title, ch_id, html_content, is_quick) in enumerate(chapters):
+        badge = '<span class="quick-path-badge">⚡ Quick path</span>' if is_quick else ''
+        if i == 0:
+            ch_num = ""
+        else:
+            ch_num = f'<div class="chapter-number">Chapter {i}{badge}</div>'
         sections.append(f'''
         <section class="chapter" id="{ch_id}">
             {ch_num}
