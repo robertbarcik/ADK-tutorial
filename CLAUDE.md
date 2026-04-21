@@ -117,7 +117,7 @@ Two environment variables students (and Claude) load from `.env` (copy from `.en
 
 ## Running and testing notebooks
 
-Before merging any module PR, the notebook must run top-to-bottom against a fresh kernel:
+Before committing a module change, the notebook must run top-to-bottom against a fresh kernel:
 
 ```bash
 python3 -m venv .venv
@@ -150,9 +150,8 @@ python3 textbook/_sources/tools/build_html.py
 
 ## Git workflow
 
-- One branch + one PR per module (after the scaffolding PR). Title format: `course(MNN): <module name>`.
-- All via `gh` CLI. No force-pushes, no `--no-verify`, no amending published commits.
-- Do not auto-merge — user reviews and merges each PR.
+- Commit directly to `main` and push. No feature branches, no pull requests for this repo.
+- No force-pushes, no `--no-verify`, no amending published commits.
 
 ## Reference repos (style only — do not modify from here)
 
