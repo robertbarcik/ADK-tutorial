@@ -4,135 +4,135 @@
 
 ## Slide 1 — Title
 
-Module seven. Callbacks as middleware. Six lifecycle hooks wrap every invocation of your agent, and they all follow the same simple rule: return `None` to proceed normally, return a value to short-circuit. That single convention turns the hook mechanism into a general-purpose guardrail and interception layer. Guardrails, caches, PII redaction, test mocks — all the same pattern.
+Welcome to module seven — callbacks as middleware. Six lifecycle hooks wrap every invocation of your agent, and they all follow the same simple rule — return `None` to proceed normally, or return a value to short-circuit. That single convention turns the hook mechanism into a general-purpose guardrail and interception layer, which is why the same pattern covers things like guardrails, caches, PII redaction, and test mocks.
 
 ---
 
 ## Slide 2 — Middleware analogy
 
-The analogy. Callbacks are for agents what middleware is for web handlers. If you've used Express middleware, Django middleware, or plugin hooks in any framework, you already know the shape — a pipeline of pre- and post-hooks around each step of the request lifecycle. ADK takes the same idea and applies it to the agent lifecycle.
+The analogy to hold in your head is that callbacks are for agents what middleware is for web handlers. If you've used something like Express middleware, Django middleware, or plugin hooks in any framework, you already know the shape — a pipeline of pre- and post-hooks around each step of the request lifecycle. ADK takes the same idea and applies it to the agent lifecycle.
 
 ---
 
 ## Slide 3 — Six hooks
 
-Three lifecycle events, each wrapped by a before/after pair.
+Let me walk through the six hooks. There are three lifecycle events, and each one is wrapped by a before/after pair.
 
-Agent runs — `before_agent_callback` and `after_agent_callback`. Fire at the boundaries of the whole invocation.
+First, the agent run itself — so `before_agent_callback` and `after_agent_callback`. These fire at the boundaries of the whole invocation.
 
-Model call — `before_model_callback` and `after_model_callback`. Fire around every LLM request.
+Second, the model call — `before_model_callback` and `after_model_callback`. These fire around every LLM request.
 
-Tool call — `before_tool_callback` and `after_tool_callback`. Fire around every tool execution.
+And third, the tool call — `before_tool_callback` and `after_tool_callback`. These fire around every tool execution.
 
-Plus two error-handling hooks for recovering from exceptions: `on_model_error_callback` and `on_tool_error_callback`. Less commonly used; default is the error propagates.
+On top of those six, there are two error-handling hooks for recovering from exceptions — `on_model_error_callback` and `on_tool_error_callback`. They're less commonly used, because the default is that the error just propagates.
 
 ---
 
 ## Slide 4 — Return-to-override header
 
-The one rule. Return-to-override. Return `None`, things proceed. Return a value, things short-circuit.
+If you remember one rule about callbacks, remember this — return-to-override. Return `None`, and things proceed. Return a value, and things short-circuit.
 
 ---
 
 ## Slide 5 — The entire API
 
-Here it is. The entire callback API, on one slide. A function that takes a context and some hook-specific arguments. Inside, you observe, log, or validate. At the end, decide.
+What you see on this slide is the entire callback API, on one slide. A function that takes a context and some hook-specific arguments. Inside, you observe, log, or validate. And at the end, you decide.
 
 `return None` means "I'm just observing, let the real call happen."
 
 `return <a value>` means "skip the real call and use this instead."
 
-That's it. Same pattern across all six hooks. The only thing that varies is what type of value each hook accepts as a replacement.
+That's it — the same pattern across all six hooks. The only thing that varies is what type of value each hook accepts as a replacement.
 
 ---
 
 ## Slide 6 — Demo 1 header
 
-Demo one. `before_model_callback`. The canonical 5-line blocklist guardrail.
+Time for demo one — `before_model_callback`, the canonical five-line blocklist guardrail.
 
 ---
 
 ## Slide 7 — Five lines of safety gate
 
-Here's the code. A blocklist of words, a callback function that checks the latest user message against the list, and if it matches, returns a canned `LlmResponse`. The LLM is never called.
+In code, the blocklist guardrail looks like this. A list of forbidden words, a callback function that checks the latest user message against the list, and if it matches, the callback returns a canned `LlmResponse`. As a result, the LLM is never called.
 
-Two details worth noticing. The `llm_request.contents` list has the full chat history; the latest turn is the last entry. And the returned value is a proper `LlmResponse` object with model-role content — that's what ADK expects when you short-circuit.
+Two details worth noticing. First, the `llm_request.contents` list has the full chat history, and the latest turn is the last entry. Second, the returned value is a proper `LlmResponse` object with model-role content — that's what ADK expects when you short-circuit.
 
 ---
 
 ## Slide 8 — Live: blocklist
 
-Switch to the notebook. Cell eleven. Two queries: a harmless one about photosynthesis passes through to the LLM. A query containing "password" hits the callback, gets short-circuited, never touches the LLM. Watch the event stream — the blocked run has no model-deliberation events. Just the callback's canned response.
+Switch to the notebook — cell eleven. We'll run two queries. First, a harmless one about photosynthesis, which passes through to the LLM. Second, a query containing "password", which hits the callback, gets short-circuited, and never touches the LLM. Watch the event stream — the blocked run has no model-deliberation events at all, just the callback's canned response.
 
 ---
 
 ## Slide 9 — LLM never called
 
-The payoff, on one slide. On the blocked run, the LLM was never called. Zero tokens billed. Guaranteed refusal.
+The payoff of that demo, on one slide. On the blocked run, the LLM was never called. Zero tokens billed. Guaranteed refusal.
 
-Compare this to a soft guardrail — an instruction that says "refuse to discuss passwords." An instruction is a polite request the model can misinterpret or be jailbroken around. A code-level check in a callback is a wall. It cannot be bypassed by anything the user types, because the text never reaches the model.
+Compare this to a soft guardrail — so an instruction that says "refuse to discuss passwords." An instruction is really just a polite request the model can misinterpret or be jailbroken around. A code-level check in a callback, on the other hand, is a wall. It cannot be bypassed by anything the user types, because the text never reaches the model.
 
-This is the single most important reason to learn callbacks: they're how you enforce safety at the framework layer, not the prompt layer.
+This is the single most important reason to learn callbacks — they're how you enforce safety at the framework layer, not at the prompt layer.
 
 ---
 
 ## Slide 10 — Demo 2 header
 
-Demo two. `after_tool_callback`. PII redaction.
+On to demo two — `after_tool_callback`, applied to PII redaction.
 
 ---
 
 ## Slide 11 — Redact fields
 
-The pattern. A tool returns a dict with some sensitive fields. The callback runs after the tool, before the model sees the result. It checks if the return is a dict, copies it, replaces sensitive keys with `[REDACTED]`, returns the cleaned version. ADK uses the cleaned version as the tool-response the model sees.
+The redaction pattern looks like this. A tool returns a dict with some sensitive fields. The callback runs after the tool, but before the model sees the result. It checks if the return is a dict, copies it, replaces sensitive keys with `[REDACTED]`, and returns the cleaned version. ADK then uses the cleaned version as the tool-response the model sees.
 
-The sensitive-fields set here is salary, SSN, home address — typical PII. In your own code, put whatever fields you don't want to leak.
+The sensitive-fields set here is salary, SSN, and home address — so typical PII. In your own code, you'd put whatever fields you don't want to leak.
 
 ---
 
 ## Slide 12 — Live: PII redaction
 
-Notebook cell fourteen. The HR agent looks up Alice. The tool returns her full record — email, department, salary, SSN, home address. The callback intercepts it on the way back. The model sees only email and department as real values; salary, SSN, and home address come through as `[REDACTED]`. The final response is appropriately cagey.
+Over in cell fourteen of the notebook, the HR agent looks up Alice. The tool returns her full record — email, department, salary, SSN, and home address. The callback intercepts it on the way back. As a result, the model sees only email and department as real values; salary, SSN, and home address all come through as `[REDACTED]`. And the final response is appropriately cagey.
 
 ---
 
 ## Slide 13 — Why this matters
 
-The key observation. The tool function itself returned the full record. Your Python code, your audit logs, your database writes — they all saw the real values. But the model saw the redacted version.
+The key observation from that demo is this. The tool function itself returned the full record — which means your Python code, your audit logs, your database writes all saw the real values. But the model saw the redacted version.
 
-That's the production value. You contain the PII blast radius at the callback layer, not at the tool-function layer. Other systems that legitimately need the full data — your billing pipeline, your HR database — can still call the tool function directly without the callback, and they get the real values.
+That's the production value. You contain the PII blast radius at the callback layer, not at the tool-function layer. Other systems that legitimately need the full data — things like your billing pipeline or your HR database — can still call the tool function directly without the callback, and they get the real values.
 
 ---
 
 ## Slide 14 — Demo 3 header
 
-Demo three. `before_tool_callback`. Mocking for tests.
+And now demo three — `before_tool_callback`, applied to mocking for tests.
 
 ---
 
 ## Slide 15 — Short-circuit expensive tools
 
-The pattern. A dict of mock responses, keyed by ticker. The callback checks if the tool being called is `fetch_stock_price` and whether the ticker has a mock entry. If yes, returns the mock; the real tool never runs. If no, returns `None`; the real tool runs normally.
+The mocking pattern looks like this. A dict of mock responses, keyed by ticker. The callback checks whether the tool being called is `fetch_stock_price` and whether the ticker has a mock entry. If yes, it returns the mock, and the real tool never runs. If no, it returns `None`, and the real tool runs normally.
 
 ---
 
 ## Slide 16 — Production win
 
-The production value, on one slide. Same agent code, tests without hitting real APIs. Inject the callback in tests, leave it off in production. No separate test doubles, no test-only code paths in your agent. The callback is the test seam.
+The production value of that pattern, on one slide. Same agent code, tests without hitting real APIs. You inject the callback in tests, and you leave it off in production. No separate test doubles, no test-only code paths in your agent. The callback is the test seam.
 
-This is how you make agent code unit-testable. It's also how you build resilience — if the real API is down, a `before_tool_callback` can return a cached fallback instead of failing the request.
+That's how you make agent code unit-testable. It's also how you build resilience — so if the real API is down, a `before_tool_callback` can return a cached fallback instead of failing the request.
 
 ---
 
 ## Slide 17 — Six hooks reference
 
-All six hooks, with one-line use cases.
+What you see on this slide is all six hooks, with one-line use cases.
 
-Agent-level hooks are less common. Before-agent for pre-flight setup; after-agent for final-output logging.
+Agent-level hooks are less common — before-agent is for pre-flight setup, and after-agent is for final-output logging.
 
 Model-level hooks are where guardrails, caching, and prompt-injection checks live.
 
-Tool-level hooks are where mocking, PII redaction, and argument validation live.
+And tool-level hooks are where mocking, PII redaction, and argument validation live.
 
 Memorize the three "before" hooks at minimum — they're the ones you reach for when you want to short-circuit something.
 
@@ -140,17 +140,17 @@ Memorize the three "before" hooks at minimum — they're the ones you reach for 
 
 ## Slide 18 — Callbacks vs alternatives
 
-When to pick callbacks versus other mechanisms. Four ways to intervene in an agent's lifecycle.
+So when should you pick callbacks versus other mechanisms? There are really four ways to intervene in an agent's lifecycle.
 
-Instruction prompt — soft preferences, style. One agent's behavior.
+First, the instruction prompt — good for soft preferences and style. So one agent's behavior.
 
-Tool function code — guards on irreversible operations. One tool's safety.
+Second, tool function code — good for guards on irreversible operations. So one tool's safety.
 
-Callbacks — cross-cutting concerns for one agent's whole lifecycle. Guardrails, PII, caching.
+Third, callbacks — for cross-cutting concerns across one agent's whole lifecycle. Things like guardrails, PII, and caching.
 
-Plugins — newer, broader, applies across all agents in a runner. Org-wide policies, audit logging.
+And finally, plugins — newer, broader, and applied across all agents in a runner. Things like org-wide policies and audit logging.
 
-The rule: callbacks for agent-specific logic, plugins for app-wide policy. If the same policy must fire on every agent in your app, reach for a plugin. If it's specific to one agent, callbacks are right.
+So the rule of thumb is this — callbacks for agent-specific logic, plugins for app-wide policy. If the same policy must fire on every agent in your app, reach for a plugin. If it's specific to one agent, callbacks are the right tool.
 
 Plugins are out of scope today — module ten touches on them for production deployments.
 
@@ -158,20 +158,20 @@ Plugins are out of scope today — module ten touches on them for production dep
 
 ## Slide 19 — Observability gotcha
 
-A real gotcha worth naming so you're not surprised. Callback execution does not automatically appear in ADK's OpenTelemetry traces. At least as of version 1.28 — check release notes if you're on a newer version, this might change.
+Before we wrap, there's a real observability gotcha worth naming so you're not surprised. Callback execution does not automatically appear in ADK's OpenTelemetry traces — at least as of version 1.28, so check the release notes if you're on a newer version, because this might change.
 
-Concretely: if you're using Cloud Trace, Langfuse, or Arize to observe runs, you'll see LLM calls, tool calls, state deltas. You will not see "before_model_callback ran, returned None" as a span.
+Concretely, if you're using something like Cloud Trace, Langfuse, or Arize to observe runs, you'll see LLM calls, tool calls, and state deltas. You will not see "before_model_callback ran, returned None" as a span.
 
-If you rely on callbacks for policy decisions and you need the callback execution to be observable in production, instrument your callbacks manually. Print statements, log lines, or manual spans via the OpenTelemetry API. Documented gap; Google's own ADK blog acknowledges it.
+That's why, if you rely on callbacks for policy decisions and you need that execution to be observable in production, you'll want to instrument your callbacks manually. Things like print statements, log lines, or manual spans via the OpenTelemetry API. It's a documented gap — Google's own ADK blog acknowledges it.
 
 ---
 
 ## Slide 20 — What to carry forward
 
-What to carry forward. Six hooks. One rule: return `None` or return a value. The pattern generalizes to guardrails, redactors, mocks, caches — pick the hook that fits and write the check.
+So what should you carry forward from today? Six hooks. One rule — return `None` or return a value. The pattern generalizes to guardrails, redactors, mocks, and caches — so pick the hook that fits and write the check.
 
 ---
 
 ## Slide 21 — Next
 
-Module eight. Memory. We've been on in-memory session state for seven modules. Module eight is where sessions get real persistence — we swap to `DatabaseSessionService` backed by SQLite, introduce the `load_memory` tool and `MemoryService` for explicit long-term recall, and revisit the Skeptical Memory pattern from module three with more depth. See you there.
+Up next in module eight, we get into memory. We've been on in-memory session state for seven modules now, and module eight is where sessions get real persistence — we swap to `DatabaseSessionService` backed by SQLite, introduce the `load_memory` tool and `MemoryService` for explicit long-term recall, and revisit the Skeptical Memory pattern from module three with more depth. See you there.

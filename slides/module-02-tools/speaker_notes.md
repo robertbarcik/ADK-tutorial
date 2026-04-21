@@ -4,246 +4,246 @@
 
 ## Slide 1 — Title
 
-Module two. Tools as verbs. If module one gave you the mental model of an agent, this module is where the agent starts doing things. Tools are the verbs. An agent without tools can only produce text — that's a chatbot. An agent with tools can look up data, call APIs, run code, talk to other agents. That's software. Four flavors of tools, one mental model, one design rule, one interlude on risk. Let's go.
+Welcome to module two — tools as verbs. If module one gave you the mental model of an agent, this module is where the agent actually starts doing things. Tools are the verbs. An agent without tools can only produce text, which really means it's just a chatbot. An agent with tools, on the other hand, can look up data, call APIs, run code, or even talk to other agents — and that's what we'd call software. In this module, we'll cover four flavors of tools, one mental model, one design rule, and a short interlude on risk. Let's go.
 
 ---
 
 ## Slide 2 — Without / with tools
 
-Here's the framing. Without tools, an agent is a chatbot. It produces text. That's the entire scope. With tools, an agent is software — it can reach out to the world, change state, make decisions that stick. Everything interesting about agent development happens at the tool boundary. So we spend a full module here.
+The framing is this. Without tools, an agent is essentially a chatbot — it produces text, and that's the entire scope. With tools, on the other hand, the agent becomes software — it can reach out to the world, change state, and make decisions that stick. Everything interesting about agent development really happens at this tool boundary. And that's why we spend a full module here.
 
 ---
 
 ## Slide 3 — The tool mental model
 
-The picture. When the model decides a tool is needed, it emits a structured call — tool name, arguments. ADK catches the call, finds the code behind it, runs the code, wraps the return value, and feeds it back to the model as a tool-response event. Then the model produces a final answer based on what the tool returned.
+Let me walk through what actually happens when an agent calls a tool. When the model decides a tool is needed, it emits a structured call — so the tool name, plus the arguments. ADK then catches that call, finds the code behind it, runs the code, wraps the return value, and feeds it back to the model as a tool-response event. From there, the model produces a final answer based on what the tool returned.
 
-This is the same shape regardless of what kind of tool you're wiring up. What changes between the four flavors is only where the schema comes from and where the code runs. That's it.
+This is the same shape, regardless of what kind of tool you're wiring up. The only things that change between the four flavors are where the schema comes from, and where the code runs. That's really it — just those two dimensions vary.
 
 ---
 
 ## Slide 4 — Four flavors differ only in two things
 
-Here's the table you should carry in your head. Four flavors.
+Here's the table you should carry in your head — four flavors in total.
 
-FunctionTool — the schema comes from your Python function's docstring and type hints. The code lives in your file. We used one in module one.
+First, FunctionTool. The schema comes from your Python function's docstring and type hints, and the code lives in your file. We already used one of these in module one.
 
-OpenAPIToolset — the schema comes from an OpenAPI specification. The code lives in a remote HTTP API.
+Second, OpenAPIToolset. The schema comes from an OpenAPI specification, and the code lives in a remote HTTP API.
 
-McpToolset — the schema comes from an MCP server's list-tools response. The code lives in a separate process.
+Third, McpToolset. The schema comes from an MCP server's list-tools response, and the code lives in a separate process.
 
-AgentTool — the schema comes from another agent's name and description. The code is that other agent.
+And finally, AgentTool. The schema comes from another agent's name and description, and the code is that other agent.
 
-Same abstraction to the model. The model cannot tell the difference between these four at the schema level. We'll build one of each today.
+The key thing is that it's the same abstraction to the model. The model really cannot tell the difference between these four at the schema level. Today, we'll build one of each.
 
 ---
 
 ## Slide 5 — Flavor 1 header
 
-Flavor one. FunctionTool. Plain Python functions.
+Let's start with flavor one — FunctionTool, which is just plain Python functions.
 
 ---
 
 ## Slide 6 — The docstring is the schema
 
-The thing to internalize about FunctionTool: **the docstring is the schema.** ADK reads your function's docstring and type hints and generates the JSON schema the LLM provider expects — OpenAI-style, Gemini-style, whichever.
+If you remember one thing about FunctionTool, remember this — **the docstring is the schema.** What I mean is, ADK reads your function's docstring and type hints, and from those, it generates the JSON schema that the LLM provider expects — so whether that's OpenAI-style, Gemini-style, or whichever.
 
-Three practical consequences. First, write the docstring for the model to read, not for a human code reviewer. The model has no channel to ask you what a parameter means. Every argument needs an unambiguous description.
+This has three practical consequences. First, you want to write the docstring for the model to read, and not for a human code reviewer. The model has no channel to ask you what a parameter means, so every argument really needs an unambiguous description.
 
-Second, type hints are load-bearing. A missing type hint degrades to string, often silently. Always type your tool functions.
+Second, the type hints are load-bearing. A missing type hint degrades to a string, often silently — so always type your tool functions.
 
-Third, return a JSON-serializable dict or string. Not a custom class, not a NumPy array. The return value is sent verbatim to the model as a tool-response event — it has to be serializable.
+And third, you want to return a JSON-serializable dict or string. Not a custom class, and not a NumPy array. The return value is sent verbatim to the model as a tool-response event, which means it has to be serializable.
 
 ---
 
 ## Slide 7 — Code example
 
-Here's what a richer FunctionTool looks like. Two parameters, one optional with a default. The Args block in the docstring becomes the parameter descriptions the model sees. The Python default becomes an optional argument in the schema. The typing `city: str` becomes `"type": "string"` in the emitted schema.
+A richer FunctionTool example looks like this. There are two parameters, and one of them is optional with a default. The Args block in the docstring becomes the parameter descriptions the model sees. The Python default becomes an optional argument in the schema. And the typing `city: str` becomes `"type": "string"` in the emitted schema.
 
-One small design note: I tell the model explicitly when to use fahrenheit. Without that sentence, the model guesses.
+One small design note worth calling out: I tell the model explicitly when to use fahrenheit. Because without that specific sentence, the model would just guess.
 
 ---
 
 ## Slide 8 — Live: FunctionTool
 
-Switch to the notebook. Cell thirteen. The weather agent gets a Munich question with a Fahrenheit qualifier. Watch the tool call arguments: the model picks `units='fahrenheit'` because the instruction told it to, and the tool returns a number the model then formats as English.
+Switch to the notebook, cell thirteen. The weather agent gets a Munich question with a Fahrenheit qualifier. Watch the tool call arguments — the model picks `units='fahrenheit'` because the instruction told it to, and the tool then returns a number, which the model formats into English.
 
 ---
 
 ## Slide 9 — Flavor 2 header
 
-Flavor two. OpenAPIToolset. Consume an entire REST API.
+Now on to flavor two — OpenAPIToolset, which lets you consume an entire REST API.
 
 ---
 
 ## Slide 10 — When to use OpenAPI
 
-When the thing you want to call is a REST API that already has an OpenAPI spec, you don't want to hand-write a FunctionTool per endpoint. Hand ADK the spec; get N tools automatically.
+When the thing you want to call is a REST API that already has an OpenAPI spec, you don't want to hand-write a FunctionTool per endpoint. Instead, you just hand ADK the spec, and you get N tools automatically.
 
-The use case in production: your company already has an API with a spec — that same spec your web frontend is using. Point the agent at it. The agent gets to call every endpoint. No glue code per endpoint.
+The use case in production is this. Your company already has an API with a spec — the same spec your web frontend is using. You point the agent at it, and the agent gets to call every endpoint. No glue code per endpoint.
 
-One quirk to know: ADK snake-cases operation IDs. If your spec says `operationId: getLatestRate`, the tool the model sees is named `get_latest_rate`. If a call isn't happening and you're sure the instruction is right, check whether ADK renamed the tool.
+There's one quirk worth knowing about: ADK snake-cases operation IDs. So if your spec says `operationId: getLatestRate`, the tool the model sees is actually named `get_latest_rate`. If a call isn't happening and you're sure the instruction is right, check whether ADK has renamed the tool.
 
 ---
 
 ## Slide 11 — OpenAPI code
 
-Three lines to integrate. A spec dict (or JSON string, or YAML string) goes into OpenAPIToolset. The toolset goes into the agent's tools list. Done.
+In code, wiring it up is really just three lines. You have a spec dict — or a JSON string, or a YAML string — and it goes into OpenAPIToolset. The toolset then goes into the agent's tools list. And that's it.
 
-I'm using the Frankfurter currency API for the demo — it's free, no auth, public. The spec I'm passing is minimal, just one endpoint. In production your spec would be larger and every path would become a tool.
+For the demo, I'm using the Frankfurter currency API — it's free, no auth, and public. The spec I'm passing is minimal, just one endpoint. In production, your spec would be larger, and every path would become a tool.
 
 ---
 
 ## Slide 12 — Live: OpenAPI
 
-Switch to the notebook. Cell sixteen. I ask the fx agent for the CHF to JPY rate. Watch the tool call arguments: `base='CHF'`, `symbols='JPY'`. The tool response is the raw JSON body from the Frankfurter API, unmodified. The model reads the rate field and produces the final answer.
+Switch to the notebook, cell sixteen. I ask the fx agent for the CHF to JPY rate. Watch the tool call arguments — `base='CHF'`, `symbols='JPY'`. The tool response is the raw JSON body from the Frankfurter API, unmodified. The model then reads the rate field and produces the final answer.
 
-ADK doesn't transform the API's output — it passes it through as-is. That's useful for debugging; you can see the API's actual contract in the event stream.
+Notice that ADK doesn't transform the API's output at all — it just passes it through as-is. That's actually really useful for debugging, because you can see the API's actual contract right there in the event stream.
 
 ---
 
 ## Slide 13 — Flavor 3 header
 
-Flavor three. McpToolset. Talk to a separate tool server.
+Flavor three is McpToolset — where you talk to a separate tool server.
 
 ---
 
 ## Slide 14 — What MCP is
 
-Model Context Protocol. Anthropic's standard for exposing tools to agents. It was donated to the Linux Foundation in December 2025, and it is now the de facto standard for agent-to-tool communication across the industry — Anthropic, Google, OpenAI, Microsoft, the open-source stack, all of them support it.
+MCP stands for Model Context Protocol, and it's Anthropic's standard for exposing tools to agents. It was donated to the Linux Foundation in December 2025, and it's now the de facto standard for agent-to-tool communication across the industry — Anthropic, Google, OpenAI, Microsoft, the open-source stack, all of them support it.
 
-An MCP server is a separate process. Your agent connects over stdin/stdout (or HTTP, or Server-Sent Events) and uses the server's tools as if they were local.
+An MCP server is essentially a separate process that your agent connects to — over stdin/stdout, or HTTP, or Server-Sent Events — and then uses the server's tools as if they were local.
 
-The reason MCP matters: the server can be written in any language. TypeScript, Go, Rust, whatever. It can run on any machine. It can own any state — database connections, API credentials, caches. The agent doesn't know. It speaks MCP; the tools show up.
+Here's why MCP really matters. The server can be written in any language — TypeScript, Go, Rust, whatever you want. It can run on any machine. And it can own any state — things like database connections, API credentials, or caches. The agent doesn't need to know any of that. It just speaks MCP, and the tools show up.
 
 ---
 
 ## Slide 15 — MCP code
 
-Connect to an MCP server — two concepts. The connection parameters say how to reach it: stdio, which language to run the server in, what script file. Then McpToolset spawns the server, speaks the handshake, and lists its tools.
+Connecting to an MCP server really comes down to two concepts. First, the connection parameters say how to reach it — so things like stdio, which language to run the server in, what script file. Then McpToolset spawns the server, speaks the handshake, and lists its tools.
 
-This repo ships three ready-made MCP servers in the `mcp_servers/` folder — one for tickets, one for a knowledge base, one for system monitoring. We're using the ticket server here. It exposes five tools; five tools appear in the agent with no extra code.
+This repo ships three ready-made MCP servers in the `mcp_servers/` folder — one for tickets, one for a knowledge base, and one for system monitoring. We're using the ticket server here. It exposes five tools, and as a result, five tools appear in the agent with no extra code.
 
 ---
 
 ## Slide 16 — Live: MCP
 
-Switch to the notebook. Cell nineteen. The ticket agent gets a WiFi question. Watch the event stream — the tool called is `search_tickets`, which came from the MCP server. The response is the server's payload, wrapped in an MCP content envelope. The model extracts the ticket and produces the final answer.
+Switch to the notebook, cell nineteen. The ticket agent gets a WiFi question. Watch the event stream — the tool being called is `search_tickets`, which came from the MCP server. The response is the server's payload, wrapped in an MCP content envelope. The model then extracts the ticket and produces the final answer.
 
-The MCP subprocess is running on your laptop right now, in the background, holding the ticket database. When we end the notebook we'll close it; otherwise it leaks.
+Worth noting: the MCP subprocess is running on your laptop right now, in the background, holding the ticket database. When we end the notebook, we'll close it — otherwise it leaks.
 
 ---
 
 ## Slide 17 — Flavor 4 header
 
-Flavor four. AgentTool. Wrap an agent as a tool.
+And the final flavor is AgentTool — where you wrap an agent as a tool.
 
 ---
 
 ## Slide 18 — AgentTool vs sub_agents
 
-This one has a conceptual subtlety worth getting right. ADK has two ways to put one agent inside another.
+This fourth flavor has a conceptual subtlety worth getting right. ADK actually has two ways to put one agent inside another — AgentTool and sub_agents — and they are not interchangeable.
 
-AgentTool is the consultant pattern. The parent calls the specialist like a function. The parent stays in charge. The child answers, and control goes back to the parent automatically.
+AgentTool is the consultant pattern — the parent calls the specialist like a function. The parent stays in charge, the child answers, and then control goes back to the parent automatically.
 
-sub_agents is the transfer pattern. The parent hands the conversation over. The child owns the conversation — for one turn or twenty turns — until the child itself decides to transfer back.
+sub_agents, on the other hand, is the transfer pattern — where the parent hands the conversation over entirely. The child then owns the conversation, whether that's for one turn or twenty turns, until the child itself decides to transfer back.
 
-AgentTool when the child has a clean I/O contract. sub_agents when the child should drive the dialog. M06 does this comparison in detail. For today — focus on the consultant pattern.
+So the rule of thumb is this. Use AgentTool when the child has a clean I/O contract, and sub_agents when the child should drive the dialog. M06 will do this comparison in detail. But for today, just focus on the consultant pattern.
 
 ---
 
 ## Slide 19 — AgentTool code
 
-A translator wrapped as a tool. The translator is itself an agent — it has a model, an instruction, a purpose. But instead of giving it to `sub_agents`, we wrap it in `AgentTool` and hand that to the parent.
+In this example, we wrap a translator as a tool. The translator is itself an agent — it has a model, an instruction, and a purpose. But instead of giving it to `sub_agents`, we wrap it in `AgentTool` and hand that to the parent.
 
-Now the parent's model sees `translator` in its tools list, with the translator's description as the tool description. When a user asks for a translation, the parent calls the translator, gets its response, and incorporates it.
+Now the parent's model sees `translator` in its tools list, with the translator's description as the tool description. So when a user asks for a translation, the parent calls the translator, gets its response back, and incorporates it into the reply.
 
 ---
 
 ## Slide 20 — Live: AgentTool
 
-Cell twenty-two of the notebook. The orchestrator gets asked for a Slovak translation of a phrase. Watch the event stream. The orchestrator calls the `translator` tool. The translator runs as its own LLM call, produces a translation, and the response comes back. The orchestrator then produces the final user-facing reply. Two model calls, one observable event trace.
+Over in cell twenty-two of the notebook, the orchestrator gets asked for a Slovak translation of a phrase. Watch the event stream. The orchestrator calls the `translator` tool. The translator runs as its own LLM call, produces a translation, and the response comes back. The orchestrator then produces the final user-facing reply. So you get two model calls, but all captured in a single observable event trace.
 
 ---
 
 ## Slide 21 — Interlude header
 
-Quick interlude. Two minutes. Theory. Risk-based tool design — one of the ten patterns from the Agentic Design Patterns publication. The idea matters enough to pause the flavor tour and make you think about it.
+Time for a quick interlude — about two minutes of theory, on risk-based tool design. This is one of the ten patterns from the Agentic Design Patterns publication, and the idea matters enough that I want to pause the flavor tour and make you think about it.
 
 ---
 
 ## Slide 22 — Risk tiers
 
-Not all tools are equal. A tool that reads a ticket is not in the same category as a tool that deletes the database. The difference is blast radius — the scope of damage a misfiring tool call can do before anyone notices.
+Not all tools are equal. A tool that reads a ticket is just not in the same category as a tool that deletes the database. The difference between them is blast radius — the scope of damage a misfiring tool call can do before anyone notices.
 
-A practical taxonomy. Four tiers.
+A practical taxonomy looks like this — four tiers, going from safest to most dangerous.
 
-Read-only: no external change. `get_weather`, `search_tickets`. No guard needed.
+First, read-only. These don't change anything external. Things like `get_weather` or `search_tickets`. No guard needed.
 
-Mutating, reversible: writes, but undoing the write is cheap. `create_ticket`, `send_draft_email`. Log every call; that's the audit trail.
+Second, mutating but reversible. These do write, but undoing the write is cheap. Things like `create_ticket` or `send_draft_email`. Log every call, and that's your audit trail.
 
-Mutating, irreversible: writes that are hard to roll back. `charge_card`, `post_to_slack`. These need explicit confirmation — not just an instruction to the model, but a code-level gate.
+Third, mutating and irreversible. These are writes that are hard to roll back. Things like `charge_card` or `post_to_slack`. These really need explicit confirmation — not just an instruction to the model, but a code-level gate.
 
-Catastrophic: destructive, multi-user, loud. `drop_database`, `delete_user`, `publish_press_release`. Humans in the loop. Do not let the agent call these directly.
+And finally, catastrophic. These are destructive, multi-user, loud. Things like `drop_database`, `delete_user`, or `publish_press_release`. Humans in the loop. Do not let the agent call these directly.
 
-The temptation is to treat every tool the same because the framework treats them the same. Don't.
+The temptation is to treat every tool the same, because the framework kind of treats them the same at first glance. But don't — because each tier really does deserve a different level of guardrail.
 
 ---
 
 ## Slide 23 — Where to put the guard
 
-The rule, on one slide. **Put the guard in the tool code.** Not in the instruction.
+If there's one rule to carry forward from this interlude, it's this: **put the guard in the tool code** — not in the instruction.
 
-An instruction is a polite request the model can ignore or misread. Code is a wall. If your delete-ticket tool checks for a confirmation token in Python, no instruction in the world can bypass it. If your check is only "please ask the user first" in the system prompt, the model will skip it sometimes, and the first time that costs you data, you'll wish you'd enforced it in code.
+And here's why that distinction really matters. An instruction is just a polite request that the model can ignore or misread. Code, on the other hand, is a wall. So if your delete-ticket tool checks for a confirmation token in Python, then no instruction in the world can bypass it. But if your check is only something like "please ask the user first" in the system prompt, the model will skip it sometimes — and the first time that costs you data, you'll wish you'd enforced it in code.
 
 ---
 
 ## Slide 24 — Confirmation gate code
 
-Here's the pattern. The tool takes an extra argument — `confirmation_token`, defaulted to empty. If the token matches the expected string for this specific ticket, the delete proceeds. If the token is empty or wrong, the function returns a preview and does nothing.
+In code, that guard looks like this. The tool takes an extra argument, `confirmation_token`, which is defaulted to empty. If the token matches the expected string for this specific ticket, then the delete proceeds. But if the token is empty or wrong, the function just returns a preview and does nothing.
 
-Now the instruction to the model can say "call with empty token first, show the preview, confirm with the user, and only retry with the real token if they explicitly confirm." But if the model skips any of that — if it tries to short-cut — the tool returns a preview anyway, and the delete does not happen.
+Now the instruction to the model can say something like "call with an empty token first, show the preview, confirm with the user, and only retry with the real token if they explicitly confirm." But if the model skips any of that — if it tries to short-cut — the tool returns a preview anyway, and the delete does not happen.
 
-Notice the subtle detail: the expected token is computed from the ticket ID. That way a model that somehow learned a fixed token string from training data can't just hardcode it.
+Notice the subtle detail here: the expected token is computed from the ticket ID. That way, a model that somehow learned a fixed token string from training data can't just hardcode it and slip through.
 
 ---
 
 ## Slide 25 — Live: guarded delete
 
-Cell twenty-five. The user says "delete ticket T-1001." Watch the event stream.
+Over in cell twenty-five, the user says "delete ticket T-1001." Watch the event stream.
 
-The agent calls `delete_ticket` without a confirmation token. The tool returns a preview, not a delete. The agent surfaces the preview to the user and asks for confirmation. Only on a second turn, with the right token, would the delete actually happen. The data is safe.
+The agent calls `delete_ticket` without a confirmation token. The tool returns a preview, not a delete. The agent then surfaces the preview to the user and asks for confirmation. Only on a second turn, with the right token, would the delete actually happen. So the data is safe.
 
 ---
 
 ## Slide 26 — Choosing a flavor
 
-A quick reference before we wrap. If the thing you want is a Python function running in-process — FunctionTool. If it's an existing REST API with a spec — OpenAPIToolset. If it's a tool server written in any language with its own state — McpToolset. If it's a specialist sub-agent the parent should call like a function — AgentTool.
+Before we wrap up, let me give you a quick reference on which flavor to pick when. If the thing you want is a Python function running in-process — use FunctionTool. If it's an existing REST API with a spec — OpenAPIToolset. If it's a tool server written in any language with its own state — McpToolset. And if it's a specialist sub-agent the parent should call like a function — AgentTool.
 
-The FunctionTool is the default. Reach for the others when you have a specific reason — a language mismatch, an existing spec, a shared tool catalog.
+FunctionTool is really the default. Reach for the others only when you have a specific reason — things like a language mismatch, an existing spec, or a shared tool catalog.
 
 ---
 
 ## Slide 27 — Gotchas
 
-Three real gotchas to pre-empt.
+Before we wrap up, there are three real gotchas worth pre-empting.
 
-One: built-in Google tools — Search, code execution, Vertex Search — cannot coexist with other tools in the same agent. There's an exception for Search on ADK 1.16 or later via `bypass_multi_tools_limit=True`. Otherwise, wrap each built-in tool in its own sub-agent. We'll do this in module eleven.
+The first one is that the built-in Google tools — so Search, code execution, and Vertex Search — cannot coexist with other tools in the same agent. There's an exception for Search on ADK 1.16 or later, via `bypass_multi_tools_limit=True`. Otherwise, you have to wrap each built-in tool in its own sub-agent. We'll actually do this in module eleven.
 
-Two: MCP stdio in Jupyter or Colab. Jupyter replaces `sys.stderr` with an object without a `.fileno()`, which breaks subprocess spawn. The notebook patches this in the setup cell automatically. If you ever write your own MCP integration in a notebook, patch `sys.stderr` first.
+The second gotcha is around MCP stdio in Jupyter or Colab. Jupyter replaces `sys.stderr` with an object that doesn't have a `.fileno()`, which in turn breaks the subprocess spawn. Luckily, the notebook patches this in the setup cell automatically. But if you ever write your own MCP integration in a notebook, remember to patch `sys.stderr` first.
 
-Three: LiteLLM plus tool calls plus streaming is known-flaky on non-Gemini models. ADK defaults tool-calling demos to non-streaming, which is the right choice for our purposes. If you turn streaming back on for production, test the tool paths hard.
+And the third gotcha: LiteLLM plus tool calls plus streaming is known to be flaky on non-Gemini models. That's why ADK defaults tool-calling demos to non-streaming, which is the right choice for our purposes. If you do turn streaming back on for production, test the tool paths hard.
 
 ---
 
 ## Slide 28 — Takeaway
 
-What to carry forward. Tools come in four flavors. Same abstraction to the model; different integration targets. FunctionTool, OpenAPIToolset, McpToolset, AgentTool.
+So what should you carry forward from today? Tools really come in four flavors — same abstraction to the model, different integration targets. So that's FunctionTool, OpenAPIToolset, McpToolset, and AgentTool.
 
-And the design rule. Blast radius matters. Put the guard in the tool code, not in the instruction.
+And then there's the design rule to remember from the interlude: blast radius really matters, which is why you want to put the guard in the tool code, not in the instruction.
 
 ---
 
 ## Slide 29 — Next
 
-Module three. Sessions, State, Events, Artifacts. Where the conversation's memory actually lives. See you there.
+Up next in module three, we dig into Sessions, State, Events, and Artifacts — where the conversation's memory actually lives. See you there.
