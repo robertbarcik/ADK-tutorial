@@ -1746,14 +1746,7 @@ async for event in runner.run_async(
     <p style="color:var(--text-muted);font-size:0.9em;">We'll use in-memory for M01&ndash;M07 and swap to database in M08 when memory becomes the point.</p>
   </div>
 
-  <!-- 10 Live demo 1 -->
-  <div class="slide" data-module="01" data-type="section-title" style="background:linear-gradient(135deg,var(--amber-dark) 0%,var(--amber) 100%);">
-    <h1>Live</h1>
-    <h3>One agent, no tools, one event</h3>
-    <p class="highlight-text" style="color:white;">Notebook cells 1&ndash;7</p>
-  </div>
-
-  <!-- 11 Event stream: simplest case -->
+  <!-- 10 Event stream: simplest case -->
   <div class="slide" data-module="01">
     <h2>The simplest event stream</h2>
 <pre class="diagram">USER: Hi, what's your name?
@@ -1762,7 +1755,7 @@ async for event in runner.run_async(
     <p>One event. Final response. That's the minimum a conversation can produce.</p>
   </div>
 
-  <!-- 12 Add a tool -->
+  <!-- 11 Add a tool -->
   <div class="slide" data-module="01" data-type="code">
     <h2>Add a tool</h2>
     <p>Tools are Python functions. The docstring and type hints <em>are</em> the JSON schema the model sees. No decorators, no config.</p>
@@ -1779,14 +1772,7 @@ weather_agent = Agent(
 )</code></pre>
   </div>
 
-  <!-- 13 Live demo 2 -->
-  <div class="slide" data-module="01" data-type="section-title" style="background:linear-gradient(135deg,var(--amber-dark) 0%,var(--amber) 100%);">
-    <h1>Live</h1>
-    <h3>Add a tool; three events appear</h3>
-    <p class="highlight-text" style="color:white;">Notebook cells 8&ndash;10</p>
-  </div>
-
-  <!-- 14 Event stream with tool -->
+  <!-- 12 Event stream with tool -->
   <div class="slide" data-module="01">
     <h2>The event stream with a tool</h2>
 <pre class="diagram">USER: What's the weather in Prague?
@@ -1797,7 +1783,7 @@ weather_agent = Agent(
     <p>Three events. You can see the decision, the execution, and the synthesis. If the agent had called the wrong tool, you'd see it here. If it had called two tools, you'd see both.</p>
   </div>
 
-  <!-- 15 adk web -->
+  <!-- 13 adk web -->
   <div class="slide" data-module="01">
     <h2>The visual version: <code>adk web</code></h2>
     <p>Run <code>adk web</code> in a folder with your agent and it opens a chat UI with the same event stream rendered as a clickable timeline. Same data, friendlier for exploration.</p>
@@ -1807,7 +1793,7 @@ weather_agent = Agent(
     </div>
   </div>
 
-  <!-- 16 Against the competitors -->
+  <!-- 14 Against the competitors -->
   <div class="slide" data-module="01" data-type="comparison">
     <h2>ADK vs. the obvious alternatives</h2>
     <div class="comparison-layout">
@@ -1832,7 +1818,7 @@ weather_agent = Agent(
     <p style="margin-top:var(--space-4);">ADK's pitch: <strong>typed Python, not a DSL. Explicit primitives, not metaphors.</strong> Smaller community (~18K stars, ~202 contributors) but the clearest event-level observability in the category.</p>
   </div>
 
-  <!-- 17 Vendor lock in, addressed -->
+  <!-- 15 Vendor lock in, addressed -->
   <div class="slide" data-module="01" data-type="code">
     <h2>"But it's a Google framework"</h2>
     <p>The single most common objection. It is a Google framework, and Google uses it to sell Gemini and Vertex. But the model abstraction is a one-line swap:</p>
@@ -1850,7 +1836,7 @@ model = LiteLlm(model="ollama_chat/qwen3:8b")</code></pre>
     <p>Part 1 of this course uses LiteLLM against OpenRouter for exactly this reason. We only switch to direct Gemini in Part 2, where Gemini-only features earn it.</p>
   </div>
 
-  <!-- 18 Course arc -->
+  <!-- 16 Course arc -->
   <div class="slide" data-module="01" data-type="split">
     <h2>The arc of this course</h2>
     <div class="split-layout">
@@ -1865,7 +1851,7 @@ model = LiteLlm(model="ollama_chat/qwen3:8b")</code></pre>
     </div>
   </div>
 
-  <!-- 19 Per-module shape -->
+  <!-- 17 Per-module shape -->
   <div class="slide" data-module="01">
     <h2>Each module ships four artifacts</h2>
     <ul>
@@ -1877,7 +1863,7 @@ model = LiteLlm(model="ollama_chat/qwen3:8b")</code></pre>
     <p>All four are aligned. A term defined in the textbook is the same term used on the slide is the same term used in the notebook.</p>
   </div>
 
-  <!-- 20 Takeaway -->
+  <!-- 18 Takeaway -->
   <div class="slide" data-module="01" data-type="keyfact">
     <h2 class="text-muted" style="border-bottom:none;font-size:1em;text-transform:uppercase;letter-spacing:0.08em;">Write these four down</h2>
     <p><strong>Agent &middot; Runner &middot; Event &middot; Session</strong></p>

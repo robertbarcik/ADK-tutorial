@@ -4,7 +4,7 @@
 
 ## Slide 1 — Title
 
-Welcome to this course on Google's Agent Development Kit, or ADK for short. AI agents are everywhere right now: in job descriptions, product roadmaps, and startup pitch decks. But there's a wide gap between calling an LLM API once and having something running in production that reads a database, hits other services, and holds memory across weeks. Over the next fourteen modules, you're going to cross it.
+Welcome to this course on Google's Agent Development Kit, or ADK for short. AI agents are everywhere right now: in job descriptions, product roadmaps, and startup pitch decks. But there's a wide gap between calling an LLM API once and having something running in production that reads a database, hits other services, and holds memory across weeks. By the end of this course, you'll have crossed it.
 
 ---
 
@@ -16,7 +16,7 @@ By the end of the course, you'll have shipped agents across all five categories 
 
 ## Slide 3 — Three parts
 
-OK, so here's how the course unfolds, in three parts. Part one is the foundation, and it's the bulk of the work: ten modules where the same agent code runs on Claude, GPT, Gemini, Qwen, or even a local Llama, all through a thin abstraction called LiteLLM. Along the way you'll give agents tools, persistent memory, multi-agent orchestration, evaluation, and HTTP deployment. Part two is the Gemini-only stretch, three modules on capabilities you genuinely cannot replicate on any other provider: search grounding straight from inside the model, long-context caching that turns million-token prompts into cheap reads, thinking budgets you can dial up or down, and the Live voice API for real-time conversation. And the final module is a short side step into A2A, the new Linux Foundation protocol that lets your agent talk to someone else's agent, even when the two were built in completely different frameworks.
+OK, so here's how the course unfolds, in three parts. Part one is the foundation, and it's the bulk of the work. The same agent code you write runs on Claude, GPT, Gemini, Qwen, or even a local Llama, all through a thin abstraction called LiteLLM. Along the way you'll give agents tools, persistent memory, multi-agent orchestration, evaluation, and HTTP deployment. Part two is the Gemini-only stretch, a deep dive into capabilities you genuinely cannot replicate on any other provider: search grounding straight from inside the model, long-context caching that turns million-token prompts into cheap reads, thinking budgets you can dial up or down, and the Live voice API for real-time conversation. And the final module is a short side step into A2A, the new Linux Foundation protocol that lets your agent talk to someone else's agent, even when the two were built in completely different frameworks.
 
 ---
 
