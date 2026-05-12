@@ -84,11 +84,21 @@ For most of this course we'll stay on the in-memory service. Later in the course
 
 ---
 
+### Notebook break — Run the greeter agent
+
+[Switch the screen to the notebook.]
+
+Now let me actually run the greeter agent we just defined. The Agent is here, a Runner is wired to a session service, and I'm sending in a single user message, "hi". I'll iterate over every event that comes back and print it. [Run the cell.] One event. Marked `FINAL`. Containing the greeter's response. That's the smallest event stream an ADK conversation can produce.
+
+[Switch back to the slide deck.]
+
+---
+
 ## Slide 10 — The simplest event stream
 
-Here's what one event looks like in practice. The user sends in "Hi, what's your name?", and a single event comes back, marked `FINAL`, containing the greeter's response.
+You just saw it run. On the slide is the same event stream as a static diagram you can refer back to. One event, marked `FINAL`, containing the greeter's response.
 
-This is the minimum a conversation can produce. The user turn goes in, one model turn comes out, the stream ends. Nothing interesting on its own, but it establishes the baseline for what happens when we add a tool to the same agent.
+That's the minimum a conversation can produce. Nothing interesting on its own, but it establishes the baseline for what happens when we add a tool to the same agent.
 
 ---
 
@@ -104,17 +114,21 @@ One thing worth flagging up front: the docstring really matters. The model reads
 
 ---
 
+### Notebook break — Add a tool and watch the events multiply
+
+[Switch the screen to the notebook.]
+
+Same setup as before, but now the agent has the `get_weather` tool wired in. I send a question: "What's the weather in Prague?" [Run the cell.] Watch how the event stream grows. First, a tool call event: the model decided `get_weather` was needed with `city='Prague'`. Second, a tool response event: ADK ran the function and the return value, `{'city': 'Prague', 'report': 'Cloudy, 14C'}`, is here. Third, the final text response from the model, a natural-language sentence about Prague's weather. Three events instead of one, all of them visible.
+
+[Switch back to the slide deck.]
+
+---
+
 ## Slide 12 — The event stream with a tool
 
-Here's what three events look like in practice, once the agent has a tool to call.
+Here's the same event stream as a static diagram you can refer back to. Three events: a tool call, a tool response, and the final text answer.
 
-First, you see a tool call. The model decided a tool was needed and emitted a structured call: the tool name plus the arguments. ADK intercepted that before it left the agent. Notice the model did not execute the tool itself. It only asked to.
-
-Second, you see the tool response. ADK executed the Python function with those arguments, and then fed the return value back into the conversation as a tool-response event of its own.
-
-And third, the final text response. The model read the tool output, and wrote a natural-language answer for the user.
-
-So three distinct events, all visible, all inspectable. If the model had called the wrong tool, you'd see it in the first event. If it had called two tools in sequence, you'd see both calls, both responses, and then the final answer. This is the shape of agent behavior, and it's the reason the event stream is the agent-development debugger.
+The thing to internalize is this shape. If the model had called the wrong tool, you'd see it in the first event. If it had called two tools in sequence, you'd see both calls, both responses, and then the final answer. This is the shape of agent behavior, and it's the reason the event stream is the agent-development debugger.
 
 ---
 

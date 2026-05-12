@@ -70,6 +70,16 @@ One small design note worth calling out. I tell the model explicitly when to use
 
 ---
 
+### Notebook break — FunctionTool in action
+
+[Switch the screen to the notebook.]
+
+Here's the same `get_weather` function we just saw, wired into a working weather agent. I'll send a question that exercises the optional argument: "What's the weather in Munich? Reply in Fahrenheit." [Run the cell.] Watch the tool call arguments in the event stream. The model picked `units='fahrenheit'` because the docstring told it when to. The tool returns a number, and the model formats it into an English sentence for the user. Without that one sentence in the docstring, the model would have guessed celsius and the user would have been confused.
+
+[Switch back to the slide deck.]
+
+---
+
 ## Slide 8 — Flavor 2: OpenAPIToolset
 
 Now to flavor two: OpenAPIToolset. The motivation here is different from FunctionTool. With FunctionTool you write the Python code yourself. But what if the thing the agent needs to call is a REST API that already exists, complete with a specification? You don't want to hand-write a wrapper for every endpoint. That's what OpenAPIToolset is for.
@@ -93,6 +103,16 @@ Wiring OpenAPIToolset into an agent really takes three lines, and you can see al
 For our demo, we're using a free public API called Frankfurter. It returns currency exchange rates, requires no authentication, and exposes a single endpoint for fetching the latest rate. That makes it a clean teaching example. The OpenAPI spec we're passing to ADK is short, just one endpoint described in around twenty lines of YAML. So our agent ends up with exactly one tool: `get_latest_rate`.
 
 In a real production setting, your spec would be much bigger, maybe tens or hundreds of endpoints. Every one of those endpoints would automatically become a tool the agent can call, and you wouldn't have to write any per-endpoint glue code. That's the whole pitch of OpenAPIToolset.
+
+---
+
+### Notebook break — OpenAPIToolset against Frankfurter
+
+[Switch the screen to the notebook.]
+
+Here we have the Frankfurter spec wired into an `OpenAPIToolset`, and the resulting toolset handed to the agent. I'll ask: "What's the exchange rate from Swiss francs to Japanese yen?" [Run the cell.] Look at the event stream. The model called the auto-generated `get_latest_rate` tool with `base='CHF'` and `symbols='JPY'`. The tool response is the raw JSON body Frankfurter returned, completely unchanged. The model then reads the `rates.JPY` field and produces the final answer. Notice ADK didn't transform the API output at all. It just passed it through, which makes the API contract transparent and easy to debug.
+
+[Switch back to the slide deck.]
 
 ---
 
@@ -122,6 +142,16 @@ This repo ships three ready-made MCP servers in the `mcp_servers/` folder: one f
 
 ---
 
+### Notebook break — McpToolset against the ticket server
+
+[Switch the screen to the notebook.]
+
+Here ADK spawns the ticket MCP server as a subprocess and lists its tools automatically. The agent now has five tools available without us writing any of them. I'll ask: "Find any open tickets about WiFi." [Run the cell.] Watch the event stream. The model called `search_tickets`, which came from the MCP server, not from any Python code in this file. The response is the server's payload wrapped in an MCP content envelope. The model extracts the ticket details and answers in English. And the whole time, the ticket database lives inside the subprocess, where the agent never sees it directly.
+
+[Switch back to the slide deck.]
+
+---
+
 ## Slide 14 — Flavor 4: AgentTool
 
 And the final flavor is AgentTool. This is the most reflexive of the four. With AgentTool, the thing your agent is calling is another agent, wrapped to look like a tool. Useful when you have a specialist agent, say a translator or a code reviewer, that you want to plug into a bigger workflow without it taking over the conversation.
@@ -145,6 +175,16 @@ So the rule of thumb is this. Use AgentTool when the child has a clean input-out
 Here on the slide we have two agents. The first one is `translator`: a specialist whose only job is to translate English to Slovak. The second one is `orchestrator`, the parent agent that talks to the user. Instead of putting the translator into `sub_agents` and handing the conversation over, we wrap it in `AgentTool` and hand that to the orchestrator as if it were just another tool in its `tools=` list.
 
 Now the orchestrator's model sees `translator` in its tools list, with the translator's description as the tool description. When a user asks for a translation, the orchestrator calls the translator, gets its translation back, and incorporates it into the reply. The orchestrator stays in charge the whole time, and you see both agents' work in the same event stream.
+
+---
+
+### Notebook break — AgentTool with the translator
+
+[Switch the screen to the notebook.]
+
+Here's the orchestrator agent with the translator wrapped as an `AgentTool`. I'll send a request: "Translate 'good morning' to Slovak." [Run the cell.] Watch what happens in the event stream. The orchestrator calls the `translator` tool, which is itself an LLM call running a separate agent. The translator produces "dobré ráno" and that response comes back as a tool-response event. The orchestrator then writes the final reply to the user. Two model calls in one event trace, both visible, both inspectable, the parent never lost control of the conversation.
+
+[Switch back to the slide deck.]
 
 ---
 
@@ -187,6 +227,16 @@ Take a look at the code on the slide. The function is called `delete_ticket`, an
 Now the instruction to the model can say something like: "call with an empty token first, show the preview, confirm with the user, and only retry with the real token if they explicitly confirm." But if the model skips any of that, if it tries to short-cut and just calls the delete directly, the tool returns a preview anyway, and the delete does not happen.
 
 Notice the subtle detail here. The expected token is computed from the ticket ID. That way, a model that somehow learned a fixed token string from training data can't just hardcode it and slip through.
+
+---
+
+### Notebook break — The guarded delete in action
+
+[Switch the screen to the notebook.]
+
+Here's the agent with the guarded `delete_ticket` tool wired in. The user says: "Delete ticket T-1001." [Run the cell.] Look at what happens in the event stream. The agent called `delete_ticket` without a confirmation token, because that's the default first call. The tool returned a preview, not a deletion. The agent surfaces the preview to the user and asks them to confirm. The data is safe. On a second turn with the correct token, the delete would actually run, but only with that explicit hand-off.
+
+[Switch back to the slide deck.]
 
 ---
 
