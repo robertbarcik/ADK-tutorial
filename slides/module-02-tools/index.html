@@ -1684,7 +1684,7 @@ body {
       <li>Three consequences:</li>
     </ul>
     <div class="callout callout-tip">
-      <div class="callout-title">Tip</div>
+      <div class="callout-title">Three consequences</div>
       <ul style="margin:0;">
         <li>Write the docstring for the model, not for a human reviewer. The model has no channel to ask you what a parameter means.</li>
         <li>Type hints are load-bearing. Missing hints degrade to <code>string</code>.</li>
@@ -1708,21 +1708,14 @@ body {
     <p class="code-caption">The <code>Args:</code> block becomes the parameter descriptions. <code>str</code> becomes <code>"type": "string"</code>. The default value becomes <code>"required": false</code>.</p>
   </div>
 
-  <!-- 08 Live demo 1 -->
-  <div class="slide" data-module="02" data-type="section-title" style="background:linear-gradient(135deg,var(--amber-dark) 0%,var(--amber) 100%);">
-    <h1>Live</h1>
-    <h3>FunctionTool: get_weather(city='Munich', units='fahrenheit')</h3>
-    <p class="highlight-text" style="color:white;">Notebook cell 13</p>
-  </div>
-
-  <!-- 09 Flavor 2 header -->
+  <!-- 08 Flavor 2 header -->
   <div class="slide" data-module="02" data-type="section-title" style="background:linear-gradient(135deg,var(--navy-dark) 0%,var(--navy) 100%);">
     <div class="topic-badge">Flavor 2</div>
     <h1>OpenAPIToolset</h1>
     <p class="highlight-text">Consume an entire REST API.</p>
   </div>
 
-  <!-- 10 When to use OpenAPI -->
+  <!-- 09 When to use OpenAPI -->
   <div class="slide" data-module="02">
     <h2>When your target is a REST API with a spec</h2>
     <p>Don't hand-write a <code>FunctionTool</code> for every endpoint. Hand ADK the OpenAPI spec; get N tools automatically.</p>
@@ -1733,7 +1726,7 @@ body {
     </ul>
   </div>
 
-  <!-- 11 OpenAPI code -->
+  <!-- 10 OpenAPI code -->
   <div class="slide" data-module="02" data-type="code">
     <h2>Frankfurter currency API — three lines to integrate</h2>
 <pre><code>fx_toolset = OpenAPIToolset(spec_dict=FRANKFURTER_SPEC)
@@ -1745,21 +1738,14 @@ fx_agent = LlmAgent(
     <p class="code-caption">The spec lives in a dict (or a JSON/YAML string). Every path becomes a tool. No per-endpoint glue code.</p>
   </div>
 
-  <!-- 12 Live demo 2 -->
-  <div class="slide" data-module="02" data-type="section-title" style="background:linear-gradient(135deg,var(--amber-dark) 0%,var(--amber) 100%);">
-    <h1>Live</h1>
-    <h3>OpenAPI: CHF to JPY via Frankfurter</h3>
-    <p class="highlight-text" style="color:white;">Notebook cell 16</p>
-  </div>
-
-  <!-- 13 Flavor 3 header -->
+  <!-- 11 Flavor 3 header -->
   <div class="slide" data-module="02" data-type="section-title" style="background:linear-gradient(135deg,var(--navy-dark) 0%,var(--navy) 100%);">
     <div class="topic-badge">Flavor 3</div>
     <h1>McpToolset</h1>
     <p class="highlight-text">Talk to a separate tool server.</p>
   </div>
 
-  <!-- 14 What is MCP -->
+  <!-- 12 What is MCP -->
   <div class="slide" data-module="02">
     <h2>MCP in one paragraph</h2>
     <p><strong>Model Context Protocol.</strong> Anthropic's standard for exposing tools to agents, donated to the Linux Foundation in December 2025. A de facto protocol for agent-to-tool communication across the industry. An MCP server is a separate process; your agent connects over stdio or HTTP and uses its tools as if they were local.</p>
@@ -1769,7 +1755,7 @@ fx_agent = LlmAgent(
     </div>
   </div>
 
-  <!-- 15 MCP code -->
+  <!-- 13 MCP code -->
   <div class="slide" data-module="02" data-type="code">
     <h2>Connect to an existing MCP server</h2>
 <pre><code>ticket_toolset = McpToolset(
@@ -1786,21 +1772,14 @@ ticket_agent = LlmAgent(..., tools=[ticket_toolset])</code></pre>
     <p class="code-caption">ADK spawns the server, speaks MCP, and discovers its tools. Five tools appear with no extra code.</p>
   </div>
 
-  <!-- 16 Live demo 3 -->
-  <div class="slide" data-module="02" data-type="section-title" style="background:linear-gradient(135deg,var(--amber-dark) 0%,var(--amber) 100%);">
-    <h1>Live</h1>
-    <h3>MCP: search_tickets("WiFi") via stdio subprocess</h3>
-    <p class="highlight-text" style="color:white;">Notebook cell 19</p>
-  </div>
-
-  <!-- 17 Flavor 4 header -->
+  <!-- 14 Flavor 4 header -->
   <div class="slide" data-module="02" data-type="section-title" style="background:linear-gradient(135deg,var(--navy-dark) 0%,var(--navy) 100%);">
     <div class="topic-badge">Flavor 4</div>
     <h1>AgentTool</h1>
     <p class="highlight-text">Wrap an agent as a tool.</p>
   </div>
 
-  <!-- 18 AgentTool vs sub_agents -->
+  <!-- 15 AgentTool vs sub_agents -->
   <div class="slide" data-module="02" data-type="comparison">
     <h2>The consultant pattern</h2>
     <div class="comparison-layout">
@@ -1819,7 +1798,7 @@ ticket_agent = LlmAgent(..., tools=[ticket_toolset])</code></pre>
     <p style="margin-top:var(--space-4);text-align:center;color:var(--text-muted);">M06 will do this comparison in detail. Today: focus on the consultant pattern.</p>
   </div>
 
-  <!-- 19 AgentTool code -->
+  <!-- 16 AgentTool code -->
   <div class="slide" data-module="02" data-type="code">
     <h2>A translator, called like a function</h2>
 <pre><code>translator = LlmAgent(
@@ -1836,21 +1815,14 @@ orchestrator = LlmAgent(
 )</code></pre>
   </div>
 
-  <!-- 20 Live demo 4 -->
-  <div class="slide" data-module="02" data-type="section-title" style="background:linear-gradient(135deg,var(--amber-dark) 0%,var(--amber) 100%);">
-    <h1>Live</h1>
-    <h3>AgentTool: orchestrator → translator</h3>
-    <p class="highlight-text" style="color:white;">Notebook cell 22</p>
-  </div>
-
-  <!-- 21 Interlude header -->
+  <!-- 17 Interlude header -->
   <div class="slide" data-module="02" data-type="section-title" style="background:linear-gradient(135deg,#6A1B9A 0%,#8E24AA 100%);">
     <div class="topic-badge">Interlude &middot; Agentic Design Patterns</div>
     <h1>Risk-based tool design</h1>
     <p class="highlight-text">Not all tools are equal. Treat them like they aren't.</p>
   </div>
 
-  <!-- 22 Risk tiers -->
+  <!-- 18 Risk tiers -->
   <div class="slide" data-module="02">
     <h2>Categorize tools by blast radius</h2>
     <table>
@@ -1867,14 +1839,14 @@ orchestrator = LlmAgent(
     <p style="margin-top:var(--space-4);">The temptation is to treat every tool the same because the framework does. Don't.</p>
   </div>
 
-  <!-- 23 Where to put the guard -->
+  <!-- 19 Where to put the guard -->
   <div class="slide" data-module="02" data-type="keyfact">
     <h2 class="text-muted" style="border-bottom:none;font-size:1em;text-transform:uppercase;letter-spacing:0.08em;">The rule</h2>
     <p>Put the guard in the <strong>tool code</strong>.</p>
     <p style="font-size:0.7em;color:var(--text-muted);margin-top:var(--space-4);">Not in the instruction. An instruction is a polite request the model can ignore. Code is a wall.</p>
   </div>
 
-  <!-- 24 Confirmation gate code -->
+  <!-- 20 Confirmation gate code -->
   <div class="slide" data-module="02" data-type="code">
     <h2>A delete tool with a confirmation gate</h2>
 <pre><code>def delete_ticket(ticket_id: str, confirmation_token: str = "") -> dict:
@@ -1891,14 +1863,7 @@ orchestrator = LlmAgent(
     ...</code></pre>
   </div>
 
-  <!-- 25 Live demo 5 -->
-  <div class="slide" data-module="02" data-type="section-title" style="background:linear-gradient(135deg,var(--amber-dark) 0%,var(--amber) 100%);">
-    <h1>Live</h1>
-    <h3>Guarded tool: delete returns a preview, not the delete</h3>
-    <p class="highlight-text" style="color:white;">Notebook cell 25</p>
-  </div>
-
-  <!-- 26 Choosing between flavors -->
+  <!-- 21 Choosing between flavors -->
   <div class="slide" data-module="02">
     <h2>Choosing a flavor</h2>
     <table>
@@ -1915,7 +1880,7 @@ orchestrator = LlmAgent(
     <p style="color:var(--text-muted);font-size:0.9em;">The FunctionTool is the default. Reach for the others when you have a specific reason.</p>
   </div>
 
-  <!-- 27 Gotchas -->
+  <!-- 22 Gotchas -->
   <div class="slide" data-module="02">
     <h2>Gotchas worth knowing now</h2>
     <div class="callout callout-gotcha">
@@ -1932,14 +1897,14 @@ orchestrator = LlmAgent(
     </div>
   </div>
 
-  <!-- 28 Takeaway -->
+  <!-- 23 Takeaway -->
   <div class="slide" data-module="02" data-type="keyfact">
     <h2 class="text-muted" style="border-bottom:none;font-size:1em;text-transform:uppercase;letter-spacing:0.08em;">What to carry forward</h2>
     <p>Tools come in <strong>four flavors</strong>. Same abstraction to the model; different integration targets.</p>
     <p style="font-size:0.85em;color:var(--text-muted);margin-top:var(--space-4);">And: <em>blast radius matters</em>. Put the guard in the tool code, not in the instruction.</p>
   </div>
 
-  <!-- 29 Next -->
+  <!-- 24 Next -->
   <div class="slide" data-module="02" data-type="section-title" style="background:linear-gradient(135deg,var(--navy) 0%,var(--navy-light) 100%);">
     <div class="topic-badge">Up next</div>
     <h1>M03 &mdash; Sessions, State, Events, Artifacts</h1>
