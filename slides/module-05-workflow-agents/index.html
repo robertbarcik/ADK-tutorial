@@ -1696,12 +1696,6 @@ pipeline = SequentialAgent(
 )</code></pre>
   </div>
 
-  <div class="slide" data-module="05" data-type="section-title" style="background:linear-gradient(135deg,var(--amber-dark) 0%,var(--amber) 100%);">
-    <h1>Live</h1>
-    <h3>summarizer → translator</h3>
-    <p class="highlight-text" style="color:white;">Notebook cell 9</p>
-  </div>
-
   <div class="slide" data-module="05" data-type="section-title" style="background:linear-gradient(135deg,var(--navy-dark) 0%,var(--navy) 100%);">
     <div class="topic-badge">Primitive 2</div>
     <h1>ParallelAgent</h1>
@@ -1724,12 +1718,6 @@ trio = ParallelAgent(
     name="trio",
     sub_agents=[de_researcher, sk_researcher, cz_researcher],
 )</code></pre>
-  </div>
-
-  <div class="slide" data-module="05" data-type="section-title" style="background:linear-gradient(135deg,var(--amber-dark) 0%,var(--amber) 100%);">
-    <h1>Live</h1>
-    <h3>Three researchers in parallel — ~1.25s total</h3>
-    <p class="highlight-text" style="color:white;">Notebook cell 12</p>
   </div>
 
   <div class="slide" data-module="05">
@@ -1798,12 +1786,6 @@ refiner = LoopAgent(
 )</code></pre>
   </div>
 
-  <div class="slide" data-module="05" data-type="section-title" style="background:linear-gradient(135deg,var(--amber-dark) 0%,var(--amber) 100%);">
-    <h1>Live</h1>
-    <h3>Generator+Critic — refinement in action</h3>
-    <p class="highlight-text" style="color:white;">Notebook cell 15</p>
-  </div>
-
   <div class="slide" data-module="05">
     <h2>What to always do</h2>
     <div class="callout callout-gotcha">
@@ -1836,12 +1818,6 @@ refiner = LoopAgent(
     ],
 )</code></pre>
     <p>Five LLM calls — three parallel researchers, then one synthesizer. Wall time ≈ two calls, not five. Production agents are built out of compositions like this.</p>
-  </div>
-
-  <div class="slide" data-module="05" data-type="section-title" style="background:linear-gradient(135deg,var(--amber-dark) 0%,var(--amber) 100%);">
-    <h1>Live</h1>
-    <h3>Parallel researchers → Sequential synthesizer</h3>
-    <p class="highlight-text" style="color:white;">Notebook cell 18</p>
   </div>
 
   <div class="slide" data-module="05" data-type="comparison">
