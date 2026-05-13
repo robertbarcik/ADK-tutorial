@@ -180,6 +180,6 @@ One key property holds across all four: a term defined on a slide is the same te
 
 ## Slide 18 — Write these down
 
-Agent. Runner. Event. Session. If you can say those four out loud right now without looking at the slide, you're ready for the practical part. If you hesitated on any of them, scroll back through the event-stream illustrations on the previous slides and re-read what each primitive is actually doing.
+Agent. Runner. Event. Session. If you can say those four out loud right now without looking at the slide, you're ready for what comes next. If you hesitated on any of them, scroll back through the event-stream illustrations on the previous slides, or open the notebook and re-run the cells we ran together.
 
-In the notebook walkthrough that comes next, you'll run all of this yourself: build the greeter, add the weather tool, and watch the event stream grow from one event to three. See you there.
+Up next, we get into tools. We had one flavor today: the plain Python function. ADK has three more flavors of tool, and we'll build one of each. See you there.

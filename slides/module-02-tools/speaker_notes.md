@@ -270,4 +270,4 @@ And then there's the design rule to remember from the interlude. Blast radius ma
 
 ## Slide 24 — Up next
 
-In the notebook walkthrough that comes next, you'll build all four flavors yourself. The FunctionTool with the rich docstring, the OpenAPIToolset against the Frankfurter currency API, the McpToolset against a stdio ticket server, and the AgentTool wrapping a translator. You'll also wire up the guarded delete tool from the interlude. Then, in the module after that, we dig into Sessions, State, Events, and Artifacts: where the conversation's memory actually lives. See you there.
+Up next, we dig into Sessions, State, Events, and Artifacts: where the conversation's memory actually lives. We'll cover how to make an agent remember a user across separate conversations, the four-tier scope system that decides whether memory lasts a turn or forever, and the three patterns for writing state. See you there.

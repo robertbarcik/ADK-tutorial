@@ -108,7 +108,7 @@ Pattern three is where people get caught. You fetch a session with `get_session(
 
 So the rule, on one slide. Use `output_key=` on the agent. Use `tool_context.state[...]` inside a tool. And do not assign directly to a returned session's `.state` dict. The first two persist because they go through events. The third bypasses events, and events are how ADK persists state.
 
-The notebook walkthrough that comes later has a cell that demonstrates this pitfall explicitly. Run it, and you'll see the direct-assignment values vanish on the next fetch.
+There's a cell in the notebook that demonstrates this pitfall explicitly. Run it on your own time, and you'll see the direct-assignment values vanish on the next fetch.
 
 ---
 
@@ -180,4 +180,4 @@ And one principle from the Skeptical Memory pattern: stored state is a hint, not
 
 ## Slide 19 — Up next
 
-In the notebook walkthrough that comes next, you'll see all of this in action. You'll create an agent that remembers a favorite color in session one, then watch it recall the color in a fresh session two. You'll also reproduce the silent-failure pitfall with direct `.state` assignment, so you can recognize it when it happens in your own code. Then, in the module after that, we open up `LiteLlm`. Claude, GPT, Qwen, or a locally-hosted Ollama model, all from the same agent code, all with just one line of configuration different. See you there.
+Up next, we open up the model abstraction we've been treating as a black box. The same agent code will run against Claude, GPT, Qwen, or a locally-hosted Ollama model, all from one line of configuration. We'll cover the specific gotcha around the `ollama_chat` prefix that causes infinite tool-call loops if you get it wrong. See you there.
