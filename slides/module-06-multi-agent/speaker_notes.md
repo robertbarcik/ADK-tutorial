@@ -4,7 +4,7 @@
 
 ## Slide 1 — Title
 
-Welcome to module six: multi-agent hierarchies. This is the module where the LLM itself decides which agent handles the user's request. When the user's input is what determines which specialist runs, you don't want a workflow agent. You want the LLM at the top to route. ADK has two patterns for exactly this, and they look similar on the surface but behave very differently. Today we pull them apart.
+Hi and welcome back. This module is on multi-agent hierarchies, the situation where the LLM at the top of the stack decides which agent should handle the user's request. When the user's input is what determines which specialist runs, you don't want a workflow agent. You want the LLM to route. ADK has two patterns for exactly this. They look similar on the surface but behave very differently, and today we pull them apart.
 
 ---
 
@@ -12,13 +12,13 @@ Welcome to module six: multi-agent hierarchies. This is the module where the LLM
 
 There are three ways in total to compose agents in ADK, and it's worth naming all three up front so you see where today fits.
 
-First, workflow agents. Declarative control flow with named primitives: Sequential, Parallel, and Loop. You name the workflow, the framework runs the pattern. Use them when you can name the workflow.
+The first way is workflow agents, where you declare the control flow as a named primitive like Sequential, Parallel, or Loop. The framework runs the pattern. Use them when you can name the workflow.
 
-Second, sub-agents. LLM-driven routing via transfer. The coordinator's LLM picks which specialist should take over, and ADK hands off control.
+The second way is sub-agents, which is LLM-driven routing via transfer. The coordinator's LLM picks which specialist should take over, and ADK hands off control to that specialist.
 
-And third, AgentTool. LLM-driven routing via function call. The coordinator picks which specialist to call, the specialist runs, and the coordinator stays in charge.
+The third way is AgentTool, also LLM-driven, but routing via function call instead of transfer. The coordinator picks which specialist to call, the specialist runs, and the coordinator stays in charge of the conversation.
 
-Today we focus on the two LLM-driven patterns, side by side.
+Today we focus on the two LLM-driven patterns, side by side, because they look similar at first glance and people get them confused.
 
 ---
 
@@ -30,7 +30,7 @@ The whole module comes down to one question, and you can see it on the slide. Af
 
 ## Slide 4 — sub_agents: the org-chart transfer
 
-On to pattern one: `sub_agents`, the org-chart transfer.
+Let's start with pattern one: the `sub_agents` approach, which I think of as the org-chart transfer. The idea is that the coordinator hands the user's question off entirely to one of its specialists, the way a manager forwards an email to whoever should actually answer it. The next slides unpack how this is wired up and what it looks like in code.
 
 ---
 
@@ -50,7 +50,7 @@ One production-sensitive detail worth flagging: the child's `description=` field
 
 ## Slide 6 — sub_agents in code
 
-Here on the slide we have the sub_agents pattern in code. Two specialists at the top, each with a name, a description (which is really the routing schema), and its own instruction. Then a coordinator at the bottom that has both specialists in its `sub_agents=` list. And that's it. No routing code, because ADK handles the transfer mechanism for you.
+On the slide we have the sub_agents pattern in code. Two specialists at the top, each with a name, a description (which is really the routing schema), and its own instruction. Then a coordinator at the bottom that has both specialists in its `sub_agents=` list. And that's it. No routing code, because ADK handles the transfer mechanism for you.
 
 ---
 
@@ -58,7 +58,7 @@ Here on the slide we have the sub_agents pattern in code. Two specialists at the
 
 [Switch the screen to the notebook.]
 
-Here's the coordinator and its two specialists wired up. I'll send a greeting first. [Run the cell.] Watch the event stream. The coordinator's model emits a `transfer_to_agent` call with `agent_name='greeter'`, and ADK routes. The greeter produces the final response, and that response is what the user sees. Now a weather question. [Run the next cell.] Same shape, different routing target: `transfer_to_agent(agent_name='weather_specialist')`. The weather specialist takes over and produces the answer.
+Let me show you this in action. The coordinator and its two specialists are already wired up in the notebook. I'll send a greeting first. [Run the cell.] Watch the event stream. The coordinator's model emits a `transfer_to_agent` call with `agent_name='greeter'`, and ADK routes. The greeter produces the final response, and that response is what the user sees. Now a weather question. [Run the next cell.] Same shape, different routing target: `transfer_to_agent(agent_name='weather_specialist')`. The weather specialist takes over and produces the answer.
 
 [Switch back to the slide deck.]
 
@@ -66,7 +66,7 @@ Here's the coordinator and its two specialists wired up. I'll send a greeting fi
 
 ## Slide 7 — The event stream
 
-Here on the slide is the same event stream as a static reference. The coordinator emitted `transfer_to_agent` with `agent_name='weather_specialist'`. ADK routed. The weather specialist produced the final response.
+What you see on the slide is the same event stream, captured as a static reference. The coordinator emitted `transfer_to_agent` with `agent_name='weather_specialist'`. ADK routed. The weather specialist produced the final response.
 
 The key thing to notice is the author of that final response. It's the specialist, not the coordinator. That's the tell that this is a transfer pattern.
 
@@ -74,7 +74,7 @@ The key thing to notice is the author of that final response. It's the specialis
 
 ## Slide 8 — AgentTool: the consultant pattern
 
-On to pattern two: `AgentTool`, the consultant pattern.
+Now to pattern two: the `AgentTool` approach, also known as the consultant pattern. Same idea of LLM-driven routing, but the wiring is different and the resulting behavior is different. The next slides unpack how it works and what it looks like in code.
 
 ---
 
@@ -92,7 +92,7 @@ So the specialist never gets the microphone. It answers a structured question, h
 
 ## Slide 10 — AgentTool in code
 
-Here on the slide we have the same two specialists from before, but now wrapped in `AgentTool` and placed in the coordinator's `tools=` list, not `sub_agents=`. That single word difference in the constructor is really the whole behavioral difference between the two patterns.
+The slide shows the same two specialists from before, but now wrapped in `AgentTool` and placed in the coordinator's `tools=` list, not `sub_agents=`. That single word difference in the constructor is really the whole behavioral difference between the two patterns.
 
 ---
 
@@ -100,7 +100,7 @@ Here on the slide we have the same two specialists from before, but now wrapped 
 
 [Switch the screen to the notebook.]
 
-Here's the same team, this time wired up as AgentTool consultants. Same prompts as before. Greeting first. [Run the cell.] Watch what's different in the event stream this time. The coordinator emits a tool call, but the tool is `greeter`, the specialist. The specialist returns its output as a tool-response event. And then the coordinator, not the specialist, produces the final reply to the user. Now the weather question. [Run the next cell.] Same shape: coordinator calls `weather_specialist` as a tool, gets the response, and writes the final user-facing reply itself.
+The same specialists, now wrapped as AgentTool consultants in the coordinator's tools list. Watch how the event stream differs from the transfer demo. Greeting first. [Run the cell.] The coordinator emits a tool call, but the tool is `greeter`, the specialist. The specialist returns its output as a tool-response event. And then the coordinator, not the specialist, produces the final reply to the user. Now the weather question. [Run the next cell.] Same shape: coordinator calls `weather_specialist` as a tool, gets the response, and writes the final user-facing reply itself.
 
 [Switch back to the slide deck.]
 
@@ -108,7 +108,7 @@ Here's the same team, this time wired up as AgentTool consultants. Same prompts 
 
 ## Slide 11 — The event stream: note the author
 
-Here on the slide is the same event stream from the consultant pattern, laid out for reference. The coordinator called `weather_specialist` as a tool. A tool-response event came back with the result. And then the coordinator, not the specialist, produced the final reply to the user.
+On the slide is the event stream from the consultant pattern, laid out for reference. The coordinator called `weather_specialist` as a tool. A tool-response event came back with the result. And then the coordinator, not the specialist, produced the final reply to the user.
 
 That's the consultant pattern in action. The specialist answered a specific question and stepped back, while the coordinator stayed in charge of speaking to the user.
 
