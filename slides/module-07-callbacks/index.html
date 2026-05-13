@@ -1687,12 +1687,6 @@ guarded_agent = LlmAgent(
 )</code></pre>
   </div>
 
-  <div class="slide" data-module="07" data-type="section-title" style="background:linear-gradient(135deg,var(--amber-dark) 0%,var(--amber) 100%);">
-    <h1>Live</h1>
-    <h3>Normal query passes; blocked query short-circuits</h3>
-    <p class="highlight-text" style="color:white;">Notebook cell 11</p>
-  </div>
-
   <div class="slide" data-module="07" data-type="keyfact">
     <h2 class="text-muted" style="border-bottom:none;font-size:1em;text-transform:uppercase;letter-spacing:0.08em;">On the blocked run</h2>
     <p>The LLM was <strong>never called</strong>.</p>
@@ -1722,12 +1716,6 @@ hr_agent = LlmAgent(
     tools=[lookup_employee],
     after_tool_callback=redact_pii,
 )</code></pre>
-  </div>
-
-  <div class="slide" data-module="07" data-type="section-title" style="background:linear-gradient(135deg,var(--amber-dark) 0%,var(--amber) 100%);">
-    <h1>Live</h1>
-    <h3>Tool returns full record; model sees redacted version</h3>
-    <p class="highlight-text" style="color:white;">Notebook cell 14</p>
   </div>
 
   <div class="slide" data-module="07">
