@@ -1627,7 +1627,7 @@ body {
   </div>
 
   <div class="slide" data-module="08" data-type="keyfact">
-    <h2 class="text-muted" style="border-bottom:none;font-size:1em;text-transform:uppercase;letter-spacing:0.08em;">Seven modules, one problem</h2>
+    <h2 class="text-muted" style="border-bottom:none;font-size:1em;text-transform:uppercase;letter-spacing:0.08em;">The persistence problem</h2>
     <p><code>InMemorySessionService</code> loses <strong>everything</strong> on process restart.</p>
     <p style="font-size:0.7em;color:var(--text-muted);margin-top:var(--space-4);">Perfect for tutorials. Useless for production.</p>
   </div>
@@ -1679,12 +1679,6 @@ session_service = DatabaseSessionService(
     </div>
   </div>
 
-  <div class="slide" data-module="08" data-type="section-title" style="background:linear-gradient(135deg,var(--amber-dark) 0%,var(--amber) 100%);">
-    <h1>Live</h1>
-    <h3>Write preference; restart; recall</h3>
-    <p class="highlight-text" style="color:white;">Notebook cells 11-13</p>
-  </div>
-
   <div class="slide" data-module="08">
     <h2>The demo in three steps</h2>
 <pre class="diagram">Instance 1 (DatabaseSessionService → sqlite://app.db)
@@ -1730,12 +1724,6 @@ Instance 2 (FRESH DatabaseSessionService → same app.db)
       </tbody>
     </table>
     <p style="color:var(--text-muted);font-size:0.9em;">Memory Bank is the real-world path if you're on Google Cloud — it extracts facts, deduplicates, consolidates over time. For self-hosted production, you'd implement <code>BaseMemoryService</code> against Postgres + pgvector or similar.</p>
-  </div>
-
-  <div class="slide" data-module="08" data-type="section-title" style="background:linear-gradient(135deg,var(--amber-dark) 0%,var(--amber) 100%);">
-    <h1>Live</h1>
-    <h3>Past conversation archived; fresh session recalls it</h3>
-    <p class="highlight-text" style="color:white;">Notebook cells 18-22</p>
   </div>
 
   <div class="slide" data-module="08">
