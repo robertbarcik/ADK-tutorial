@@ -48,7 +48,7 @@ That's it. The same pattern across all six hooks. The only thing that varies is 
 
 ## Slide 6 — Demo 1: before_model_callback for blocklist
 
-Time for demo one: `before_model_callback`, applied to the canonical five-line blocklist guardrail. The setup is small, the payoff is large.
+Let's get into the first demo. We're going to use `before_model_callback` to build a blocklist guardrail in just five lines of code. The setup looks trivial, but the implications go pretty far once you see it run.
 
 ---
 
@@ -72,11 +72,11 @@ Let me run this. I'll send two prompts through the same agent. The first is a ha
 
 ## Slide 8 — On the blocked run, the LLM was never called
 
-The payoff of that demo, on one slide. On the blocked run, the LLM was never called. Zero tokens billed. Guaranteed refusal.
+Here's the real payoff of what you just saw in the demo. On the blocked run, the LLM was never called at all. That means zero tokens billed, and a guaranteed refusal that doesn't depend on the model's good behavior.
 
-Compare this to a soft guardrail, like an instruction that says "refuse to discuss passwords." An instruction is really just a polite request the model can misinterpret or be jailbroken around. A code-level check in a callback, on the other hand, is a wall. It cannot be bypassed by anything the user types, because the text never reaches the model.
+Compare this with a soft guardrail, like an instruction that says "refuse to discuss passwords." An instruction is really just a polite request that the model can misinterpret or get jailbroken around. A code-level check inside a callback, on the other hand, is a wall. It can't be bypassed by anything the user types, because the text never reaches the model in the first place.
 
-This is the single most important reason to learn callbacks: they're how you enforce safety at the framework layer, not at the prompt layer.
+This is the single most important reason to learn callbacks. They're how you enforce safety at the framework layer, not at the prompt layer where it can be argued with.
 
 ---
 
@@ -88,9 +88,11 @@ On to demo two: `after_tool_callback`, applied to PII redaction. Same pattern, d
 
 ## Slide 10 — Redact sensitive fields
 
-The redaction pattern is on the slide. A tool returns a dict with some sensitive fields. The callback runs after the tool, but before the model sees the result. It checks if the return is a dict, copies it, replaces sensitive keys with `[REDACTED]`, and returns the cleaned version. ADK then uses the cleaned version as the tool-response the model sees.
+The slide shows the redaction callback in code. The function is called `redact_pii`, and right above it we have a set of sensitive field names: salary, SSN, and home address. Those are the fields we never want the model to see.
 
-The sensitive-fields set here is salary, SSN, and home address: typical PII. In your own code, you'd put whatever fields you don't want to leak.
+The function itself does something simple. It runs after the tool has returned, but before the model gets to look at the response. When the response is a dictionary, the function makes a copy, replaces any of those sensitive keys with the string `[REDACTED]`, and hands the cleaned version back. ADK then uses this cleaned version as the tool-response the model actually sees, while the original tool-function return stays untouched.
+
+In your own code, the sensitive set is whatever you don't want to leak: customer card numbers, employee SSNs, internal IDs. The shape of the function stays the same.
 
 ---
 
@@ -144,9 +146,9 @@ That's how you make agent code unit-testable. It's also how you build resilience
 
 ## Slide 15 — Six hooks reference
 
-What's on the slide is all six hooks, with one-line use cases for each.
+Let's look at all six hooks together with their typical use cases, so you have one reference card you can keep in your head.
 
-Agent-level hooks are less common: before-agent is for pre-flight setup, and after-agent is for final-output logging.
+Agent-level hooks are the least commonly used. The before-agent hook is for pre-flight setup, and the after-agent hook is for final-output logging.
 
 Model-level hooks are where guardrails, caching, and prompt-injection checks live.
 
@@ -186,7 +188,13 @@ That's why, if you rely on callbacks for policy decisions and you need that exec
 
 ## Slide 18 — What to carry forward
 
-So what should you carry forward from today? Six hooks. One rule: return `None` or return a value. The pattern generalizes to guardrails, redactors, mocks, and caches. Pick the hook that fits and write the check.
+So what should you carry forward from today? Three things really matter.
+
+The first is the six hooks themselves, and the single rule that governs all of them: return `None` to pass through, or return a value to short-circuit. That's the whole API, and you'll use it the same way every time.
+
+The second is the realization that the same pattern covers very different production needs. Guardrails, PII redaction, test mocks, and caches all use exactly the same callback signature, just at a different point in the lifecycle. Once you've written one, you can write the others.
+
+And the third is the reason to reach for callbacks in the first place. They're how you enforce policy in code rather than in prompts. An instruction can be argued with; a callback cannot. That makes them your default tool for anything that has to behave reliably under adversarial input or production load.
 
 ---
 
