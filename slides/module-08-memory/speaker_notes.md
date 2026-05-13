@@ -72,7 +72,7 @@ Now to part two of the module: long-term memory, with `MemoryService` and the `l
 
 ## Slide 9 — The shape
 
-The shape of long-term memory is a four-step dance.
+Long-term memory in ADK follows four steps. Let me walk through them.
 
 First, a conversation happens. The user tells the agent something, like a project they're working on, a preference, or a fact about themselves.
 
@@ -118,13 +118,13 @@ The important thing to internalize is that those facts are NOT in the current co
 
 ## Slide 12 — Skeptical Memory, revisited
 
-A short interlude on Skeptical Memory, now with teeth. We touched on the pattern briefly earlier in the course, but it really deserves more weight at long time horizons like the ones we're now dealing with.
+Time for a short interlude on the Skeptical Memory pattern. We met it briefly earlier in the course. Now that we have memory spanning weeks or months, it's worth going into properly.
 
 ---
 
 ## Slide 13 — Memory staleness at long horizons
 
-Let me walk through the staleness problem in its full form. Three months ago, the user told the agent they work at Acme Corp. The memory is stored. Today, the agent searches memory for "employer," finds Acme, and uses it to ground a reply: "As an Acme employee, you..."
+Let me walk through the staleness problem in its full form. Three months ago, the user told the agent they work at Anthropic. The memory is stored. Today, the agent searches memory for "employer," finds Anthropic, and uses it to ground a reply: "As an Anthropic employee, you..."
 
 Except the user might have changed jobs since then. The memory is accurate as of the day it was stored. It is not accurate as of today. So the agent, acting confidently on a three-month-old fact, is confidently wrong.
 
@@ -134,13 +134,13 @@ At long time horizons, whether weeks or months, staleness is really the default,
 
 ## Slide 14 — Three defensive patterns
 
-There are three defensive patterns worth knowing, all from the Agentic Design Patterns publication.
+There are three defensive patterns worth knowing when you're working with stale long-term memory.
 
-First, retrieve-and-verify for high-stakes actions. Before the agent sends an email, makes a purchase, or does anything irreversible, the next step after `load_memory` should be a tool call that re-verifies the retrieved fact. Something like "Let me confirm: you're still at Acme, right?" before acting, not after the fact fails.
+The first pattern is retrieve-and-verify, especially for high-stakes actions. Before the agent sends an email, makes a purchase, or does anything irreversible, the next step after `load_memory` should be a tool call that re-verifies the retrieved fact. So you'd code something like "Let me confirm: you're still at Anthropic, right?" before acting, not after the action fails.
 
-Second, stamp memories with recency metadata. Store the date alongside every `user:` or `app:` level write, and surface the age of the memory to the model when it retrieves. The model will naturally distrust a three-month-old fact more than a fresh one, but only if it knows the age in the first place.
+The second pattern is to stamp memories with recency metadata. What that means in practice is that you store the date alongside every `user:` or `app:` level write, and you surface the age of the memory to the model when it retrieves. With the age visible, the model will naturally distrust a three-month-old fact more than a fresh one. Without it, the model has no way to tell the difference.
 
-And third, decay or consolidate aggressively. Memory fills up. Let old entries age out, delete them after some number of days, or consolidate multiple entries into a single summary. Memory Bank does this automatically. For `InMemoryMemoryService`, you'll implement the policy yourself.
+And the third pattern is to decay or consolidate aggressively, because memory fills up over time. You can let old entries age out, delete them after some number of days, or consolidate multiple entries into a single summary. Memory Bank does this automatically. For `InMemoryMemoryService`, you'll implement the policy yourself.
 
 ---
 
