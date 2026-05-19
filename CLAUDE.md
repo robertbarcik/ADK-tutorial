@@ -1,5 +1,7 @@
 # ADK Course — Claude instructions
 
+> **Picking up speaker-notes work?** Read [`SPEAKER_NOTES_STATUS.md`](SPEAKER_NOTES_STATUS.md) first. It tracks which modules have been rewritten, the conventions established (notebook breaks, slide-deck structure, prose rules), and a final-pass checklist. Janka and Claude have been iterating module by module; that file is the cross-session source of truth.
+
 A full course on Google's Agent Development Kit (ADK). Four aligned components per module: slides, speaker notes, textbook chapter, Jupyter notebook.
 
 ## Course shape
