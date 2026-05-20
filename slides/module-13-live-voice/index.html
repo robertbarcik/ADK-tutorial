@@ -1627,7 +1627,7 @@ body {
   </div>
 
   <div class="slide" data-module="13" data-type="keyfact">
-    <h2 class="text-muted" style="border-bottom:none;font-size:1em;text-transform:uppercase;letter-spacing:0.08em;">As of April 2026</h2>
+    <h2 class="text-muted" style="border-bottom:none;font-size:1em;text-transform:uppercase;letter-spacing:0.08em;">As of May 2026</h2>
     <p>The <strong>single most differentiated</strong> capability<br>Gemini ships that no competitor replicates cleanly.</p>
   </div>
 
@@ -1639,7 +1639,7 @@ body {
       <li><strong>Interruption.</strong> Talk over Gemini mid-response and it stops immediately, listens to the new input.</li>
       <li><strong>Sub-second latency</strong> on happy-path sessions.</li>
     </ul>
-    <p>Competitors: OpenAI's Realtime API is the closest; different semantics, different pricing. Anthropic has no direct equivalent.</p>
+    <p>Competitors as of May 2026: OpenAI's Realtime API is the closest, with different semantics and pricing. Anthropic has no direct equivalent.</p>
   </div>
 
   <div class="slide" data-module="13" data-type="comparison">
@@ -1653,7 +1653,7 @@ body {
       <div class="vs-divider">vs</div>
       <div class="vs-right">
         <h3><code>run_live</code> (this module)</h3>
-        <p style="font-size:0.9em;">Open bidirectional WebSocket. Stream chunks of audio into a queue; chunks of response audio stream back, in parallel.</p>
+        <p style="font-size:0.9em;">Open bidirectional WebSocket. Stream chunks of audio into a queue. Response audio streams back in parallel.</p>
         <p style="font-size:0.9em;color:var(--text-muted);">For as long as the session is open. Built for voice, not turn-based chat.</p>
       </div>
     </div>
@@ -1665,7 +1665,7 @@ body {
       <thead><tr><th>Primitive</th><th>Role</th></tr></thead>
       <tbody>
         <tr><td><code>LiveRequestQueue</code></td><td>Push user input into (text chunks or audio blobs)</td></tr>
-        <tr><td><code>Runner.run_live(...)</code></td><td>Async generator yielding server events; runs until queue closes</td></tr>
+        <tr><td><code>Runner.run_live(...)</code></td><td>Async generator yielding server events. Runs until queue closes.</td></tr>
         <tr><td><code>RunConfig(response_modalities=[...])</code></td><td>Output shape: <code>"TEXT"</code>, <code>"AUDIO"</code>, or both</td></tr>
       </tbody>
     </table>
@@ -1739,7 +1739,7 @@ Audio out   ◀──WebSocket──   stream response audio</pre>
     </div>
     <div class="callout callout-tip">
       <div class="callout-title">What to do</div>
-      <p style="margin:0;">Learn the API shape today. Run the audio demo in a few weeks, or on a paid tier, or against Vertex AI. The concepts are durable; this month's version-string is not.</p>
+      <p style="margin:0;">Learn the API shape today. Run the audio demo in a few weeks, or on a paid tier, or against Vertex AI. The concepts are durable. This month's version-string is not.</p>
     </div>
   </div>
 
@@ -1762,7 +1762,7 @@ Audio out   ◀──WebSocket──   stream response audio</pre>
       <div class="callout-title">Use Live for</div>
       <ul style="margin:0;">
         <li>Real-time conversational voice</li>
-        <li>Interruption handling — users will talk over you</li>
+        <li>Interruption handling: users will talk over you</li>
         <li>Sub-second latency requirements</li>
         <li>Open-session continuous dialog</li>
       </ul>

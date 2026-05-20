@@ -1622,15 +1622,15 @@ body {
   <div class="slide active" data-module="11" data-type="section-title">
     <div class="topic-badge">Module 11 &middot; Part 2 begins &middot; Gemini unlocks</div>
     <h1>Grounding and context caching</h1>
-    <h3>What you give up by staying vendor-neutral</h3>
-    <p class="highlight-text">Real citations &middot; 1M tokens &middot; 90% discount</p>
+    <h3>Features that only work with native Gemini</h3>
+    <p class="highlight-text">Cited web search &middot; 1M token context &middot; 90% caching discount</p>
   </div>
 
   <div class="slide" data-module="11" data-type="keyfact">
     <h2 class="text-muted" style="border-bottom:none;font-size:1em;text-transform:uppercase;letter-spacing:0.08em;">Part 1 taught</h2>
     <p>vendor-neutral ADK.</p>
     <h2 class="text-muted" style="border-bottom:none;font-size:1em;text-transform:uppercase;letter-spacing:0.08em;margin-top:var(--space-6);">Part 2 shows</h2>
-    <p>what you <strong>give up</strong> by staying neutral.</p>
+    <p>what <strong>native Gemini</strong> unlocks.</p>
   </div>
 
   <div class="slide" data-module="11">
@@ -1640,16 +1640,16 @@ body {
 model=LiteLlm(                          model="gemini-2.5-flash"
     model="openrouter/google/..."
 )                                       ← plain string; that's it</pre>
-    <p>Everything else — tools, sessions, workflow agents, callbacks, memory, eval — identical. Only the model argument changes.</p>
+    <p>Everything else (tools, sessions, workflow agents, callbacks, memory, eval) is identical. Only the model argument changes.</p>
   </div>
 
   <div class="slide" data-module="11">
     <h2>Three Gemini unlocks</h2>
     <ul>
-      <li><strong>Google Search grounding</strong> (this module) — real citations, no external search API to manage</li>
-      <li><strong>Long context + caching</strong> (this module) — 1M tokens; 75-90% discount on repeated content</li>
-      <li><strong>Thinking budgets</strong> (M12) — trade latency for reasoning quality</li>
-      <li><strong>Live API voice</strong> (M13) — bidirectional audio streaming with interruption</li>
+      <li><strong>Google Search grounding</strong> (this module): real citations, no external search API to manage</li>
+      <li><strong>Long context + caching</strong> (this module): 1M tokens, 75-90% discount on repeated content</li>
+      <li><strong>Thinking budgets</strong> (M12): trade latency for reasoning quality</li>
+      <li><strong>Live API voice</strong> (M13): bidirectional audio streaming with interruption</li>
     </ul>
     <p style="color:var(--text-muted);font-size:0.9em;">None reachable through LiteLLM. All require native Gemini + <code>GOOGLE_API_KEY</code>.</p>
   </div>
@@ -1699,11 +1699,19 @@ grounded_agent = LlmAgent(
     <h2>Cost reality</h2>
     <div class="callout callout-gotcha">
       <div class="callout-title">Search is billed separately</div>
-      <p style="margin:0;">~$35 per 1,000 grounded requests. Not per-token; per-request. Budget accordingly for search-heavy agents.</p>
+      <ul style="margin:0;padding-left:1.2em;">
+        <li>~$35 per 1,000 grounded requests</li>
+        <li>Billed per-request, not per-token</li>
+        <li>Budget accordingly for search-heavy agents</li>
+      </ul>
     </div>
     <div class="callout callout-gotcha">
       <div class="callout-title">Built-in tools don't mix</div>
-      <p style="margin:0;"><code>google_search</code>, <code>BuiltInCodeExecutor</code>, <code>VertexAiSearchTool</code> — cannot coexist with regular function tools in the same agent. Wrap each as a sub-agent via <code>AgentTool</code>, OR (for Search on ADK ≥ 1.16) pass <code>bypass_multi_tools_limit=True</code>.</p>
+      <ul style="margin:0;padding-left:1.2em;">
+        <li><code>google_search</code>, <code>BuiltInCodeExecutor</code>, <code>VertexAiSearchTool</code> cannot coexist with regular function tools</li>
+        <li>Wrap each as a sub-agent via <code>AgentTool</code></li>
+        <li>For Search on ADK ≥ 1.16: pass <code>bypass_multi_tools_limit=True</code></li>
+      </ul>
     </div>
   </div>
 
@@ -1724,7 +1732,7 @@ grounded_agent = LlmAgent(
     <p>A 100-page PDF is ~50K tokens. Asking 20 questions against it:</p>
 <pre class="diagram">No caching:  20 × 50K input = 1M input tokens → $0.075/hour
 (You re-pay for the PDF on every question.)</pre>
-    <p>Context caching fixes this. You cache the PDF once; subsequent queries pay a discounted rate on the cached portion.</p>
+    <p>Context caching fixes this. You cache the PDF once. Subsequent queries pay a discounted rate on the cached portion.</p>
   </div>
 
   <div class="slide" data-module="11">
@@ -1732,11 +1740,11 @@ grounded_agent = LlmAgent(
     <table>
       <thead><tr><th>Type</th><th>Setup</th><th>Discount</th><th>Control</th></tr></thead>
       <tbody>
-        <tr><td><strong>Implicit</strong></td><td>Auto — zero code</td><td>~75%</td><td>None; Gemini decides what to cache</td></tr>
+        <tr><td><strong>Implicit</strong></td><td>Auto, zero code</td><td>~75%</td><td>None. Gemini decides what to cache.</td></tr>
         <tr><td><strong>Explicit</strong></td><td><code>client.caches.create(...)</code> with TTL</td><td>~90%</td><td>You pick content and TTL</td></tr>
       </tbody>
     </table>
-    <p>Implicit is automatic for repeated prefixes. Explicit wins when you want a named, time-bounded cache you can hit from many sessions.</p>
+    <p><strong>Implicit:</strong> Gemini detects repeated token prefixes automatically. Zero setup, ~75% off cached tokens. <strong>Explicit:</strong> you name a cache, set a TTL, and reuse it across many sessions. ~90% off. Use explicit when the same large document serves many users.</p>
   </div>
 
   <div class="slide" data-module="11" data-type="code">

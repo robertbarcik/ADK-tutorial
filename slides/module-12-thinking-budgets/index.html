@@ -1629,7 +1629,7 @@ body {
   <div class="slide" data-module="12">
     <h2>What thinking is</h2>
     <p>Gemini 2.5+ models do an <strong>internal reasoning pass</strong> before producing the final answer. The reasoning tokens don't appear in the output; they're counted separately as <code>thoughts_token_count</code>.</p>
-    <p>You set a <strong>budget</strong> — a ceiling on internal reasoning — and Gemini spends up to that much thinking.</p>
+    <p>You set a <strong>budget</strong> (a ceiling on internal reasoning) and Gemini spends up to that much thinking.</p>
     <pre class="diagram">user prompt ──▶ [internal thinking: up to N tokens] ──▶ final answer
                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
                       invisible in output; billed separately</pre>
@@ -1676,7 +1676,7 @@ tokens — input: 158, thoughts: 1109, output: 702</pre>
 ── thinking_agent (thinking=2048)    9.98s
    Answer: enumerated primes (23, 29, 31, 37, 41, 43, 47),
            sum = 251  ← correct</pre>
-    <p><strong>The fast agent got a different — and wrong — answer.</strong> That's the quality difference, visible.</p>
+    <p><strong>The fast agent got a different, wrong answer.</strong> That's the quality difference, visible.</p>
   </div>
 
   <div class="slide" data-module="12" data-type="code">
@@ -1739,7 +1739,7 @@ thinking_agent = LlmAgent(
   <div class="slide" data-module="12" data-type="keyfact">
     <h2 class="text-muted" style="border-bottom:none;font-size:1em;text-transform:uppercase;letter-spacing:0.08em;">Gemini-only property</h2>
     <p>Thought signatures <strong>persist across multi-turn tool calls</strong>.</p>
-    <p style="font-size:0.75em;color:var(--text-muted);margin-top:var(--space-4);">No reasoning reload. Thinking carries through the conversation.<br>No other frontier model ships this as of April 2026.</p>
+    <p style="font-size:0.75em;color:var(--text-muted);margin-top:var(--space-4);">No reasoning reload. Thinking carries through the conversation.<br>No other frontier model ships this as of May 2026.</p>
   </div>
 
   <div class="slide" data-module="12">
