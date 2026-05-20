@@ -21,12 +21,12 @@ end to end before touching any `speaker_notes.md` file.
 | M07 | Callbacks as middleware | rewritten + 3 notebook breaks |
 | M08 | Memory | rewritten + 2 notebook breaks |
 | M09 | Evaluation | rewritten + 1 notebook break |
+| M10 | Deployment | rewritten + 1 notebook break |
 
 ### Pending
 
 | Module | Topic |
 |---|---|
-| M10 | Deployment |
 | M11 | Gemini grounding + caching |
 | M12 | Thinking budgets |
 | M13 | Live API voice |

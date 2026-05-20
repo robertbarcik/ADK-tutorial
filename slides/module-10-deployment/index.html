@@ -1627,9 +1627,9 @@ body {
   </div>
 
   <div class="slide" data-module="10" data-type="keyfact">
-    <h2 class="text-muted" style="border-bottom:none;font-size:1em;text-transform:uppercase;letter-spacing:0.08em;">Nine modules</h2>
-    <p>of agents that run in <strong>notebooks</strong>.</p>
-    <h2 class="text-muted" style="border-bottom:none;font-size:1em;text-transform:uppercase;letter-spacing:0.08em;margin-top:var(--space-6);">Module 10</h2>
+    <h2 class="text-muted" style="border-bottom:none;font-size:1em;text-transform:uppercase;letter-spacing:0.08em;">Up to now</h2>
+    <p>agents that run in <strong>notebooks</strong>.</p>
+    <h2 class="text-muted" style="border-bottom:none;font-size:1em;text-transform:uppercase;letter-spacing:0.08em;margin-top:var(--space-6);">This module</h2>
     <p>turns them into <strong>products</strong>.</p>
   </div>
 
@@ -1687,16 +1687,10 @@ curl -X POST http://localhost:8000/run \
        "new_message": {"role": "user", "parts": [{"text": "Weather in Prague?"}]}}'</code></pre>
   </div>
 
-  <div class="slide" data-module="10" data-type="section-title" style="background:linear-gradient(135deg,var(--amber-dark) 0%,var(--amber) 100%);">
-    <h1>Live</h1>
-    <h3>adk api_server + real HTTP calls</h3>
-    <p class="highlight-text" style="color:white;">Notebook cells 7-9</p>
-  </div>
-
   <div class="slide" data-module="10" data-type="keyfact">
-    <h2 class="text-muted" style="border-bottom:none;font-size:1em;text-transform:uppercase;letter-spacing:0.08em;">What you saw</h2>
-    <p>This is <strong>the production shape</strong>.</p>
-    <p style="font-size:0.75em;color:var(--text-muted);margin-top:var(--space-4);">Cloud Run is the same FastAPI app, running somewhere else. Swap the URL; the client code doesn't change.</p>
+    <h2 class="text-muted" style="border-bottom:none;font-size:1em;text-transform:uppercase;letter-spacing:0.08em;">The production shape</h2>
+    <p>This is <strong>the same FastAPI app</strong> — running somewhere else.</p>
+    <p style="font-size:0.75em;color:var(--text-muted);margin-top:var(--space-4);">Swap the URL; the client code doesn't change. Cloud Run, fly.io, AWS — same <code>/run</code> endpoint, same session triple, same JSON.</p>
   </div>
 
   <div class="slide" data-module="10" data-type="section-title" style="background:linear-gradient(135deg,var(--navy-dark) 0%,var(--navy) 100%);">
@@ -1761,7 +1755,7 @@ CMD ["sh", "-c", "adk api_server /app --host 0.0.0.0 --port ${PORT}"]</code></pr
     <h2>What Agent Engine adds over Cloud Run</h2>
     <ul>
       <li><strong>Managed sessions</strong> — no separate database needed.</li>
-      <li><strong>Memory Bank</strong> — LLM-distilled long-term memory, auto-consolidation, auto-decay. Real upgrade over M08.</li>
+      <li><strong>Memory Bank</strong> — LLM-distilled long-term memory, auto-consolidation, auto-decay. A real upgrade over a hand-rolled <code>InMemoryMemoryService</code>.</li>
       <li><strong>Agent Identity</strong> — per-agent IAM principals with certificate-bound creds. Strongest enterprise-governance primitive Google ships.</li>
       <li><strong>Built-in evaluation + observability</strong> — integrates with Gen AI Evaluation Service.</li>
     </ul>
@@ -1792,7 +1786,7 @@ CMD ["sh", "-c", "adk api_server /app --host 0.0.0.0 --port ${PORT}"]</code></pr
     <h2>Callbacks vs Plugins</h2>
     <div class="comparison-layout">
       <div class="vs-left">
-        <h3>Callbacks (M07)</h3>
+        <h3>Callbacks</h3>
         <ul style="font-size:0.9em;">
           <li>Per-agent</li>
           <li>Attached to <code>LlmAgent(...)</code></li>
@@ -1828,7 +1822,7 @@ CMD ["sh", "-c", "adk api_server /app --host 0.0.0.0 --port ${PORT}"]</code></pr
 
   <div class="slide" data-module="10" data-type="section-title" style="background:linear-gradient(135deg,var(--navy-dark) 0%,var(--navy-light) 100%);">
     <div class="topic-badge">Part 1 wrap</div>
-    <h1>Ten modules.</h1>
+    <h1>Part 1 complete.</h1>
     <p class="highlight-text" style="color:white;">From "what is an agent" to "how do I ship one."</p>
   </div>
 
