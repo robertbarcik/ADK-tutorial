@@ -1681,7 +1681,6 @@ body {
     <ul>
       <li>ADK reads your function's docstring + type hints.</li>
       <li>It builds the JSON schema the LLM provider expects.</li>
-      <li>Three consequences:</li>
     </ul>
     <div class="callout callout-tip">
       <div class="callout-title">Three consequences</div>
@@ -1748,10 +1747,10 @@ fx_agent = LlmAgent(
   <!-- 12 What is MCP -->
   <div class="slide" data-module="02">
     <h2>MCP in one paragraph</h2>
-    <p><strong>Model Context Protocol.</strong> Anthropic's standard for exposing tools to agents, donated to the Linux Foundation in December 2025. A de facto protocol for agent-to-tool communication across the industry. An MCP server is a separate process; your agent connects over stdio or HTTP and uses its tools as if they were local.</p>
+    <p><strong>Model Context Protocol.</strong> Anthropic's standard for exposing tools to agents, donated to the Linux Foundation in December 2025. A de facto protocol for agent-to-tool communication across the industry. An MCP server is a separate process. Your agent connects over stdio or HTTP and uses its tools as if they were local.</p>
     <div class="callout callout-tip">
       <div class="callout-title">Why this matters</div>
-      <p style="margin:0;">Your MCP server can be written in <strong>any language</strong>, run <strong>on any machine</strong>, own <strong>any state</strong> — database connections, API credentials, caches. The agent doesn't care. It speaks the protocol; the tools just work.</p>
+      <p style="margin:0;">Your MCP server can be written in <strong>any language</strong>, run <strong>on any machine</strong>, own <strong>any state</strong>: database connections, API credentials, caches. The agent doesn't care. It speaks the protocol. The tools just work.</p>
     </div>
   </div>
 
@@ -1786,7 +1785,7 @@ ticket_agent = LlmAgent(..., tools=[ticket_toolset])</code></pre>
       <div class="vs-left">
         <h3>AgentTool</h3>
         <p style="font-size:0.95em;">Parent <strong>calls</strong> the specialist like a function. Parent stays in charge. Child answers, hands control back.</p>
-        <p style="font-size:0.9em;color:var(--text-muted);"><strong>When:</strong> child has a clean I/O contract; you want visibility in the parent's event stream.</p>
+        <p style="font-size:0.9em;color:var(--text-muted);"><strong>When:</strong> child has a clean I/O contract. You want visibility in the parent's event stream.</p>
       </div>
       <div class="vs-divider">vs</div>
       <div class="vs-right">
@@ -1900,7 +1899,7 @@ orchestrator = LlmAgent(
   <!-- 23 Takeaway -->
   <div class="slide" data-module="02" data-type="keyfact">
     <h2 class="text-muted" style="border-bottom:none;font-size:1em;text-transform:uppercase;letter-spacing:0.08em;">What to carry forward</h2>
-    <p>Tools come in <strong>four flavors</strong>. Same abstraction to the model; different integration targets.</p>
+    <p>Tools come in <strong>four flavors</strong>. Same abstraction to the model, different integration targets.</p>
     <p style="font-size:0.85em;color:var(--text-muted);margin-top:var(--space-4);">And: <em>blast radius matters</em>. Put the guard in the tool code, not in the instruction.</p>
   </div>
 

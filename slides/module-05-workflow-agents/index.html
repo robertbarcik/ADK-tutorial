@@ -1622,7 +1622,6 @@ body {
   <div class="slide active" data-module="05" data-type="section-title">
     <div class="topic-badge">Module 05 &middot; Part 1 Vendor-agnostic</div>
     <h1>Workflow agents</h1>
-    <h3>Control flow as Python classes, not graph diagrams</h3>
     <p class="highlight-text">Sequential &middot; Parallel &middot; Loop</p>
   </div>
 
@@ -1636,11 +1635,11 @@ body {
   <div class="slide" data-module="05">
     <h2>Three first-class primitives</h2>
     <ul>
-      <li><code>SequentialAgent</code> — run children in order. A <strong>shell pipeline</strong>.</li>
-      <li><code>ParallelAgent</code> — run children concurrently. An <strong><code>asyncio.gather()</code></strong>.</li>
-      <li><code>LoopAgent</code> — cycle until <code>exit_loop</code> or <code>max_iterations</code>. A <strong><code>while</code> with an escape hatch</strong>.</li>
+      <li><code>SequentialAgent</code>: run children in order. A <strong>shell pipeline</strong>.</li>
+      <li><code>ParallelAgent</code>: run children concurrently. An <strong><code>asyncio.gather()</code></strong>.</li>
+      <li><code>LoopAgent</code>: cycle until <code>exit_loop</code> or <code>max_iterations</code>. A <strong><code>while</code> with an escape hatch</strong>.</li>
     </ul>
-    <p>This is ADK's strongest pedagogical differentiator. LangGraph makes you draw a graph; CrewAI hides flow behind a role DSL; ADK lets you <em>name</em> the workflow.</p>
+    <p>LangGraph makes you draw a graph. CrewAI hides flow behind a role DSL. ADK lets you <em>name</em> the workflow directly in Python.</p>
   </div>
 
   <div class="slide" data-module="05">
@@ -1667,7 +1666,7 @@ body {
       <li><code>{summary}</code> in a later child's instruction → substituted from state before the model sees it.</li>
       <li><code>{summary?}</code> → same, but "optional; don't error if missing."</li>
     </ul>
-    <p>Write with <code>output_key=</code>. Read with <code>{key}</code>. No orchestration code.</p>
+    <p>Write with <code>output_key=</code>. Read with <code>{key}</code>. State is the only connection between children.</p>
   </div>
 
   <div class="slide" data-module="05" data-type="section-title" style="background:linear-gradient(135deg,var(--navy-dark) 0%,var(--navy) 100%);">
@@ -1699,11 +1698,11 @@ pipeline = SequentialAgent(
   <div class="slide" data-module="05" data-type="section-title" style="background:linear-gradient(135deg,var(--navy-dark) 0%,var(--navy) 100%);">
     <div class="topic-badge">Primitive 2</div>
     <h1>ParallelAgent</h1>
-    <p class="highlight-text">Concurrent fan-out. Wall time ≈ slowest child.</p>
+    <p class="highlight-text">Concurrent fan-out. Runs as fast as the slowest child.</p>
   </div>
 
   <div class="slide" data-module="05" data-type="code">
-    <h2>Three-way fan-out</h2>
+    <h2>Three researchers in parallel</h2>
 <pre><code>de_researcher = LlmAgent(name="de_researcher", ...,
     instruction="One fun fact about Germany.",
     output_key="germany_fact")
@@ -1739,15 +1738,15 @@ trio = ParallelAgent(
   <div class="slide" data-module="05">
     <h2>The pattern</h2>
 <pre class="diagram">┌─ LoopAgent ──────────────────────────────────────────┐
-│                                                       │
-│   generator ─▶ writes state["draft"]                  │
-│        ▲                                              │
-│        │                                              │
-│   critic ─▶ either writes state["critique"]           │
-│             or calls exit_loop()                      │
-│                                                       │
+│                                                      │
+│   generator ─▶ writes state["draft"]                 │
+│        ▲                                             │
+│        │                                             │
+│   critic ─▶ either writes state["critique"]          │
+│             or calls exit_loop()                     │
+│                                                      │
 └──── repeat until exit_loop OR max_iterations ────────┘</pre>
-    <p>Self-correction, critic-driven refinement, reflexion — same pattern, many names. In ADK: a LoopAgent with two children.</p>
+    <p>Critic-driven refinement. Build it as a LoopAgent: a generator child and a critic child.</p>
   </div>
 
   <div class="slide" data-module="05" data-type="code">
@@ -1805,7 +1804,7 @@ refiner = LoopAgent(
   <div class="slide" data-module="05" data-type="section-title" style="background:linear-gradient(135deg,var(--navy-dark) 0%,var(--navy) 100%);">
     <div class="topic-badge">Putting it together</div>
     <h1>Composing workflows</h1>
-    <p class="highlight-text">Workflow agents are themselves agents.</p>
+    <p class="highlight-text">Agents that contain agents.</p>
   </div>
 
   <div class="slide" data-module="05" data-type="code">
@@ -1817,7 +1816,7 @@ refiner = LoopAgent(
         synthesizer,    # LlmAgent: reads all 3 state keys, writes a report
     ],
 )</code></pre>
-    <p>Five LLM calls — three parallel researchers, then one synthesizer. Wall time ≈ two calls, not five. Production agents are built out of compositions like this.</p>
+    <p>Five LLM calls: three parallel researchers, then one synthesizer. Because the researchers run simultaneously, the total time is roughly two sequential calls. Production agents are built out of compositions like this.</p>
   </div>
 
   <div class="slide" data-module="05" data-type="comparison">
@@ -1839,7 +1838,7 @@ refiner = LoopAgent(
           <li>Control flow depends on user input</li>
           <li>Flexibility: the model's judgment is the point</li>
           <li>Conversation can go anywhere</li>
-          <li>(M06 covers this — <code>sub_agents</code> and <code>AgentTool</code>)</li>
+          <li>(M06 covers this: <code>sub_agents</code> and <code>AgentTool</code>)</li>
         </ul>
       </div>
     </div>

@@ -1630,10 +1630,10 @@ body {
   <!-- 02 What ADK is (and is not) -->
   <div class="slide" data-module="01">
     <h2>What ADK is</h2>
-    <p>A code-first Python framework for building LLM-driven agents. Google wrote it. Open source. 1.0 GA May 2025, now on v1.31. Python is the reference SDK; Java, Go, and TypeScript exist.</p>
+    <p>A code-first Python framework for building LLM-driven agents. Open source, 1.0 GA May 2025, now on v1.31.</p>
     <h3>What ADK is not</h3>
     <ul>
-      <li><strong>Not a model.</strong> You bring your own &mdash; Gemini, Claude, GPT, Qwen, Gemma.</li>
+      <li><strong>Not a model.</strong> You choose: Gemini, Claude, GPT, Qwen, Gemma.</li>
       <li><strong>Not a cloud.</strong> Runs on your laptop, on Cloud Run, on AWS, on a Raspberry Pi.</li>
       <li><strong>Not a UI.</strong> It ships a dev UI (<code>adk web</code>), but the output is code you deploy.</li>
       <li><strong>Not a graph DSL.</strong> You write typed Python, not a JSON DAG.</li>
@@ -1651,7 +1651,7 @@ body {
       <li>A switch statement that dispatches tool calls to Python functions.</li>
       <li>Error handling when the model asks for a tool that doesn't exist.</li>
     </ul>
-    <p>A framework lets you stop writing those sixty lines. You write the things that are actually yours &mdash; the instruction, the tools, the business logic &mdash; and the framework handles the rest.</p>
+    <p>A framework lets you stop writing those sixty lines. You write the things that are actually yours: the instruction, the tools, the business logic. The framework handles the rest.</p>
   </div>
 
   <!-- 04 Key equation -->
@@ -1679,10 +1679,10 @@ body {
       </div>
       <div class="grid-card highlight">
         <div class="grid-card-title">Session</div>
-        <div class="grid-card-body">The conversation's memory &mdash; event history plus a state dict. One per chat.</div>
+        <div class="grid-card-body">The conversation's memory: event history plus a state dict. One per chat.</div>
       </div>
     </div>
-    <p style="margin-top:var(--space-4);color:var(--text-muted);font-size:0.9em;">Every later concept &mdash; workflow agents, multi-agent hierarchies, callbacks, memory services, evaluation &mdash; composes on top of these four.</p>
+    <p style="margin-top:var(--space-4);color:var(--text-muted);font-size:0.9em;">Every later concept (workflow agents, multi-agent hierarchies, callbacks, memory services, evaluation) composes on top of these four.</p>
   </div>
 
   <!-- 06 Agent primitive -->
@@ -1789,7 +1789,7 @@ weather_agent = Agent(
     <p>Run <code>adk web</code> in a folder with your agent and it opens a chat UI with the same event stream rendered as a clickable timeline. Same data, friendlier for exploration.</p>
     <div class="callout callout-tip">
       <div class="callout-title">Tip</div>
-      <p style="margin:0;">Keep <code>adk web</code> open while you develop. When an agent misbehaves, its reason is almost always obvious from the timeline &mdash; a tool returned the wrong shape, an instruction was ambiguous, a state key was stale.</p>
+      <p style="margin:0;">Keep <code>adk web</code> open while you develop. When an agent misbehaves, its reason is almost always obvious from the timeline: a tool returned the wrong shape, an instruction was ambiguous, a state key was stale.</p>
     </div>
   </div>
 
@@ -1800,7 +1800,7 @@ weather_agent = Agent(
       <div class="vs-left">
         <h3>LangGraph</h3>
         <ul style="font-size:0.9em;">
-          <li>Graph DSL; explicit nodes and edges.</li>
+          <li>Graph DSL. Explicit nodes and edges.</li>
           <li>Great for complex control flow, heavier for a simple agent.</li>
           <li>~34M monthly downloads.</li>
         </ul>
@@ -1855,10 +1855,10 @@ model = LiteLlm(model="ollama_chat/qwen3:8b")</code></pre>
   <div class="slide" data-module="01">
     <h2>Each module ships four artifacts</h2>
     <ul>
-      <li><strong>Slides</strong> (this deck) &mdash; the mental model, on screen.</li>
-      <li><strong>Speaker notes</strong> &mdash; what gets said while the slides play. Readable straight into a microphone.</li>
-      <li><strong>Textbook chapter</strong> &mdash; the long-form version, in English, with examples.</li>
-      <li><strong>Jupyter notebook</strong> &mdash; the code you ran in the demo, runnable top-to-bottom against your own API key.</li>
+      <li><strong>Slides</strong> (this deck): the mental model, on screen.</li>
+      <li><strong>Speaker notes</strong>: what gets said while the slides play. Readable straight into a microphone.</li>
+      <li><strong>Textbook chapter</strong>: the long-form version, in English, with examples.</li>
+      <li><strong>Jupyter notebook</strong>: the code you ran in the demo, runnable top-to-bottom against your own API key.</li>
     </ul>
     <p>All four are aligned. A term defined in the textbook is the same term used on the slide is the same term used in the notebook.</p>
   </div>

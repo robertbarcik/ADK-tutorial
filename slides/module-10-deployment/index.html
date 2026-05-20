@@ -1639,11 +1639,11 @@ body {
       <thead><tr><th>Path</th><th>Effort</th><th>Lock-in</th></tr></thead>
       <tbody>
         <tr><td><code>adk deploy cloud_run</code></td><td>One command</td><td>GCP only</td></tr>
-        <tr><td>Vanilla Docker</td><td>Write a Dockerfile</td><td>None — any container platform</td></tr>
-        <tr><td>Vertex AI Agent Engine</td><td>One command; most batteries included</td><td>Deep GCP</td></tr>
+        <tr><td>Vanilla Docker</td><td>Write a Dockerfile</td><td>None. Any container platform.</td></tr>
+        <tr><td>Vertex AI Agent Engine</td><td>One command. Most features included.</td><td>Deep GCP</td></tr>
       </tbody>
     </table>
-    <p>All three produce the same thing at the agent layer. They differ only in who runs the container and what batteries come with it.</p>
+    <p>All three produce the same thing at the agent layer. They differ only in who runs the container and what features come with it.</p>
   </div>
 
   <div class="slide" data-module="10" data-type="section-title" style="background:linear-gradient(135deg,var(--navy-dark) 0%,var(--navy) 100%);">
@@ -1659,7 +1659,7 @@ body {
 ├── agent.py             # exports `root_agent`
 ├── requirements.txt     # pinned Python deps
 └── .env                 # optional; OPENROUTER_API_KEY etc.</code></pre>
-    <p><code>adk api_server</code>, <code>adk web</code>, <code>adk deploy cloud_run</code>, <code>AgentEvaluator.evaluate</code> — all of them look for <code>root_agent</code> in <code>agent.py</code>.</p>
+    <p><code>adk api_server</code>, <code>adk web</code>, <code>adk deploy cloud_run</code>, <code>AgentEvaluator.evaluate</code>: all look for <code>root_agent</code> in <code>agent.py</code>.</p>
     <p style="color:var(--text-muted);font-size:0.9em;">Convention, not hard requirement. <code>adk create</code> scaffolds it for you.</p>
   </div>
 
@@ -1689,8 +1689,8 @@ curl -X POST http://localhost:8000/run \
 
   <div class="slide" data-module="10" data-type="keyfact">
     <h2 class="text-muted" style="border-bottom:none;font-size:1em;text-transform:uppercase;letter-spacing:0.08em;">The production shape</h2>
-    <p>This is <strong>the same FastAPI app</strong> — running somewhere else.</p>
-    <p style="font-size:0.75em;color:var(--text-muted);margin-top:var(--space-4);">Swap the URL; the client code doesn't change. Cloud Run, fly.io, AWS — same <code>/run</code> endpoint, same session triple, same JSON.</p>
+    <p>This is <strong>the same FastAPI app</strong>, running somewhere else.</p>
+    <p style="font-size:0.75em;color:var(--text-muted);margin-top:var(--space-4);">Swap the URL. The client code doesn't change. Cloud Run, fly.io, AWS: same <code>/run</code> endpoint, same session triple, same JSON.</p>
   </div>
 
   <div class="slide" data-module="10" data-type="section-title" style="background:linear-gradient(135deg,var(--navy-dark) 0%,var(--navy) 100%);">
@@ -1718,11 +1718,11 @@ CMD ["sh", "-c", "adk api_server /app --host 0.0.0.0 --port ${PORT}"]</code></pr
   <div class="slide" data-module="10">
     <h2>Where you can ship the image</h2>
     <ul>
-      <li><strong>AWS Fargate / App Runner</strong> — <code>aws ecr</code> push, point a service at the image.</li>
-      <li><strong>Azure Container Apps</strong> — <code>az acr build</code>, <code>az containerapp create</code>.</li>
-      <li><strong>Fly.io</strong> — <code>fly launch --dockerfile ./Dockerfile</code>.</li>
-      <li><strong>Kubernetes</strong> — your usual Helm chart or Kustomize manifest.</li>
-      <li><strong>Your own server</strong> — <code>docker run</code>.</li>
+      <li><strong>AWS Fargate / App Runner</strong>: <code>aws ecr</code> push, point a service at the image.</li>
+      <li><strong>Azure Container Apps</strong>: <code>az acr build</code>, <code>az containerapp create</code>.</li>
+      <li><strong>Fly.io</strong>: <code>fly launch --dockerfile ./Dockerfile</code>.</li>
+      <li><strong>Kubernetes</strong>: your usual Helm chart or Kustomize manifest.</li>
+      <li><strong>Your own server</strong>: <code>docker run</code>.</li>
     </ul>
     <p style="color:var(--text-muted);font-size:0.9em;">The important property: <strong>there's no ADK-specific deployment story for non-Google clouds.</strong> Regular container deployment.</p>
   </div>
@@ -1741,8 +1741,10 @@ CMD ["sh", "-c", "adk api_server /app --host 0.0.0.0 --port ${PORT}"]</code></pr
     --service_name my-weather-agent \\
     my_weather_agent</code></pre>
     <p style="font-size:0.9em;color:var(--text-muted);">Under the hood: ADK generates a Dockerfile, builds via Cloud Build, pushes to Artifact Registry, deploys a Cloud Run service.</p>
-    <p><strong>Pro:</strong> fast path on GCP; sensible defaults; integrates with Cloud Trace + Cloud Logging.<br>
-       <strong>Con:</strong> Google Cloud only; less control; pay the Cloud Run runtime margin.</p>
+    <ul style="font-size:0.9em;">
+      <li><strong>Pro:</strong> fast path on GCP. Sensible defaults. Integrates with Cloud Trace and Cloud Logging.</li>
+      <li><strong>Con:</strong> Google Cloud only. Less control. Pays the Cloud Run runtime margin.</li>
+    </ul>
   </div>
 
   <div class="slide" data-module="10" data-type="section-title" style="background:linear-gradient(135deg,var(--navy-dark) 0%,var(--navy) 100%);">
@@ -1754,10 +1756,10 @@ CMD ["sh", "-c", "adk api_server /app --host 0.0.0.0 --port ${PORT}"]</code></pr
   <div class="slide" data-module="10">
     <h2>What Agent Engine adds over Cloud Run</h2>
     <ul>
-      <li><strong>Managed sessions</strong> — no separate database needed.</li>
-      <li><strong>Memory Bank</strong> — LLM-distilled long-term memory, auto-consolidation, auto-decay. A real upgrade over a hand-rolled <code>InMemoryMemoryService</code>.</li>
-      <li><strong>Agent Identity</strong> — per-agent IAM principals with certificate-bound creds. Strongest enterprise-governance primitive Google ships.</li>
-      <li><strong>Built-in evaluation + observability</strong> — integrates with Gen AI Evaluation Service.</li>
+      <li><strong>Managed sessions</strong>: no separate database needed.</li>
+      <li><strong>Memory Bank</strong>: LLM-distilled long-term memory, auto-consolidation, auto-decay. A real upgrade over a hand-rolled <code>InMemoryMemoryService</code>.</li>
+      <li><strong>Agent Identity</strong>: per-agent IAM principals with certificate-bound creds. Strongest enterprise-governance primitive Google ships.</li>
+      <li><strong>Built-in evaluation + observability</strong>: integrates with Gen AI Evaluation Service.</li>
     </ul>
   </div>
 
@@ -1803,19 +1805,19 @@ CMD ["sh", "-c", "adk api_server /app --host 0.0.0.0 --port ${PORT}"]</code></pr
         </ul>
       </div>
     </div>
-    <p style="margin-top:var(--space-4);">Rule: <strong>callbacks for agent-specific logic; plugins for app-wide policy.</strong> Audit logging, per-user rate-limits, token-budget enforcement, org-wide PII redaction → plugins.</p>
+    <p style="margin-top:var(--space-4);">Rule: <strong>callbacks for agent-specific logic. Plugins for app-wide policy.</strong> Audit logging, per-user rate-limits, token-budget enforcement, org-wide PII redaction → plugins.</p>
   </div>
 
   <div class="slide" data-module="10">
     <h2>Production readiness checklist</h2>
     <ul>
-      <li><strong>Persistence</strong> — <code>DatabaseSessionService</code> → managed Postgres (not ephemeral SQLite)</li>
-      <li><strong>Secrets</strong> — out of the container; Cloud Run secrets / AWS Secrets Manager / etc.</li>
+      <li><strong>Persistence</strong>: <code>DatabaseSessionService</code> → managed Postgres (not ephemeral SQLite)</li>
+      <li><strong>Secrets</strong>: out of the container. Cloud Run secrets, AWS Secrets Manager, or equivalent.</li>
       <li><strong>Callbacks</strong> for guardrails (blocklist, PII, mocking-in-tests)</li>
       <li><strong>Plugins</strong> for audit logging, cost tracking, rate-limiting</li>
-      <li><strong>Eval in CI</strong> — <code>adk eval</code> on every PR</li>
-      <li><strong>Trace backend</strong> — Cloud Trace, Langfuse, Arize, or your own OTel collector</li>
-      <li><strong>Auth</strong> — API gateway in front, or authenticated subnet</li>
+      <li><strong>Eval in CI</strong>: <code>adk eval</code> on every PR</li>
+      <li><strong>Trace backend</strong>: Cloud Trace, Langfuse, Arize, or your own OTel collector</li>
+      <li><strong>Auth</strong>: API gateway in front, or authenticated subnet</li>
     </ul>
     <p style="color:var(--text-muted);font-size:0.9em;">None of these are ADK-specific. They're what any Python service needs.</p>
   </div>
@@ -1829,14 +1831,14 @@ CMD ["sh", "-c", "adk api_server /app --host 0.0.0.0 --port ${PORT}"]</code></pr
   <div class="slide" data-module="10">
     <h2>What you can build now</h2>
     <ul>
-      <li>Agents with tools (function, OpenAPI, MCP, agent-tool) — M02</li>
-      <li>Persistent state with scope prefixes — M03, M08</li>
-      <li>Vendor-neutral model swapping — M04</li>
-      <li>Compositions: Sequential, Parallel, Loop; LLM-driven routing — M05, M06</li>
-      <li>Guardrails, caches, PII redaction via callbacks — M07</li>
-      <li>Long-term memory via <code>MemoryService</code> — M08</li>
-      <li>Automated eval with trajectory + LLM-judge — M09</li>
-      <li>Deployable as an HTTP service anywhere — this module</li>
+      <li>Agents with tools (function, OpenAPI, MCP, agent-tool): M02</li>
+      <li>Persistent state with scope prefixes: M03, M08</li>
+      <li>Vendor-neutral model swapping: M04</li>
+      <li>Compositions (Sequential, Parallel, Loop) and LLM-driven routing: M05, M06</li>
+      <li>Guardrails, caches, PII redaction via callbacks: M07</li>
+      <li>Long-term memory via <code>MemoryService</code>: M08</li>
+      <li>Automated eval with trajectory and LLM-judge: M09</li>
+      <li>Deployable as an HTTP service anywhere: this module</li>
     </ul>
     <p><strong>On any model. Claude, GPT, Gemini, Qwen, Gemma.</strong></p>
   </div>

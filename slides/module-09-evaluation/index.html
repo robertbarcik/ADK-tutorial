@@ -1623,7 +1623,6 @@ body {
     <div class="topic-badge">Module 09 &middot; Part 1 Vendor-agnostic</div>
     <h1>Evaluation</h1>
     <h3>Beyond eyeballing the event stream</h3>
-    <p class="highlight-text">Trajectory testing is the real differentiator.</p>
   </div>
 
   <div class="slide" data-module="09" data-type="keyfact">
@@ -1699,17 +1698,16 @@ body {
   </div>
 
   <div class="slide" data-module="09">
-    <h2>The failure tells a story</h2>
+    <h2>Where ROUGE-1 breaks</h2>
 <pre class="diagram">expected:  "The weather in Prague is cloudy and 14 degrees Celsius."
 actual:    "The weather in Prague is cloudy, and the temperature is 14 degrees Celsius."
 
 response_match_score: 0.87  (threshold 0.95)  → FAIL</pre>
     <p><strong>Same information. Different words.</strong> ROUGE-1 counts overlapping unigrams; stylistic variation costs you points.</p>
-    <p style="color:var(--text-muted);font-size:0.9em;">Trajectory score was 1.0 — the agent called the right tool. The failure is pure wording.</p>
+    <p style="color:var(--text-muted);font-size:0.9em;">Trajectory score was 1.0: the agent called the right tool. The failure is pure wording.</p>
   </div>
 
   <div class="slide" data-module="09" data-type="keyfact">
-    <h2 class="text-muted" style="border-bottom:none;font-size:1em;text-transform:uppercase;letter-spacing:0.08em;">The honest summary</h2>
     <p><strong>Trajectory testing is useful.<br>ROUGE-1 response matching is weak.</strong></p>
     <p style="font-size:0.7em;color:var(--text-muted);margin-top:var(--space-4);">ROUGE-1 punishes legitimate stylistic variation. Don't rely on it for production.</p>
   </div>
@@ -1723,8 +1721,8 @@ response_match_score: 0.87  (threshold 0.95)  → FAIL</pre>
     "response_match_score": 0.6          // permissive
   }
 }</code></pre>
-    <p>0.6-0.7 for short responses; give up on <code>response_match_score</code> for long-form text.</p>
-    <p style="color:var(--text-muted);font-size:0.9em;">Dropping the threshold isn't a win — it's an admission the metric is the wrong tool. The real upgrade is LLM-as-judge.</p>
+    <p>0.6-0.7 for short responses. For long-form text, <code>response_match_score</code> is the wrong metric entirely.</p>
+    <p style="color:var(--text-muted);font-size:0.9em;">Dropping the threshold is not a win. The real upgrade is LLM-as-judge.</p>
   </div>
 
   <div class="slide" data-module="09" data-type="code">
@@ -1739,7 +1737,7 @@ def judge(prompt, expected, actual) -> float:
         f"Score 0-1 on semantic correctness."
     )
     return float(response.strip())</code></pre>
-    <p>Different framing: trajectory asks <em>did the agent do the right things</em>; LLM-judge asks <em>did it say the right thing</em>.</p>
+    <p>Different framing: trajectory asks <em>did the agent do the right things</em>. LLM-judge asks <em>did it say the right thing</em>.</p>
   </div>
 
   <div class="slide" data-module="09">
@@ -1747,10 +1745,10 @@ def judge(prompt, expected, actual) -> float:
     <table>
       <thead><tr><th>Layer</th><th>Answers</th><th>Cost</th></tr></thead>
       <tbody>
-        <tr><td>Trajectory score</td><td>Did it call the right tools in the right order?</td><td>Free — structural check</td></tr>
-        <tr><td>ROUGE-1 response match</td><td>Is the text lexically close to expected?</td><td>Free — but weak signal</td></tr>
+        <tr><td>Trajectory score</td><td>Did it call the right tools in the right order?</td><td>Free, structural check</td></tr>
+        <tr><td>ROUGE-1 response match</td><td>Is the text lexically close to expected?</td><td>Free, but weak signal</td></tr>
         <tr><td><strong>LLM-as-judge</strong></td><td>Is the answer semantically correct?</td><td>One extra LLM call per test</td></tr>
-        <tr><td>Human review</td><td>Is the answer actually good?</td><td>Expensive; unavoidable at the tail</td></tr>
+        <tr><td>Human review</td><td>Is the answer actually good?</td><td>Expensive. Unavoidable at the tail.</td></tr>
       </tbody>
     </table>
     <p>Combine all four at different cadences. Trajectory on every PR, ROUGE-1 for regressions, LLM-judge nightly, human review for flagged cases.</p>
@@ -1762,7 +1760,7 @@ def judge(prompt, expected, actual) -> float:
       <div class="callout-title"><code>adk eval</code> writes to <code>agents_dir</code></div>
       <p style="margin:0;">In locked-down containers with read-only root filesystems (common in Kubernetes), the eval run hits <code>PermissionError</code>. Upstream: adk-python #3887.</p>
     </div>
-    <p><strong>Workaround:</strong> make agents_dir writable during eval, OR run eval outside the deployed image — CI job against the same code, developer machine, separate eval pipeline.</p>
+    <p><strong>Workaround:</strong> make agents_dir writable during eval, OR run eval outside the deployed image. CI job against the same code, developer machine, separate eval pipeline.</p>
   </div>
 
   <div class="slide" data-module="09" data-type="keyfact">

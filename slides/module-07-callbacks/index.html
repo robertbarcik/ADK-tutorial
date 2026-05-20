@@ -1629,7 +1629,7 @@ body {
   <div class="slide" data-module="07" data-type="keyfact">
     <h2 class="text-muted" style="border-bottom:none;font-size:1em;text-transform:uppercase;letter-spacing:0.08em;">Callbacks are for agents</h2>
     <p>what <strong>middleware</strong> is for web handlers.</p>
-    <p style="font-size:0.7em;color:var(--text-muted);margin-top:var(--space-4);">Express, Django, Plugin hooks — the pattern is the same.</p>
+    <p style="font-size:0.7em;color:var(--text-muted);margin-top:var(--space-4);">Express, Django, plugin hooks: the pattern is the same.</p>
   </div>
 
   <div class="slide" data-module="07">
@@ -1658,7 +1658,7 @@ body {
     if &lt;some condition&gt;:
         return &lt;a replacement value&gt;   # ← ADK uses this; real call skipped
     return None                        # ← real call proceeds</code></pre>
-    <p class="code-caption"><code>None</code> means "carry on." A returned object means "use this instead." That's it. Same pattern across all six hooks.</p>
+    <p class="code-caption"><code>None</code> means "carry on." A returned object means "use this instead."</p>
   </div>
 
   <div class="slide" data-module="07" data-type="section-title" style="background:linear-gradient(135deg,var(--navy-dark) 0%,var(--navy) 100%);">
@@ -1690,7 +1690,7 @@ guarded_agent = LlmAgent(
   <div class="slide" data-module="07" data-type="keyfact">
     <h2 class="text-muted" style="border-bottom:none;font-size:1em;text-transform:uppercase;letter-spacing:0.08em;">On the blocked run</h2>
     <p>The LLM was <strong>never called</strong>.</p>
-    <p style="font-size:0.7em;color:var(--text-muted);margin-top:var(--space-4);">Zero tokens billed. Guaranteed refusal.<br>An instruction is a polite request. This is enforcement.</p>
+    <p style="font-size:0.7em;color:var(--text-muted);margin-top:var(--space-4);">Zero tokens billed. Guaranteed refusal.</p>
   </div>
 
   <div class="slide" data-module="07" data-type="section-title" style="background:linear-gradient(135deg,var(--navy-dark) 0%,var(--navy) 100%);">
@@ -1720,7 +1720,7 @@ hr_agent = LlmAgent(
 
   <div class="slide" data-module="07">
     <h2>Why this matters</h2>
-    <p>The tool function itself returns the full record. Your Python code is still aware of the sensitive fields — useful for audit logs, database writes, or downstream systems that legitimately need them.</p>
+    <p>The tool function itself returns the full record. Your Python code is still aware of the sensitive fields, useful for audit logs, database writes, or downstream systems that legitimately need them.</p>
     <p>But the model's context contains only what it needs to answer the user's question. <strong>You contain the PII blast radius at the callback layer.</strong></p>
   </div>
 
@@ -1754,7 +1754,7 @@ stock_agent = LlmAgent(
   <div class="slide" data-module="07" data-type="keyfact">
     <h2 class="text-muted" style="border-bottom:none;font-size:1em;text-transform:uppercase;letter-spacing:0.08em;">The production win</h2>
     <p>Same agent code, tests <strong>without</strong> hitting real APIs.</p>
-    <p style="font-size:0.7em;color:var(--text-muted);margin-top:var(--space-4);">Inject the callback in tests; leave it off in prod. No separate test doubles.</p>
+    <p style="font-size:0.7em;color:var(--text-muted);margin-top:var(--space-4);">Inject the callback in tests. Leave it off in prod. No mocking infrastructure needed.</p>
   </div>
 
   <div class="slide" data-module="07">
@@ -1762,10 +1762,10 @@ stock_agent = LlmAgent(
     <table>
       <thead><tr><th>Hook</th><th>Use</th></tr></thead>
       <tbody>
-        <tr><td><code>before_agent_callback</code></td><td>Pre-flight state setup; reject inputs on session conditions</td></tr>
-        <tr><td><code>after_agent_callback</code></td><td>Final-output logging; write summary state</td></tr>
+        <tr><td><code>before_agent_callback</code></td><td>Pre-flight state setup. Reject inputs on session conditions.</td></tr>
+        <tr><td><code>after_agent_callback</code></td><td>Final-output logging. Write summary state.</td></tr>
         <tr><td><code>before_model_callback</code></td><td><strong>Guardrails</strong>, caching, prompt-injection checks</td></tr>
-        <tr><td><code>after_model_callback</code></td><td>Response filtering; telemetry; cost tracking</td></tr>
+        <tr><td><code>after_model_callback</code></td><td>Response filtering, telemetry, cost tracking</td></tr>
         <tr><td><code>before_tool_callback</code></td><td><strong>Mocking</strong>, cache lookups, argument validation</td></tr>
         <tr><td><code>after_tool_callback</code></td><td><strong>PII redaction</strong>, result caching, error classification</td></tr>
       </tbody>
@@ -1779,7 +1779,7 @@ stock_agent = LlmAgent(
       <tbody>
         <tr><td>Instruction prompt</td><td>One agent</td><td>Soft preferences, style</td></tr>
         <tr><td>Tool function code</td><td>One tool</td><td>Guards on irreversible ops (M02)</td></tr>
-        <tr><td><strong>Callback</strong></td><td><strong>One agent's lifecycle</strong></td><td><strong>Cross-cutting concerns — guardrails, PII, caching</strong></td></tr>
+        <tr><td><strong>Callback</strong></td><td><strong>One agent's lifecycle</strong></td><td><strong>Cross-cutting concerns: guardrails, PII, caching</strong></td></tr>
         <tr><td>Plugin (newer)</td><td>Whole runner, all agents</td><td>Org-wide policies; audit logging</td></tr>
       </tbody>
     </table>
@@ -1792,14 +1792,14 @@ stock_agent = LlmAgent(
       <div class="callout-title">Callbacks don't appear in traces</div>
       <p style="margin:0;">ADK's OpenTelemetry traces include LLM calls, tool calls, state deltas. They do <strong>not</strong> include "before_model_callback ran, returned None" as a span.</p>
     </div>
-    <p>If you rely on callbacks for policy decisions in production, <strong>add explicit telemetry inside the callback</strong> — a print, a log line, or a manual span.</p>
+    <p>If you rely on callbacks for policy decisions in production, <strong>add explicit telemetry inside the callback</strong>: a print, a log line, or a manual span.</p>
     <p style="color:var(--text-muted);font-size:0.9em;">Known gap. Documented in Google's ADK blog.</p>
   </div>
 
   <div class="slide" data-module="07" data-type="keyfact">
     <h2 class="text-muted" style="border-bottom:none;font-size:1em;text-transform:uppercase;letter-spacing:0.08em;">What to carry forward</h2>
     <p>Six hooks. One rule: <strong>return None or return a value</strong>.</p>
-    <p style="font-size:0.7em;color:var(--text-muted);margin-top:var(--space-4);">Guardrails, redactors, mocks, caches — same pattern, different return.</p>
+    <p style="font-size:0.7em;color:var(--text-muted);margin-top:var(--space-4);">Guardrails, redactors, mocks, caches: same pattern, different return.</p>
   </div>
 
   <div class="slide" data-module="07" data-type="section-title" style="background:linear-gradient(135deg,var(--navy) 0%,var(--navy-light) 100%);">

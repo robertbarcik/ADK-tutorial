@@ -1631,12 +1631,11 @@ body {
     <table>
       <thead><tr><th>Pattern</th><th>Control flow</th><th>When</th></tr></thead>
       <tbody>
-        <tr><td><strong>Workflow agent</strong> (M05)</td><td>Declarative — Sequential, Parallel, Loop</td><td>You can name the workflow</td></tr>
-        <tr><td><strong><code>sub_agents</code></strong></td><td>LLM decides — via <em>transfer</em></td><td>Specialist should own the dialog</td></tr>
-        <tr><td><strong><code>AgentTool</code></strong></td><td>LLM decides — via <em>function call</em></td><td>Coordinator stays in charge</td></tr>
+        <tr><td><strong>Workflow agent</strong> (M05)</td><td>Declarative: Sequential, Parallel, Loop</td><td>You can name the workflow</td></tr>
+        <tr><td><strong><code>sub_agents</code></strong></td><td>LLM decides, via <em>transfer</em></td><td>Specialist should own the dialog</td></tr>
+        <tr><td><strong><code>AgentTool</code></strong></td><td>LLM decides, via <em>function call</em></td><td>Coordinator stays in charge</td></tr>
       </tbody>
     </table>
-    <p>Workflow agents were M05. Today: the two LLM-driven patterns.</p>
   </div>
 
   <div class="slide" data-module="06" data-type="keyfact">
@@ -1658,7 +1657,7 @@ body {
       <li>ADK automatically injects <code>transfer_to_agent(agent_name=...)</code> as a callable.</li>
       <li>The coordinator's LLM emits <code>transfer_to_agent('weather_specialist')</code>.</li>
       <li>ADK <strong>transfers control</strong> to the named child. The child produces the final response.</li>
-      <li>The child remains active for follow-up turns — unless it transfers again.</li>
+      <li>The child remains active for follow-up turns. It transfers again to hand back.</li>
     </ul>
     <p style="color:var(--text-muted);font-size:0.9em;">Think org chart. The coordinator is the manager; the specialist takes the meeting.</p>
   </div>
@@ -1702,7 +1701,7 @@ coordinator = LlmAgent(
     <ul>
       <li>Wrap each specialist in <code>AgentTool(agent=...)</code>.</li>
       <li>Put those in the coordinator's <code>tools=[...]</code>, not <code>sub_agents=[...]</code>.</li>
-      <li>Coordinator's LLM emits a <strong>regular function call</strong> — same mechanism as <code>get_weather</code> or <code>search_tickets</code>.</li>
+      <li>Coordinator's LLM emits a <strong>regular function call</strong>, the same mechanism as <code>get_weather</code> or <code>search_tickets</code>.</li>
       <li>ADK runs the specialist, captures its output as a tool-response event.</li>
       <li>The coordinator <strong>reads the response and produces the final reply itself</strong>.</li>
     </ul>
@@ -1754,7 +1753,7 @@ coordinator = LlmAgent(
         <ul style="font-size:0.9em;">
           <li>Specialist should own the dialog</li>
           <li>Might take multiple turns before handing back</li>
-          <li>Topic shifts — the specialist is the right partner for the whole topic</li>
+          <li>Topic shifts: the specialist is the right partner for the whole topic</li>
           <li>User <em>perceives</em> talking to a specialist</li>
         </ul>
       </div>
@@ -1786,11 +1785,11 @@ coordinator = LlmAgent(
   <div class="slide" data-module="06" data-type="section-title" style="background:linear-gradient(135deg,#6A1B9A 0%,#8E24AA 100%);">
     <div class="topic-badge">Interlude &middot; Agentic Design Patterns</div>
     <h1>Multi-agent decomposition</h1>
-    <p class="highlight-text">Before you decompose, consider the coordination tax.</p>
+    <p class="highlight-text">Every agent you add costs something.</p>
   </div>
 
   <div class="slide" data-module="06">
-    <h2>The coordination tax has three parts</h2>
+    <h2>Three costs of adding more agents</h2>
     <ol>
       <li><strong>Extra LLM calls.</strong> Every transfer or <code>AgentTool</code> call is an additional model invocation. Two-specialist system = 2+ calls per turn. Five specialists = 10+. Compounds latency and cost.</li>
       <li><strong>Routing errors.</strong> Every routing decision is a chance to pick the wrong specialist. More specialists → wider miss surface.</li>
@@ -1802,7 +1801,7 @@ coordinator = LlmAgent(
     <h2>Three tests before you decompose</h2>
     <div class="callout callout-tip">
       <div class="callout-title">Test 1 — Reuse</div>
-      <p style="margin:0;font-size:0.95em;">Will any specialist be used elsewhere — different product, different top-level agent? If yes, decomposition is worth it. If no, consider one agent with more tools.</p>
+      <p style="margin:0;font-size:0.95em;">Will any specialist be used elsewhere, in a different product or different top-level agent? If yes, decomposition is worth it. If no, consider one agent with more tools.</p>
     </div>
     <div class="callout callout-tip">
       <div class="callout-title">Test 2 — Model heterogeneity</div>
@@ -1810,7 +1809,7 @@ coordinator = LlmAgent(
     </div>
     <div class="callout callout-tip">
       <div class="callout-title">Test 3 — Instruction scale</div>
-      <p style="margin:0;font-size:0.95em;">Is a single system prompt getting unmanageable — 500 lines with overlapping rules? Breaking it up is legitimate. But if your prompt is 30 lines, don't split for sport.</p>
+      <p style="margin:0;font-size:0.95em;">Is a single system prompt getting unmanageable (500 lines with overlapping rules)? Breaking it up is legitimate. But if your prompt is 30 lines, don't split for sport.</p>
     </div>
   </div>
 

@@ -1630,13 +1630,13 @@ body {
     <h2 class="text-muted" style="border-bottom:none;font-size:1em;text-transform:uppercase;letter-spacing:0.08em;">So far</h2>
     <p>Every demo used <code>openrouter/google/gemini-2.5-flash-lite</code>.</p>
     <h2 class="text-muted" style="border-bottom:none;font-size:1em;text-transform:uppercase;letter-spacing:0.08em;margin-top:var(--space-8);">This module</h2>
-    <p>Open it up.</p>
+    <p>Switch models with one line.</p>
   </div>
 
   <div class="slide" data-module="04">
     <h2>What <code>LiteLlm</code> actually is</h2>
-    <p>ADK was written by Google; it speaks Gemini natively. Every other model needs a <strong>translation layer</strong>. That layer is LiteLLM — an independent open-source library that sits between your code and ~100 LLM providers.</p>
-    <p>Requests are OpenAI-shaped on the way in. LiteLLM translates them to whatever the target provider expects, sends, translates the response back.</p>
+    <p>ADK was written by Google. It speaks Gemini natively. Every other model needs a <strong>translation layer</strong>. That layer is <strong style="color:var(--amber-dark);">LiteLLM</strong>, an independent open-source library that sits between your code and <strong style="color:var(--amber-dark);">~100 LLM providers</strong>.</p>
+    <p>Requests are <strong style="color:var(--amber-dark);">OpenAI-shaped</strong> on the way in. LiteLLM translates them to whatever the target provider expects, sends, and translates the response back.</p>
     <p>ADK's <code>LiteLlm</code> wrapper is a thin adapter exposing this library as an ADK model. Google wrote it so they didn't have to write a custom shim per vendor.</p>
   </div>
 
@@ -1654,7 +1654,7 @@ body {
       │ OpenAI-shaped response
       ▼
    ADK Agent (sees the shape it expected)</pre>
-    <p style="color:var(--text-muted);font-size:0.9em;">Two translations per call. Both handled by LiteLLM. The catch: bumping <code>google-adk</code> and <code>litellm</code> independently can break tool-call shapes — that's why <code>requirements.txt</code> pins them together.</p>
+    <p style="color:var(--text-muted);font-size:0.9em;">Two translations per call. Both handled by LiteLLM. The catch: bumping <code>google-adk</code> and <code>litellm</code> independently can break tool-call shapes. That's why <code>requirements.txt</code> pins them together.</p>
   </div>
 
   <div class="slide" data-module="04" data-type="code">
@@ -1670,14 +1670,14 @@ body {
         <tr><td>Meta</td><td><code>openrouter/meta-llama/llama-3.1-8b-instruct</code></td></tr>
       </tbody>
     </table>
-    <p style="color:var(--text-muted);font-size:0.9em;">One OpenRouter key replaces five provider keys. Skip <code>:free</code> tiers for real work — rate-limited, unreliable.</p>
+    <p style="color:var(--text-muted);font-size:0.9em;">One OpenRouter key replaces five provider keys. Skip <code>:free</code> tiers for real work: rate-limited and unreliable.</p>
   </div>
 
   <div class="slide" data-module="04">
     <h2>What to notice in the output</h2>
     <ul>
-      <li><strong>Answers vary in style, converge on content.</strong> Every model explains tool-calling; none hallucinate badly on a vanilla concept. Quality differences only show on hard prompts.</li>
-      <li><strong>Latency varies ~3x.</strong> Open-weight models through their current providers are slower than the hosted frontier ones. For tool-heavy agents this matters; for Q&amp;A usually not.</li>
+      <li><strong>Answers vary in style, converge on content.</strong> Every model explains tool-calling. None hallucinate badly on a vanilla concept. Quality differences only show on hard prompts.</li>
+      <li><strong>Latency varies ~3x.</strong> Open-weight models through their current providers are slower than the hosted frontier ones. For tool-heavy agents this matters. For Q&amp;A usually not.</li>
       <li><strong>Reasoning traces leak sometimes.</strong> Some models (Qwen, DeepSeek) emit a thought process even when not asked. Pick a non-reasoning variant or pass <code>extra_body={"reasoning": {"effort": "low"}}</code>.</li>
     </ul>
   </div>
@@ -1705,7 +1705,7 @@ agent = LlmAgent(
   <div class="slide" data-module="04" data-type="keyfact">
     <h2 class="text-muted" style="border-bottom:none;font-size:1em;text-transform:uppercase;letter-spacing:0.08em;">The gotcha</h2>
     <p><code>ollama_chat/</code> ← use this.<br><br><code>ollama/</code> ← <strong>not</strong> this.</p>
-    <p style="font-size:0.75em;color:var(--text-muted);margin-top:var(--space-6);">The plain <code>ollama/</code> prefix hits the <em>completions</em> API. Tool calls become text the model has to produce exactly; it fails; infinite loop. Use <code>ollama_chat/</code> for the chat-completions API with real function-calling.</p>
+    <p style="font-size:0.75em;color:var(--text-muted);margin-top:var(--space-6);">The plain <code>ollama/</code> prefix hits the <em>completions</em> API. Tool calls become text the model has to produce exactly, and it fails. Use <code>ollama_chat/</code> for the chat-completions API with real function-calling.</p>
   </div>
 
   <div class="slide" data-module="04" data-type="comparison">
@@ -1730,13 +1730,12 @@ agent = LlmAgent(
   <div class="slide" data-module="04" data-type="section-title" style="background:linear-gradient(135deg,#6A1B9A 0%,#8E24AA 100%);">
     <div class="topic-badge">Interlude &middot; Agentic Design Patterns</div>
     <h1>Prompt priority tiers</h1>
-    <p class="highlight-text">Instructions that survive pressure.</p>
   </div>
 
   <div class="slide" data-module="04">
     <h2>The problem</h2>
-    <p>When you swap models, instructions that worked on Claude sometimes partially fail on GPT. One model reads your instruction all the way through; another prioritizes the earliest tokens.</p>
-    <p>Long instructions also get truncated under context pressure — long system prompts plus long tool descriptions plus long chat history can force ADK to drop parts of what you wrote.</p>
+    <p>When you swap models, instructions that worked on Claude sometimes partially fail on GPT. One model reads your instruction all the way through. Another prioritizes the earliest tokens.</p>
+    <p>Long instructions also get truncated under context pressure. Long system prompts plus long tool descriptions plus long chat history can force ADK to drop parts of what you wrote.</p>
     <p><strong>Structure your instruction so the most important bits survive.</strong></p>
   </div>
 
@@ -1752,7 +1751,7 @@ agent = LlmAgent(
     </div>
     <div class="callout callout-success">
       <div class="callout-title">Tier 3 — Preferences (bottom, OK to lose)</div>
-      <p style="margin:0;font-size:0.95em;">Communication style — length, tone, markdown. <em>"Prefer bullet points over paragraphs."</em></p>
+      <p style="margin:0;font-size:0.95em;">Communication style: length, tone, markdown. <em>"Prefer bullet points over paragraphs."</em></p>
     </div>
   </div>
 
@@ -1782,11 +1781,11 @@ explain in 2-3 sentences.
     </div>
     <div class="callout callout-tip">
       <div class="callout-title">Per-task capability</div>
-      <p style="margin:0;font-size:0.95em;">GPT reasons better on obscure math; Claude writes cleaner code; Gemini grounds in live web results. Pick the right tool per sub-agent.</p>
+      <p style="margin:0;font-size:0.95em;">GPT reasons better on obscure math. Claude writes cleaner code. Gemini grounds in live web results. Pick the right tool per sub-agent.</p>
     </div>
     <div class="callout callout-tip">
       <div class="callout-title">Cost optimization</div>
-      <p style="margin:0;font-size:0.95em;">Cheap queries to Haiku / 4o-mini / Flash-lite; hard queries to Opus / GPT-5 / Pro. Callbacks (M07) and eval (M09) give you the hooks.</p>
+      <p style="margin:0;font-size:0.95em;">Cheap queries to Haiku, 4o-mini, or Flash-lite. Hard queries to Opus, GPT-5, or Pro. Callbacks and eval give you the hooks.</p>
     </div>
   </div>
 

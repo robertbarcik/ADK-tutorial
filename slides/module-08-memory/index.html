@@ -1637,7 +1637,7 @@ body {
     <table>
       <thead><tr><th>Scale</th><th>Primitive</th><th>Use</th></tr></thead>
       <tbody>
-        <tr><td>Within one conversation</td><td>Session state (M03)</td><td>Current turn context; <code>user:</code> for cross-session within one user</td></tr>
+        <tr><td>Within one conversation</td><td>Session state (M03)</td><td>Current turn context. <code>user:</code> prefix for cross-session within one user.</td></tr>
         <tr><td><strong>Across weeks / unrelated sessions</strong></td><td><strong><code>MemoryService</code> + <code>load_memory</code></strong></td><td>Retrieve facts the agent has no session-level reason to know</td></tr>
       </tbody>
     </table>
@@ -1675,7 +1675,7 @@ session_service = DatabaseSessionService(
     </div>
     <div class="callout callout-tip">
       <div class="callout-title">Install dependencies</div>
-      <p style="margin:0;"><code>pip install aiosqlite greenlet</code> — aiosqlite is the async driver; greenlet is a transitive SQLAlchemy async requirement.</p>
+      <p style="margin:0;"><code>pip install aiosqlite greenlet</code>. aiosqlite is the async driver. greenlet is a transitive SQLAlchemy async requirement.</p>
     </div>
   </div>
 
@@ -1694,7 +1694,7 @@ Instance 2 (FRESH DatabaseSessionService → same app.db)
     initial state: {user:preference: 'terse'}  ← loaded from disk
   USER: What do I prefer?
   Agent: terse</pre>
-    <p>State survives the restart because it was written via <code>output_key=</code> or <code>tool_context.state</code> — paths ADK persists via events.</p>
+    <p>State survives the restart because it was written via <code>output_key=</code> or <code>tool_context.state</code>, paths ADK persists via events.</p>
   </div>
 
   <div class="slide" data-module="08" data-type="section-title" style="background:linear-gradient(135deg,var(--navy-dark) 0%,var(--navy) 100%);">
@@ -1720,10 +1720,10 @@ Instance 2 (FRESH DatabaseSessionService → same app.db)
       <thead><tr><th>Service</th><th>Backing</th><th>When</th></tr></thead>
       <tbody>
         <tr><td><code>InMemoryMemoryService</code></td><td>Python dict</td><td>Demos (this notebook)</td></tr>
-        <tr><td><code>VertexAiMemoryBankService</code></td><td>Google Cloud; LLM-distilled facts + consolidation</td><td>Production on Vertex (M10)</td></tr>
+        <tr><td><code>VertexAiMemoryBankService</code></td><td>Google Cloud, LLM-distilled facts + consolidation</td><td>Production on Vertex AI</td></tr>
       </tbody>
     </table>
-    <p style="color:var(--text-muted);font-size:0.9em;">Memory Bank is the real-world path if you're on Google Cloud — it extracts facts, deduplicates, consolidates over time. For self-hosted production, you'd implement <code>BaseMemoryService</code> against Postgres + pgvector or similar.</p>
+    <p style="color:var(--text-muted);font-size:0.9em;">Memory Bank is the real-world path if you're on Google Cloud: it extracts facts, deduplicates, and consolidates over time. For self-hosted production, you'd implement <code>BaseMemoryService</code> against Postgres + pgvector or similar.</p>
   </div>
 
   <div class="slide" data-module="08">
@@ -1739,13 +1739,13 @@ Instance 2 (FRESH DatabaseSessionService → same app.db)
 
   <div class="slide" data-module="08" data-type="section-title" style="background:linear-gradient(135deg,#6A1B9A 0%,#8E24AA 100%);">
     <div class="topic-badge">Interlude &middot; Agentic Design Patterns (revisited)</div>
-    <h1>Skeptical Memory — with teeth</h1>
+    <h1>Skeptical Memory</h1>
     <p class="highlight-text">Long-term memory is a journal, not a cache.</p>
   </div>
 
   <div class="slide" data-module="08">
     <h2>The staleness problem at long horizons</h2>
-    <p>Three months ago: user said they work at Acme Corp. Memory stored. Today: agent searches, finds it, uses it to ground a reply.</p>
+    <p>Three months ago: user said they work at Anthropic. Memory stored. Today: agent searches, finds it, uses it to ground a reply.</p>
     <p><strong>The user might have changed jobs.</strong> The memory is accurate as of the day it was stored. It is not accurate as of today. The agent, acting confidently on a three-month-old fact, is confidently wrong.</p>
     <p style="color:var(--text-muted);">At long time horizons, <strong>staleness is the default</strong>, not the exception.</p>
   </div>
@@ -1754,7 +1754,7 @@ Instance 2 (FRESH DatabaseSessionService → same app.db)
     <h2>Three defensive patterns</h2>
     <div class="callout callout-tip">
       <div class="callout-title">1. Retrieve-and-verify for high stakes</div>
-      <p style="margin:0;font-size:0.95em;">Before irreversible actions, call a read-only tool to re-verify the retrieved fact. <em>"Let me confirm — you're still at Acme, right?"</em></p>
+      <p style="margin:0;font-size:0.95em;">Before irreversible actions, call a read-only tool to re-verify the retrieved fact. <em>"Let me confirm, you're still at Anthropic, right?"</em></p>
     </div>
     <div class="callout callout-tip">
       <div class="callout-title">2. Stamp memories with recency</div>
@@ -1762,7 +1762,7 @@ Instance 2 (FRESH DatabaseSessionService → same app.db)
     </div>
     <div class="callout callout-tip">
       <div class="callout-title">3. Decay or consolidate</div>
-      <p style="margin:0;font-size:0.95em;">Memory Bank does this automatically. For <code>InMemoryMemoryService</code>, implement the policy yourself — delete or compress entries older than N days.</p>
+      <p style="margin:0;font-size:0.95em;">Memory Bank does this automatically. For <code>InMemoryMemoryService</code>, implement the policy yourself: delete or compress entries older than N days.</p>
     </div>
   </div>
 

@@ -1623,7 +1623,6 @@ body {
     <div class="topic-badge">Module 03 &middot; Part 1 Vendor-agnostic</div>
     <h1>Sessions, State, Events, Artifacts</h1>
     <h3>Where the conversation's memory actually lives</h3>
-    <p class="highlight-text">The prefix is the lifetime.</p>
   </div>
 
   <div class="slide" data-module="03" data-type="keyfact">
@@ -1636,8 +1635,8 @@ body {
   <div class="slide" data-module="03">
     <h2>A session is two things</h2>
     <ul>
-      <li><strong>A list of events</strong> — the full ordered history of every message, tool call, tool response, and state mutation. Read-only from your code; ADK appends.</li>
-      <li><strong>A state dict</strong> — mutable key-value storage for whatever the agent should remember between turns.</li>
+      <li><strong>A list of events.</strong> The full ordered history of every message, tool call, tool response, and state mutation. Read-only from your code. ADK appends.</li>
+      <li><strong>A state dict.</strong> Mutable key-value storage for whatever the agent should remember between turns.</li>
     </ul>
     <p>Identified by the triple <code>(app_name, user_id, session_id)</code>. That triple is the primary key for every session in every session store.</p>
   </div>
@@ -1678,18 +1677,18 @@ body {
   <div class="slide" data-module="03">
     <h2>Mental model — four rings</h2>
 <pre class="diagram">             ┌──────────────────────────────────────┐
-             │  app:  global, across all users       │
-             │  ┌────────────────────────────────┐   │
-             │  │ user:  per user, all sessions  │   │
-             │  │   ┌──────────────────────┐     │   │
-             │  │   │ (unprefixed)         │     │   │
-             │  │   │  this session only   │     │   │
-             │  │   │   ┌──────────────┐   │     │   │
-             │  │   │   │ temp:        │   │     │   │
-             │  │   │   │ this run only│   │     │   │
-             │  │   │   └──────────────┘   │     │   │
-             │  │   └──────────────────────┘     │   │
-             │  └────────────────────────────────┘   │
+             │  app:  global, across all users      │
+             │  ┌────────────────────────────────┐  │
+             │  │ user:  per user, all sessions  │  │
+             │  │   ┌──────────────────────┐     │  │
+             │  │   │ (unprefixed)         │     │  │
+             │  │   │  this session only   │     │  │
+             │  │   │   ┌──────────────┐   │     │  │
+             │  │   │   │ temp:        │   │     │  │
+             │  │   │   │ this run only│   │     │  │
+             │  │   │   └──────────────┘   │     │  │
+             │  │   └──────────────────────┘     │  │
+             │  └────────────────────────────────┘  │
              └──────────────────────────────────────┘</pre>
   </div>
 
@@ -1700,11 +1699,11 @@ body {
     # user: prefix → survives beyond this session
     tool_context.state["user:favorite_color"] = color
     return {"status": "saved", "color": color}</code></pre>
-    <p class="code-caption">Add <code>tool_context: ToolContext</code> as a parameter. ADK injects the running context. <code>tool_context.state</code> behaves like a dict; the assignment is recorded as an event and persisted.</p>
+    <p class="code-caption">Add <code>tool_context: ToolContext</code> as a parameter. ADK injects the running context. <code>tool_context.state</code> behaves like a dict. The assignment is recorded as an event and persisted.</p>
   </div>
 
   <div class="slide" data-module="03">
-    <h2>The wow moment</h2>
+    <h2>Cross-session persistence</h2>
 <pre class="diagram">Session 1  ─────────────────────────────────────
   USER:       My favorite color is teal.
   tool_call:  remember_favorite_color(color='teal')
@@ -1747,7 +1746,7 @@ Session 2  ───────────────────────
 
   <div class="slide" data-module="03">
     <h2>Events — the session's immutable ledger</h2>
-    <p>Every turn produces events; the session keeps them all. Walk <code>session.events</code> to audit what happened, replay a conversation, or feed it into an evaluation suite.</p>
+    <p>Every turn produces events. The session keeps them all. Walk <code>session.events</code> to audit what happened, replay a conversation, or feed it into an evaluation suite.</p>
 <pre class="diagram">[ 0] user         text(My favorite color is teal.)
 [ 1] color_agent  tool_call(remember_favorite_color)
 [ 2] color_agent  tool_resp | state_delta(['user:favorite_color'])
@@ -1757,11 +1756,11 @@ Session 2  ───────────────────────
 
   <div class="slide" data-module="03">
     <h2>Artifacts — binary blobs outside events</h2>
-    <p>Images, audio clips, PDFs, any payload you don't want to serialize into events. Analogy: <strong>Git LFS for agents</strong> — the pointer lives in the event stream; the payload lives in a separate store.</p>
+    <p style="margin-bottom:var(--space-4);">Images, audio clips, PDFs: any binary payload you don't want to store inside the event stream. The reference lives with the events. The data lives in a dedicated blob store, like Git LFS for agents.</p>
     <ul>
-      <li><code>InMemoryArtifactService</code> — demos and tests.</li>
-      <li><code>GcsArtifactService</code> — Google Cloud Storage, for production.</li>
-      <li>Or roll your own <code>BaseArtifactService</code> — S3, Azure Blob, MinIO.</li>
+      <li><code>InMemoryArtifactService</code>: demos and tests.</li>
+      <li><code>GcsArtifactService</code>: Google Cloud Storage, for production.</li>
+      <li>Or roll your own <code>BaseArtifactService</code>: S3, Azure Blob, MinIO.</li>
     </ul>
     <p style="color:var(--text-muted);font-size:0.9em;">Skimmable for now. M13 (Live API voice agent) is where artifacts carry real weight.</p>
   </div>
@@ -1769,17 +1768,16 @@ Session 2  ───────────────────────
   <div class="slide" data-module="03" data-type="section-title" style="background:linear-gradient(135deg,#6A1B9A 0%,#8E24AA 100%);">
     <div class="topic-badge">Interlude &middot; Agentic Design Patterns</div>
     <h1>Skeptical Memory</h1>
-    <p class="highlight-text">Stored state is a hint, not a fact.</p>
   </div>
 
   <div class="slide" data-module="03">
     <h2>Memory staleness is real</h2>
     <p>The demo looks clean because the state hasn't had time to go stale. In production, this is not how it works.</p>
     <ul>
-      <li>User's favorite color from three months ago? Probably still current.</li>
-      <li>User's current project? Maybe not — they might have moved on without telling the agent.</li>
-      <li>Tickets the agent "remembered" being open yesterday? Possibly all closed.</li>
-      <li>Server IP an MCP tool cached? Could have been reassigned.</li>
+      <li>User's favorite color from three months ago? <strong>Probably still current.</strong></li>
+      <li>User's current project? <strong>Maybe not.</strong> They might have moved on without telling the agent.</li>
+      <li>Tickets the agent "remembered" being open yesterday? <strong>Possibly all closed.</strong></li>
+      <li>Server IP an MCP tool cached? <strong>Could have been reassigned.</strong></li>
     </ul>
     <p><strong>Stored memory is a hint.</strong> Not a fact.</p>
   </div>
@@ -1787,7 +1785,7 @@ Session 2  ───────────────────────
   <div class="slide" data-module="03">
     <h2>Three guidelines from the publication</h2>
     <ol>
-      <li><strong>Prefer retrieval over recall for high-stakes decisions.</strong> Before the agent sends an email, charges a card, or deploys code, it should call a read-only tool to re-verify — not trust its own stored state.</li>
+      <li><strong>Prefer retrieval over recall for high-stakes decisions.</strong> Before the agent sends an email, charges a card, or deploys code, it should call a read-only tool to re-verify, not trust its own stored state.</li>
       <li><strong>Scope aggressively.</strong> <code>temp:</code> for scratchpads, unprefixed for per-session, <code>user:</code> only for things you're confident change only with explicit user action, <code>app:</code> only for genuinely immutable configuration.</li>
       <li><strong>Log a reason when you write <code>user:</code> or <code>app:</code> state.</strong> Months from now you will debug an agent acting on six-month-old memory. The one-line "why did this get stored" note saves hours.</li>
     </ol>
