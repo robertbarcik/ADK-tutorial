@@ -4,164 +4,158 @@
 
 ## Slide 1 — Title
 
-Welcome to module eleven, and this is where Part 2 of the course starts. We're going to cover Google Search grounding and context caching — the first two of three Gemini unlocks. These are features that don't translate through LiteLLM, which means they give you real capability in exchange for real lock-in.
+Grounding and context caching. Both are Gemini-specific, neither translates through LiteLLM, and together they cover the first two unlocks Part 2 is about. You get real capability in exchange for real lock-in, and this module makes the trade-off concrete.
 
 ---
 
 ## Slide 2 — Part 1 vs Part 2 framing
 
-Let me frame Part 1 against Part 2 before we dive in. Part 1 taught vendor-neutral ADK, so everything ran on whichever model you picked. Part 2, on the other hand, is honest about what you give up by staying neutral — so three specific Gemini capabilities that nothing else in the market replicates. Today we'll do grounding and context caching. Module twelve is thinking budgets. And module thirteen is the Live API for voice.
+Part 1 was vendor-neutral ADK. Any model, any provider, everything running through LiteLLM. Part 2 shows what native Gemini unlocks that the wrapper can't provide. Three capabilities are in scope. This module covers the first two. The others follow in the coming modules.
 
 ---
 
 ## Slide 3 — The switch is mechanical
 
-The code change from Part 1 to Part 2 is really just one line. Instead of wrapping the model in `LiteLlm(...)`, you pass a plain string — `model="gemini-2.5-flash"`. Done. Everything else works exactly the same — tools, sessions, workflow agents, callbacks, memory services, eval. Only the model argument changes.
+The code change from Part 1 to Part 2 is one line. Instead of wrapping the model in `LiteLlm(...)`, you pass a plain string: `model="gemini-2.5-flash"`. Everything else is identical: tools, sessions, workflow agents, callbacks, memory services, eval. Only the model argument changes.
 
 ---
 
 ## Slide 4 — Three unlocks
 
-There are three Gemini unlocks the course covers, so let me walk through them.
+Three Gemini-specific capabilities are in scope for Part 2. This module covers the first two.
 
-First, Google Search grounding — that's today. You get real citations with real URLs, handled by Gemini's grounding infrastructure, rather than a search API you call yourself.
+Google Search grounding: real citations with real URLs, handled by Gemini's grounding infrastructure. No external search API to manage.
 
-Second, long context plus caching — also today. So one-million-token windows, and a 75 to 90 percent discount on cached content.
+Long context plus caching: one-million-token windows, with a 75 to 90 percent discount when the same content is reused across queries.
 
-And third, thinking budgets — that's module twelve. A knob that trades latency for reasoning quality.
+The other two unlocks follow in the coming modules. Thinking budgets: a knob that controls how much internal reasoning the model does before answering. And the Live API: bidirectional voice streaming with interruption handling.
 
-On top of those three, the Live API for voice lands in module thirteen — bidirectional audio streaming with interruption handling.
-
-None of these translate through LiteLLM. They all require native Gemini via google-genai, which means switching your API key from OpenRouter to Google AI Studio. The free tier is enough for the first two features; caching needs paid tier; and the Live API has its own quotas.
+All four require native Gemini and a Google AI Studio key. None translate through LiteLLM.
 
 ---
 
 ## Slide 5 — Grounding header
 
-On to the first unlock — Google Search grounding. Built-in tool, and real citations.
+First unlock: Google Search grounding. A built-in tool that returns real citations.
 
 ---
 
 ## Slide 6 — Add google_search
 
-In code, the integration is really just two steps. You import `google_search` from `google.adk.tools`, and add it to the agent's `tools=` list. That's the entire integration.
+`google_search` is a function you import from `google.adk.tools` and add to the agent's `tools=` list. That's the full integration.
 
-Notice what's NOT there. There's no search API key. No client library for Google's Custom Search API. And no function that parses results. Gemini handles Search internally — the tool is *built-in*, which means it's not a Python function that ADK dispatches. You register intent, and Gemini does the work.
-
----
-
-## Slide 7 — Live: grounding
-
-Switch to the notebook, cell nine. We'll ask about the capital of Slovakia and its current population, and watch the event stream. Notice two things. First, there's no explicit `tool_call` for google_search — because it's a built-in, so it's handled internally. And second, look at the grounding metadata at the bottom — those are the real URLs Gemini consulted. Seven sources just for a population query.
+Notice what's absent. There's no API key to manage, no client library to install, and no result-parser function to write. Gemini handles Search internally because `google_search` is a built-in tool, not a Python function that ADK dispatches. You declare intent, and Gemini does the work.
 
 ---
 
-## Slide 8 — What you saw
+### Notebook break — Grounding in action
 
-Back on the slide, let's unpack what that output actually contained. Bratislava — the capital. Multiple population figures from different sources. Seven grounding sources attached to the event — things like Wikipedia, Britannica, and others. Real URLs. Not hallucinations.
+[Switch the screen to the notebook.]
 
-In production, you surface these to your users. Something like "Source: Wikipedia (see full article at ...)" underneath each paragraph. That's what transparent grounding looks like — the user sees where the claims came from, and can verify them.
+Open cell eight. The agent is already configured with `google_search` in its tools list. Run cell nine to send a factual question about a capital city and its current population, then watch the event stream.
 
----
+Two things to notice. First, there's no `tool_call` event for `google_search`. It's a built-in, so Gemini handles the dispatch internally rather than through ADK's tool-call loop. Second, look at the grounding metadata at the bottom of the output. Those are real URLs that Gemini consulted to back the response. Seven sources for one population query.
 
-## Slide 9 — Cost reality
-
-Before we move on, there are two cost-adjacent gotchas worth flagging.
-
-First, Search is billed separately from tokens. Roughly thirty-five dollars per thousand grounded requests. Not per-token; per-request. So for a search-heavy agent doing a hundred grounded queries a day, that's three-fifty a day, over a hundred a month. Budget accordingly.
-
-Second, built-in tools — so google_search, BuiltInCodeExecutor, and Vertex AI Search — cannot coexist with regular function tools in the same agent. If you try to add `get_weather` alongside `google_search`, the Gemini API rejects the request.
-
-There are two workarounds. First, wrap each built-in tool as a sub-agent via AgentTool. The parent has only AgentTool wrappers, and each sub-agent has one focused built-in. Second, on ADK one-point-sixteen and later, `google_search` specifically accepts `bypass_multi_tools_limit=True`, which lets it mix with regular tools. So check your ADK version.
+[Switch back to the slide deck.]
 
 ---
 
-## Slide 10 — Caching header
+## Slide 7 — What you saw
 
-On to the second unlock — long context plus context caching.
+The output shows what citation-grade sourcing looks like. The capital city, population figures from multiple sources, and seven grounding sources with real URLs pointing to Wikipedia, Britannica, and others.
 
----
-
-## Slide 11 — 1M tokens
-
-Gemini 2.5 and later models handle up to one million input tokens. Two million on the Pro variants. That's enough for a 500-page PDF manual. Enough for an entire codebase. Enough for months of email history.
-
-The capability is impressive. The economics, on the other hand, are the issue.
+In production, you surface these to your users. A line like "Source: Wikipedia" underneath each paragraph. The user sees where each claim came from and can verify it. That's the difference between AI-confident guessing and grounded output.
 
 ---
 
-## Slide 12 — Economics problem
+## Slide 8 — Cost reality
 
-Let me put concrete numbers on that economics problem. A 100-page PDF is roughly fifty thousand tokens. Twenty questions against it — which is normal for a support agent over a PDF manual — means twenty times fifty thousand input tokens, so one million input tokens per hour. At Gemini 2.5 Flash's standard input rate, that's seven-and-a-half cents per hour per user. Cheap at one user; adds up fast at scale.
+Two cost-adjacent gotchas before moving to caching.
 
-The obvious fix is to not re-pay for the PDF on every question. Cache it once, and reuse it cheaply. That's what context caching does.
+First, Search is billed separately from tokens. Roughly thirty-five dollars per thousand grounded requests, charged per-request rather than per-token. For an agent doing a hundred grounded queries a day, that's over a hundred dollars a month. Budget accordingly.
 
----
-
-## Slide 13 — Two flavors
-
-Caching comes in two flavors — implicit and explicit.
-
-Implicit caching is automatic. Zero code change. Gemini detects repeated prefixes in your requests, and applies a seventy-five-percent discount to the cached portion. You don't control what's cached or for how long; Gemini decides. And it's free to everyone on 2.5 and later.
-
-Explicit caching, on the other hand, is where you call `client.caches.create` with the content you want cached and a TTL. You get a ninety-percent discount on the cached portion. You control what's in the cache, how long it lives, and when to delete. It does cost a small storage fee per cached token per hour.
-
-So the rule of thumb is this. Implicit wins for "I might ask more questions about this document later." Explicit wins for "I know for certain I'll ask many questions about this specific document over the next five minutes."
+Second, built-in tools (`google_search`, `BuiltInCodeExecutor`, Vertex AI Search) cannot coexist with regular function tools in the same agent. The Gemini API rejects the request. Two workarounds: wrap each built-in as a sub-agent via `AgentTool`, with each sub-agent holding one built-in. Or, on ADK 1.16 and later, `google_search` accepts `bypass_multi_tools_limit=True`, which lets it mix with regular tools.
 
 ---
 
-## Slide 14 — Explicit caching API
+## Slide 9 — Caching header
 
-In code, the explicit caching API looks like this. `client.caches.create` takes your content and a TTL, and returns a cache handle. Subsequent `generate_content` calls pass `cached_content=cache.name`, and as a result the cached content is billed at the discounted rate.
-
-The minimum cache size is around thirty-two thousand tokens. Below that, caching won't happen — the break-even against the storage cost just doesn't work.
-
-And one crucial caveat. Explicit caching requires a paid Gemini API tier. The free tier has a zero-token storage quota. So the notebook cell demonstrating this runs, gets a 429 rate-limit error, and explains the billing gate. The code itself is correct; it just won't execute on a free key.
+Second unlock: long context plus context caching.
 
 ---
 
-## Slide 15 — Worked example
+## Slide 10 — 1M tokens
 
-Let me put concrete numbers on the savings. 100-page PDF, 20 questions per hour.
-
-With no caching — seven-and-a-half cents per hour.
-
-With explicit caching — about one-and-a-third cents per hour, combining the one-time cache-creation cost, the per-query cached-read cost, and the one-hour storage cost.
-
-So roughly a six-times cost reduction at 20 queries per hour. And the savings scale as you ask more questions. At 100 queries per hour per PDF, the gap widens to thirty times or more.
-
-Now for the break-even. Below three-to-five queries per document per hour, implicit caching — which is free and automatic — gets you most of the savings. Above that, explicit is clearly worth the extra code.
+Gemini 2.5 and later models handle up to one million input tokens, with two million on the Pro variants. A 500-page PDF manual, an entire codebase, or months of email history all fit in one context window. The capability is real. The economics, though, need attention.
 
 ---
 
-## Slide 16 — Native vs LiteLLM header
+## Slide 11 — Economics problem
 
-Time to pick your battle — native Gemini versus LiteLLM-wrapped. An honest trade-off.
+Here are the numbers. A 100-page PDF is roughly fifty thousand tokens. Twenty questions against it, which is a normal rate for a support agent over a PDF manual, means re-sending those fifty thousand tokens on every question. At Gemini 2.5 Flash's standard input rate, that's seven-and-a-half cents per hour per user. Cheap at one user, expensive at scale.
 
----
-
-## Slide 17 — Feature matrix
-
-What you see on this slide is the feature matrix. Basic chat and tool calls work either way. Everything else — so google_search, BuiltInCodeExecutor, caching, thinking budgets from module twelve, and the Live API from module thirteen — is native-only. LiteLLM can't translate features that don't exist in the OpenAI-shaped interface.
-
-The one thing LiteLLM wins at is swapping to Claude, GPT, or Qwen in a single line. That's the whole vendor-neutrality story from module four.
-
-So the rule is this. Native Gemini when you need a feature that doesn't translate. Otherwise LiteLLM. The two are not alternatives; they're different tools for different jobs.
+Context caching fixes this by letting you pay once to cache the document, then reuse it at a steep discount.
 
 ---
 
-## Slide 18 — Production pattern
+## Slide 12 — Two caching flavors
 
-If you remember one thing about the production pattern, remember this — have both.
+Caching comes in two flavors.
 
-Your routine user-facing queries go through a LiteLLM-wrapped agent. It's portable, with multi-model failover. When OpenAI has an outage, you swap to Claude or Gemini, and your code doesn't know. When a particular task benefits from a particular model, you route per-task.
+Implicit caching is automatic. Zero code change. Gemini detects repeated prefixes and applies a seventy-five-percent discount to the cached portion. You don't control what gets cached or for how long. It's free for all 2.5 models.
 
-Your search, long-context, and voice queries, on the other hand, go through a native Gemini agent. It's locked to Google — but in turn you get grounding, caching, and the Live API, capabilities that nothing else provides.
+Explicit caching requires a `client.caches.create` call with the content and a TTL. You get a ninety-percent discount on the cached portion, full control over what's cached and for how long, and a small storage fee per cached token per hour.
 
-You combine them with sub_agents or AgentTool from module six. The coordinator decides which kind of agent to reach for, based on the query. The architecture is already familiar from Part 1.
+Implicit wins when you're not sure you'll reuse the content. Explicit wins when you know you'll ask many questions against the same content over a defined window.
 
 ---
 
-## Slide 19 — Next
+## Slide 13 — Explicit caching API
 
-Up next is module twelve — thinking budgets. A Gemini-only knob that trades latency for reasoning quality. Same question, minimum thinking budget — instant response, maybe wrong. Maximum thinking budget — slower response, probably right. We'll run the same math problem at both, and see the answer quality change along with the latency cost.
+The `client.caches.create` call takes your content and a TTL, and returns a cache handle. Subsequent `generate_content` calls pass `cached_content=cache.name`, and the cached content is billed at the discounted rate.
+
+Two constraints to keep in mind. First, the minimum cache size is around thirty-two thousand tokens. Below that, the storage cost exceeds the savings. Second, explicit caching requires a paid Gemini API tier. The free tier has a zero-token storage quota. The notebook cell demonstrating this will return a 429 error on a free key. The code is correct; it just won't execute without a paid account.
+
+---
+
+## Slide 14 — Worked example
+
+The worked example uses 100 pages and 20 queries per hour. Without caching: seven-and-a-half cents per hour. With explicit caching: about one-and-a-third cents, combining the one-time cache-creation cost, the per-query discounted read, and one hour of storage. That's a six-times cost reduction.
+
+The savings scale. At 100 queries per hour against the same document, the gap widens to thirty times or more.
+
+Break-even: below three-to-five queries per document per hour, implicit caching is free and covers most of the benefit. Above that, explicit is worth the setup code.
+
+---
+
+## Slide 15 — Native vs LiteLLM header
+
+Native Gemini versus LiteLLM-wrapped. The trade-off is real, and worth making explicit.
+
+---
+
+## Slide 16 — Feature matrix
+
+The feature matrix on the slide splits into two columns. Basic chat and tool calls work either way. `google_search`, context caching, thinking budgets, and the Live API are native-only. LiteLLM can't surface features that don't exist in the OpenAI-shaped interface it wraps.
+
+LiteLLM's advantage is one-line model swaps. Swap to Claude, GPT, or Qwen by changing a string. That's the vendor-neutrality pattern from earlier in the course.
+
+The two are not alternatives. Use native Gemini when you need a feature that doesn't translate through LiteLLM. Use LiteLLM-wrapped for everything else.
+
+---
+
+## Slide 17 — Production pattern
+
+The production pattern is to have both.
+
+Routine user-facing queries go through a LiteLLM-wrapped agent. Portable, with multi-model failover. When a provider has an outage, you swap models without touching the agent code.
+
+Search, long-context, and voice queries go through a native Gemini agent. Locked to Google, and in return you get grounding, caching, and the Live API, which nothing else provides.
+
+You combine them with `sub_agents` or `AgentTool`. The coordinator routes each query to the right specialist. The architecture is the same multi-agent pattern from earlier in the course.
+
+---
+
+## Slide 18 — Next
+
+Next up: thinking budgets. A Gemini-only control that trades latency for reasoning quality. The same question at minimum budget gets an instant response that may be wrong. At maximum budget, it gets a slower response that's much more likely to be right. The next module runs the same math problem at both settings and measures the difference.

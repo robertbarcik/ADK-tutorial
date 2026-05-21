@@ -22,15 +22,14 @@ end to end before touching any `speaker_notes.md` file.
 | M08 | Memory | rewritten + 2 notebook breaks |
 | M09 | Evaluation | rewritten + 1 notebook break |
 | M10 | Deployment | rewritten + 1 notebook break |
+| M11 | Gemini grounding + caching | rewritten + 1 notebook break + Live amber slide removed |
+| M12 | Thinking budgets | rewritten + 1 notebook break + Live amber slide removed |
+| M13 | Live API voice | rewritten + 1 notebook break + Live amber slide removed |
+| M14 | A2A protocol | rewritten + 1 notebook break + Live amber slide removed |
 
 ### Pending
 
-| Module | Topic |
-|---|---|
-| M11 | Gemini grounding + caching |
-| M12 | Thinking budgets |
-| M13 | Live API voice |
-| M14 | A2A protocol |
+*All modules done.*
 
 ## Conventions
 
