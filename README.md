@@ -55,6 +55,8 @@ The deep track. All 14 modules; all four artifacts per module. Build, test, depl
 
 Rows marked **⚡** are the quick-path modules. If you're on the full path, the marker is just a cue that those four carry the highest-density content — pay special attention.
 
+Every notebook opens directly in Google Colab via the "Open in Colab" badge on its first cell — no local setup needed to read along, since each is committed executed with outputs already in place.
+
 ---
 
 ## Getting started

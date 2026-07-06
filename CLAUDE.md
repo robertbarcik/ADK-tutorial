@@ -131,6 +131,8 @@ jupyter nbconvert --to notebook --execute notebooks/NN_slug.ipynb --output-dir /
 
 If a demo cannot be made to run, do not skip the material — write the slides / chapter / notebook against the intended design, and log the failure in `DEMOS_BROKEN.md` with reproduction steps and a workaround for students.
 
+Notebooks are committed **executed, with outputs** — they read like an article, not a blank template. Refresh outputs by re-running headless (`jupyter nbconvert --to notebook --execute --inplace`); do not blank cell outputs before committing. Each of the 14 current notebooks carries an Open-in-Colab badge as its first markdown cell.
+
 ## Known gotchas (pre-empt these in code)
 
 - **LiteLLM + streaming + tool calls** is flaky on non-Gemini models. Default all OpenRouter demos to `stream=False`.
