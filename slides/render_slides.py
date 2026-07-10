@@ -86,7 +86,10 @@ async def render_deck(
     # (Comment out this line if you WANT the strip visible — it's a one-liner.)
     await page.add_style_tag(
         content=".progress-strip, .font-controls { display: none !important; } "
-        ".slide-viewport { top: 0 !important; }"
+        ".slide-viewport { top: 0 !important; } "
+        # Freeze entrance animations/transitions so a frame can't be captured
+        # mid-fade (bit us on module-00 slide 1: opacity 0.33 -> blank JPG).
+        "*, *::before, *::after { animation: none !important; transition: none !important; }"
     )
 
     for n in range(1, count + 1):
