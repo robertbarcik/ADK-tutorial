@@ -10,7 +10,7 @@ This chapter establishes the mental model that every later chapter builds on. Fo
 
 ## What ADK is, and what it isn't
 
-ADK is Google's open-source Python framework for building LLM-driven agents. The 1.0 release shipped in May 2025; as of April 2026 it sits at v1.31, with biweekly releases. The Python implementation is the reference; there are Java, Go, and TypeScript SDKs if you need them, but features land in Python first and this course lives there.
+ADK is Google's open-source Python framework for building LLM-driven agents. The 1.0 release shipped in May 2025 and the 2.0 release in May 2026; as of July 2026 it sits at v2.4. The 2.0 release added a graph-based workflow runtime for advanced compositions — the classic agent API this course teaches carried over unchanged. The Python implementation is the reference; there are Java, Go, and TypeScript SDKs if you need them, but features land in Python first and this course lives there.
 
 Four things ADK is not, because these matter:
 

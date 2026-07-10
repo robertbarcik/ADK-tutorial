@@ -12,7 +12,7 @@ These four primitives are the whole mental model of ADK. Once they're clear in y
 
 ## Slide 2 — What ADK is
 
-ADK is Google's Agent Development Kit, a Python framework for building agents. Google open-sourced it, the 1.0 release shipped in May 2025, and as I'm recording this we're on version 1.31. There are SDKs for Java, Go, and TypeScript too, but Python is where the features land first, and it's where this course lives.
+ADK is Google's Agent Development Kit, a Python framework for building agents. Google open-sourced it, the 1.0 release shipped in May 2025, the 2.0 release landed in spring 2026, and as I'm recording this we're on the 2.x line. The big 2.0 addition was a graph-based workflow runtime for advanced setups, and the good news is that the classic agent API you'll learn in this course carried over unchanged. There are SDKs for Java, Go, and TypeScript too, but Python is where the features land first, and it's where this course lives.
 
 Now, four things ADK is NOT, because these come up a lot, and it's worth naming them up front. It's not a model. You bring your own, and in this course we'll be using Claude, GPT, and Gemma long before we touch a Gemini model. It's not a cloud either. It runs on your laptop today and on something like Cloud Run tomorrow, with no Google-Cloud dependency required. It's not a UI. There's a development UI called `adk web` that we'll see in a minute, but the deliverable is code, not screens. And finally, it's not a graph DSL. You write typed Python, not a JSON DAG.
 

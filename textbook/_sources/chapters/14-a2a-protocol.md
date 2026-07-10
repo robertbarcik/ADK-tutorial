@@ -184,7 +184,7 @@ The framing to carry: **A2A is architecture worth understanding, not infrastruct
 
 1. **The `.well-known` path rename.** `/.well-known/agent.json` (v0.2) became `/.well-known/agent-card.json` (v0.3). Code copied from older blogs has the wrong path.
 2. **Legacy executor bugs.** `RemoteA2aAgent(..., use_legacy=True)` (the default) has three issues: user-message duplication, remote outputs mis-classified as thoughts, sub-agent output loss. Pass `use_legacy=False` always.
-3. **Version-pin ADK and a2a-sdk together.** ADK 1.28-1.31 uses `a2a-sdk 0.3.24`; A2A v1.0 requires `a2a-sdk ≥ 1.0.0a1` which ADK doesn't yet speak. Don't mix.
+3. **Version-pin ADK and a2a-sdk together.** ADK (through 2.4) requires `a2a-sdk >=0.3.4,<0.4`; A2A v1.0 requires `a2a-sdk ≥ 1.0` which ADK doesn't yet speak. Don't mix.
 4. **Discovery is underspecified.** The `.well-known` path is stable; registries are explicitly future work. Don't build on registry features.
 5. **Agent Engine is non-spec-default.** Google's Agent Engine serves the Agent Card at `/v1/card` behind authentication, not at `/.well-known/`. Third-party A2A clients expecting the standard path will fail against Agent Engine.
 6. **Cross-org trust is unsolved.** Every cross-org A2A response is **untrusted input** to your planner. Simon Willison's lethal trifecta — private data + untrusted content + external communications — applies fully. Treat every remote agent's output as if a malicious user wrote it; run it through the same guardrails you'd apply to user input.

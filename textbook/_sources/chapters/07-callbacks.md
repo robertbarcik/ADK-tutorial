@@ -169,7 +169,7 @@ Plugins are out of scope for this chapter — M10 touches on them for production
 
 ## The observability gotcha
 
-Worth naming so you're not surprised in production. **Callback execution does not automatically appear in the OpenTelemetry traces ADK emits** — at least as of v1.28 (check release notes on newer versions; this may be addressed).
+Worth naming so you're not surprised in production. **Callback execution does not automatically appear in the OpenTelemetry traces ADK emits** — verified through v2.4 (check release notes on newer versions; this may be addressed).
 
 Concretely: if you use Cloud Trace, Langfuse, Arize, or any other observability tool consuming ADK's OTel output, you will see LLM calls, tool calls, and state deltas as spans. You will **not** see "before_model_callback ran, returned None" as a span.
 

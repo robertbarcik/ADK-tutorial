@@ -18,8 +18,12 @@ Use this format for each entry:
 
 ## M13 — Live API text-mode session
 
-**Status:** broken (server-side)
-**Observed:** 2026-04-20 on Google AI Studio free tier
+**Status:** FIXED (2026-07-10) — demo reworked to audio mode and verified twice end-to-end
+**Observed:** 2026-04-20 on Google AI Studio free tier; re-tested 2026-07-10 on google-adk 2.4.0
+
+**Resolution (2026-07-10):** Google patched the Live endpoint on 2026-07-09 (announced on the AI developer forum). The blanket 1011 handshake failures are gone. What remains is a *behavioral* change: current live models (`gemini-3.1-flash-live-preview`, `gemini-2.5-flash-native-audio-latest`) are **audio-native** and reject `response_modalities=["TEXT"]` with a clear **error 1007** ("requested combination of response modalities not supported"). The notebook demo now requests `["AUDIO"]` with `output_audio_transcription=types.AudioTranscriptionConfig()`, counts the returned 24kHz PCM bytes, and prints the streamed transcript (partial chunks, then a consolidated chunk with `finished=True`). Verified twice in a row: ~33–146KB audio per short turn, transcript arrives correctly. Also note `gemini-live-2.5-flash-native-audio` (the model string used in April) no longer exists on the key; references updated to `gemini-2.5-flash-native-audio-latest`.
+
+Original entry kept below for history:
 
 **What works:**
 - Listing Live-capable models on the API key (the `supported_actions` filter returns the current Live models).
@@ -62,10 +66,12 @@ PY
 
 ---
 
-## M08 — `DatabaseSessionService` + `sqlite+aiosqlite://` (fixed 2026-07-06)
+## M08 — `DatabaseSessionService` + `sqlite+aiosqlite://` (fixed 2026-07-06; INVERTED by ADK 2.x on 2026-07-10)
 
 **Status:** fixed in the notebook; upstream bug remains in `google-adk==1.28.0`
 **Observed:** 2026-07-06, executing the notebook headless with pinned `requirements.txt` versions
+
+**ADK 2.x update (2026-07-10):** the situation flips on the 2.x line. `DatabaseSessionService` in google-adk 2.4.0 builds its engine with SQLAlchemy's **async** `create_async_engine` — the plain sync `sqlite:///` URL is now *rejected* ("Failed to create database engine"), and `sqlite+aiosqlite:///` is *required* (verified with a create/get round trip). SQLAlchemy also moved behind the `[db]` extra. The notebook now installs `'google-adk[db]' aiosqlite greenlet` and uses the `sqlite+aiosqlite://` scheme again. The entry below documents the 1.x behavior for history:
 
 **What broke:**
 - `DatabaseSessionService(db_url="sqlite+aiosqlite:///...")` raised `sqlalchemy.exc.MissingGreenlet: greenlet_spawn has not been called` on the very first `create_session`/`get_session` call — reproduces even outside Jupyter/`nest_asyncio`, with a plain `asyncio.run(...)`.

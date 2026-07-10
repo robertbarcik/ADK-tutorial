@@ -2,7 +2,7 @@
 
 The third and most interesting of the three Gemini-only unlocks.
 
-**The Live API lets Gemini exchange audio bidirectionally with the user in real time.** Voice in, voice out. Voice activity detection. User-interruption-aware. Sub-second latency on happy-path sessions. Nothing in the Claude, GPT, or open-weight ecosystem ships this cleanly as of April 2026. OpenAI's Realtime API is the closest alternative — different semantics, different pricing, different failure modes. Anthropic has no direct equivalent.
+**The Live API lets Gemini exchange audio bidirectionally with the user in real time.** Voice in, voice out. Voice activity detection. User-interruption-aware. Sub-second latency on happy-path sessions. Nothing in the Claude, GPT, or open-weight ecosystem ships this cleanly as of mid-2026. OpenAI's Realtime API is the closest alternative — different semantics, different pricing, different failure modes. Anthropic has no direct equivalent.
 
 The production use cases are the obvious ones: voice assistants, live interpreter agents, real-time coaching tools, accessibility apps, voice-driven customer support. If voice-first conversational agents are your product, Gemini Live is where you build.
 
@@ -36,11 +36,11 @@ Same `Runner` as the previous 12 modules; different method. Same event-stream sh
 Model names that ship the Live capability move around — check [ai.google.dev/gemini-api/docs/live](https://ai.google.dev/gemini-api/docs/live) for the current catalog. As of this writing:
 
 - **`gemini-3.1-flash-live-preview`** — preview, free-tier-available. What the notebook tries.
-- **`gemini-live-2.5-flash-native-audio`** — paid, production-grade, ~$0.012 per minute of audio.
+- **`gemini-2.5-flash-native-audio-latest`** — paid, production-grade, ~$0.012 per minute of audio.
 
-## The API shape — text-mode Live
+## The API shape — one Live audio turn
 
-Before audio, see the API mechanics with text-only Live. Same WebSocket, same queue, same event generator — just text in text out.
+Current live models are **audio-native**: request `response_modalities=["TEXT"]` and the server rejects the session with error 1007. So the demo requests `AUDIO` and attaches `output_audio_transcription` — the audio bytes stream in as `inline_data` parts, and the words stream next to them as transcription chunks.
 
 ```python
 from google.adk.agents import LlmAgent
@@ -61,7 +61,10 @@ await session_service.create_session(app_name="m13", user_id="u", session_id="s1
 runner = Runner(agent=live_agent, app_name="m13", session_service=session_service)
 
 queue = LiveRequestQueue()
-config = RunConfig(response_modalities=["TEXT"])   # text out so we can print it
+config = RunConfig(
+    response_modalities=["AUDIO"],                                # live models are audio-native
+    output_audio_transcription=types.AudioTranscriptionConfig(),  # ...so read the words here
+)
 
 # Push one user turn into the queue
 queue.send_content(
@@ -69,14 +72,18 @@ queue.send_content(
 )
 
 # Iterate events until the turn completes
+audio_bytes = 0
 async for event in runner.run_live(
     user_id="u", session_id="s1",
     live_request_queue=queue, run_config=config,
 ):
     if event.content and event.content.parts:
         for p in event.content.parts:
-            if p.text:
-                print(p.text, end="", flush=True)
+            if p.inline_data and p.inline_data.data:
+                audio_bytes += len(p.inline_data.data)   # 24kHz PCM chunks
+    ot = event.output_transcription
+    if ot and ot.text and not ot.finished:
+        print(ot.text, end="", flush=True)               # words as they stream
     if event.turn_complete:
         break
 
@@ -85,8 +92,8 @@ queue.close()
 
 Four things to notice:
 
-1. `queue.send_content(...)` pushes a Content object in. For audio, you'd call `queue.send_realtime(audio_bytes)` with raw PCM at 16kHz, mono, 16-bit instead.
-2. `response_modalities=["TEXT"]` asks Gemini for text out. Use `["AUDIO"]` for production voice; the response events contain `inline_data` with raw PCM at 24kHz.
+1. `queue.send_content(...)` pushes a Content object in. For real voice input, you'd call `queue.send_realtime(audio_bytes)` with raw PCM at 16kHz, mono, 16-bit instead.
+2. `response_modalities=["AUDIO"]` is what current live models require (TEXT-only is rejected with 1007). The response events carry `inline_data` with raw PCM at 24kHz, and `output_audio_transcription` streams the words — partial chunks first, then one consolidated chunk flagged `finished=True`.
 3. Iteration uses `async for event in runner.run_live(...)` — same as `run_async`, but continues streaming until `event.turn_complete` or the queue closes.
 4. `queue.close()` ends the session; do this in a `finally` block in production.
 
@@ -146,9 +153,9 @@ None of this lives in a notebook — the full path needs a browser with micropho
 
 The Live API is preview-tier, and preview means what it says. Expected failure modes you'll encounter:
 
-- **APIError 1011 "Internal error encountered"** on `live.connect(...)`. Happens at the WebSocket handshake; nothing you can do. Retry or wait.
+- **Transient server errors** on `live.connect(...)`. Through spring 2026 the free tier threw blanket 1011 handshake errors; Google patched the endpoint in July 2026 and sessions connect reliably now, with clearer error codes (e.g. 1007 for an unsupported modality combination). An occasional drop is still possible — retry.
 - **Connection drops mid-session.** Network blip, server rotation, quota exhaustion. Implement reconnection with session resumption (Live's session-handle feature persists state across reconnections — see docs).
-- **Model-name rotation.** The current free-tier preview model is `gemini-3.1-flash-live-preview` as of April 2026; it was `gemini-2.0-flash-live-preview-09-2025` last quarter. The course's `DEMOS_BROKEN.md` logs the current state.
+- **Model-name rotation.** The current free-tier preview model is `gemini-3.1-flash-live-preview` as of July 2026; the April-era `gemini-live-2.5-flash-native-audio` string no longer exists. The course's `DEMOS_BROKEN.md` logs the current state.
 - **Transient latency spikes.** When the service is under load, sub-second latency becomes multi-second. Not ADK's fault.
 
 The code shown in this chapter and the matching notebook is correct. What fails is server-side. When the Live API matures past preview — likely by late 2026 — this roughness goes away. The API shape you learn here will remain.
@@ -160,7 +167,7 @@ Audio is billed **by minute, not by token** — a quirk of real-time streaming.
 | Model | Tier | Rate |
 |---|---|---|
 | `gemini-3.1-flash-live-preview` | Preview, free-tier-eligible | Free up to quota |
-| `gemini-live-2.5-flash-native-audio` | Paid, production-grade | ~$0.012 per minute audio in/out |
+| `gemini-2.5-flash-native-audio-latest` | Paid, production-grade | ~$0.012 per minute audio in/out |
 
 For a conversational voice agent with one-minute average sessions, that's under a dollar per hundred sessions. Cheap enough that the per-minute cost is rarely the blocker. What blocks production deployments is quota — Live has much tighter rate limits than text models.
 
@@ -182,7 +189,7 @@ For everything else, `run_async` with text in, text out, plus separate STT and T
 
 ## What to carry forward
 
-- **Live is the most differentiated Gemini capability.** Bidirectional audio, VAD, interruption, sub-second latency. No competitor replicates it cleanly as of April 2026.
+- **Live is the most differentiated Gemini capability.** Bidirectional audio, VAD, interruption, sub-second latency. No competitor replicates it cleanly as of mid-2026.
 - **Three primitives:** `LiveRequestQueue`, `Runner.run_live()`, `RunConfig(response_modalities=[...])`.
 - **API shape**: push inputs via `send_content`/`send_realtime`, iterate events with `async for`, `turn_complete` ends a turn, `queue.close()` ends the session.
 - **VAD + interruption** server-side; tune via `RealtimeInputConfig.automatic_activity_detection`.
@@ -193,7 +200,7 @@ For everything else, `run_async` with text in, text out, plus separate STT and T
 ## Your turn
 
 1. **Enumerate Live models on your key.** Which ones are listed under `supported_actions=["bidiGenerateContent"]`? Note which require a paid tier.
-2. **Run the text-mode Live cell several times.** How consistently does it succeed? Do you hit 1011 errors?
+2. **Ask for TEXT-only output.** Change `response_modalities` to `["TEXT"]` and re-run. What error comes back? (Expect 1007 — current live models are audio-native.)
 3. **Sketch audio-mode.** Modify the notebook's Live cell to pass `response_modalities=["AUDIO"]`. Inspect response events — are there `inline_data` parts with audio bytes? Don't try to play them; just confirm they arrive.
 4. **Rate-limit exploration.** Run multiple concurrent Live sessions. What rate limits appear on your key's tier?
 

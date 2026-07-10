@@ -100,7 +100,7 @@ New code should always pass `False` explicitly. The default will presumably flip
 
 ## Slide 11 — Agent Card structure
 
-The Agent Card output from the notebook shows what ADK auto-generates. Name. Description. Protocol version: 0.3.0 for ADK 1.28. Transport preference: JSON-RPC by default. Capabilities: what protocol features the agent supports. Default input and output modes. And skills: a list of things the agent can do, with descriptions and examples.
+The Agent Card output from the notebook shows what ADK auto-generates. Name. Description. Protocol version: 0.3.0, which is the a2a-sdk line ADK depends on. Transport preference: JSON-RPC by default. Capabilities: what protocol features the agent supports. Default input and output modes. And skills: a list of things the agent can do, with descriptions and examples.
 
 ADK derives all of this from your agent's name, description, and tools. For production agents, you'd author the card by hand: populate realistic examples in each skill, declare capabilities explicitly, and sign the card with `AgentCardSignature` for cryptographic identity. For a course demo, the auto-generated version is enough.
 
@@ -126,7 +126,7 @@ First, the path rename. In v0.2 the Agent Card was at `/.well-known/agent.json`.
 
 Second, the legacy executor. Already covered. `use_legacy=False`, always.
 
-Third, the version pin. ADK 1.28 through 1.31 uses a2a-sdk 0.3.24. A2A v1.0 requires a2a-sdk 1.0 alpha, which ADK doesn't yet speak. Don't mix versions.
+Third, the version pin. ADK, through the current 2.4 release, requires a2a-sdk 0.3. A2A v1.0 requires a2a-sdk 1.0, which ADK doesn't yet speak. Don't mix versions.
 
 Fourth, discovery is underspecified. The `.well-known` path is stable; registries are future work. Don't depend on registry features.
 

@@ -72,13 +72,13 @@ None of this runs in the notebook. The notebook teaches the ADK-side contract: w
 
 ---
 
-### Notebook break — Text-mode Live session
+### Notebook break — One Live audio turn
 
 [Switch the screen to the notebook.]
 
-Cell nine runs a text-mode Live session. It pushes one message into the queue, iterates `run_live`, and captures the text response. Text mode skips the audio plumbing so the API shape is visible without browser infrastructure.
+The demo cell runs one Live audio turn end to end. It pushes a typed message into the queue, iterates `run_live`, and two streams come back at once. The audio itself arrives as inline data parts, and we count the bytes. The words arrive next to it through output transcription, first as partial chunks while the model speaks, then as one consolidated line marked finished.
 
-Watch the output regardless of whether the endpoint succeeds. The code is correct. The Live API is preview-tier and brittle on free keys, so a 1011 error or connection drop is possible. Either way, the event structure is what matters.
+One thing to point out in the config. Current live models are audio-native, so asking for text-only output gets the session rejected with error 1007. That is why the demo requests audio and reads the words from the transcription instead. If the cell hits a transient server error, run it again. The endpoint is preview-tier, and an occasional hiccup is on Google's side, not in your code.
 
 [Switch back to the slide deck.]
 
@@ -86,15 +86,15 @@ Watch the output regardless of whether the endpoint succeeds. The code is correc
 
 ## Slide 9 — Fair warning
 
-Fair warning belongs on its own slide. The Live API is preview-tier and currently unreliable. Transient 1011 errors, connection drops, and random timeouts are on Google's side, not in your code. The current failure pattern is logged in `DEMOS_BROKEN.md`.
+Fair warning belongs on its own slide. The Live API is preview-tier. Through spring of twenty twenty-six it threw transient server errors on free keys, and Google patched the endpoint in July. Sessions connect reliably now, but the occasional drop or timeout is still on Google's side, not in your code. The current state is logged in `DEMOS_BROKEN.md`.
 
-The path forward: learn the API shape today, because the concepts are durable. When you want a verified working demo, retry in a few weeks as the endpoint stabilizes, switch to a paid tier, or run against Vertex AI, which uses different infrastructure under the hood.
+The concepts you are learning are durable either way. If you ever hit persistent failures, switch to a paid tier or run against Vertex AI, which uses different infrastructure under the hood.
 
 ---
 
 ## Slide 10 — Pricing
 
-Pricing for Live is per minute, not per token. `gemini-3.1-flash-live-preview` is free up to quota. `gemini-live-2.5-flash-native-audio` is paid, at about 1.2 cents per minute of audio in and out combined. For a conversational agent averaging one minute per session, that's under a dollar per hundred sessions.
+Pricing for Live is per minute, not per token. `gemini-3.1-flash-live-preview` is free up to quota. `gemini-2.5-flash-native-audio-latest` is paid, at about 1.2 cents per minute of audio in and out combined. For a conversational agent averaging one minute per session, that's under a dollar per hundred sessions.
 
 Model names rotate. Check the Google AI developer docs for the current catalog when building for production.
 

@@ -210,6 +210,8 @@ The rule of thumb is on the slide. If you can name the workflow, use a workflow 
 
 Sequential, Parallel, and Loop cover the named-workflow cases cleanly. Anything more complex, start composing them. And if the composition gets unwieldy, that's a signal the workflow shouldn't be named after all. Let the LLM drive instead.
 
+One more thing worth knowing, and you can see it in the small print on the slide. The 2.0 release of ADK added a graph-based workflow runtime, where agents and tools become nodes in an explicit graph with edges between them. It targets exactly those unwieldy cases, conditional branches and cyclic flows that outgrow composition. For everything in this course, the three template agents remain the right tool, so that is what we build with.
+
 ---
 
 ## Slide 20 — Up next

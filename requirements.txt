@@ -1,28 +1,32 @@
 # Google ADK Course — Python dependencies
-# Pin google-adk and litellm together (adk-python #3713/#4367 structured-output drift).
-# If you bump one, bump the other at the same time.
+# Course runs on the ADK 2.x line (2.0 GA'd 2026-05-19; the classic agent API
+# is unchanged, the graph Workflow Runtime is additive). Pin google-adk and
+# litellm together; if you bump one, bump the other at the same time.
 
 # ─── Core ADK stack (pinned for classroom reproducibility) ──────────────
-google-adk==1.28.0
-litellm==1.83.4
-openai==2.30.0
+google-adk==2.4.0
+litellm==1.91.1
+openai==2.45.0
 python-dotenv==1.0.1
 nest-asyncio==1.6.0
 deprecated==1.2.18
 
 # ─── Model Context Protocol (M02 tools, M14 A2A demos) ─────────────────
-mcp==1.27.0
+mcp==1.28.1
 httpx==0.28.1
 
 # ─── Google GenAI SDK (Part 2: M11-M13 grounding, caching, thinking, Live API) ─
-google-genai>=1.0.0,<2.0.0
+# ADK 2.4 requires google-genai >=2.9,<3.
+google-genai>=2.9,<3.0
 
-# ─── A2A protocol SDK (M14 — pinned to 0.3.x until ADK catches up to 1.0) ──
+# ─── A2A protocol SDK (M14 — ADK 2.4 still targets 0.3.x, not the 1.x proto rewrite) ──
 a2a-sdk>=0.3.24,<0.4.0
 
 # ─── Persistence (M08 DatabaseSessionService) ──────────────────────────
-# aiosqlite is the async SQLite driver; greenlet is a transitive SQLAlchemy
-# async requirement. Required for `sqlite+aiosqlite://` URLs.
+# ADK 2.x ships DatabaseSessionService behind the [db] extra; sqlalchemy must
+# be installed explicitly. aiosqlite is the async SQLite driver; greenlet is a
+# transitive SQLAlchemy async requirement. Required for `sqlite+aiosqlite://` URLs.
+sqlalchemy>=2.0,<3.0
 aiosqlite>=0.20.0
 greenlet>=3.0.0
 

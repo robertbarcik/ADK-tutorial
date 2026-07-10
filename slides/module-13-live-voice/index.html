@@ -797,6 +797,8 @@ body {
 }
   </style>
 
+  
+
   <!-- BEGIN-INLINED-STYLES -->
   <style>
   /* shared.css — generated; edit slides/shared/shared.css */
@@ -1672,14 +1674,17 @@ body {
   </div>
 
   <div class="slide" data-module="13" data-type="code">
-    <h2>The API shape — text-mode Live</h2>
+    <h2>The API shape — one Live audio turn</h2>
 <pre><code>live_agent = LlmAgent(
     model="gemini-3.1-flash-live-preview",
     instruction="Chat casually, short replies.",
 )
 
 queue = LiveRequestQueue()
-config = RunConfig(response_modalities=["TEXT"])
+config = RunConfig(
+    response_modalities=["AUDIO"],          # live models are audio-native
+    output_audio_transcription=types.AudioTranscriptionConfig(),
+)
 
 queue.send_content(
     content=types.Content(role="user", parts=[types.Part(text="Hi!")])
@@ -1689,7 +1694,8 @@ async for event in runner.run_live(
     user_id=USER, session_id=SID,
     live_request_queue=queue, run_config=config,
 ):
-    # stream events until turn_complete
+    # audio: event.content.parts[].inline_data (24kHz PCM)
+    # words: event.output_transcription, until turn_complete
     ...
 
 queue.close()   # end the session</code></pre>
@@ -1728,8 +1734,8 @@ Audio out   ◀──WebSocket──   stream response audio</pre>
   <div class="slide" data-module="13">
     <h2>Fair warning</h2>
     <div class="callout callout-gotcha">
-      <div class="callout-title">Live is preview-tier and brittle</div>
-      <p style="margin:0;">Transient server errors (code 1011 "Internal error encountered", connection drops) show up on free-tier keys. The code is correct; the endpoint is unreliable. Logged in <code>DEMOS_BROKEN.md</code>.</p>
+      <div class="callout-title">Live is preview-tier</div>
+      <p style="margin:0;">Free-tier keys threw transient 1011 server errors through spring 2026; Google patched the endpoint in July. Occasional drops remain possible, and TEXT-only output is rejected (error 1007) — live models are audio-native. State logged in <code>DEMOS_BROKEN.md</code>.</p>
     </div>
     <div class="callout callout-tip">
       <div class="callout-title">What to do</div>
@@ -1744,7 +1750,7 @@ Audio out   ◀──WebSocket──   stream response audio</pre>
       <thead><tr><th>Model</th><th>Tier</th><th>Rate</th></tr></thead>
       <tbody>
         <tr><td><code>gemini-3.1-flash-live-preview</code></td><td>Preview, free-tier-eligible</td><td>Free up to quota</td></tr>
-        <tr><td><code>gemini-live-2.5-flash-native-audio</code></td><td>Paid, production-grade</td><td>~$0.012 per minute audio in/out</td></tr>
+        <tr><td><code>gemini-2.5-flash-native-audio-latest</code></td><td>Paid, production-grade</td><td>~$0.012 per minute audio in/out</td></tr>
       </tbody>
     </table>
     <p style="color:var(--text-muted);font-size:0.9em;">Model names move. Check <code>ai.google.dev/gemini-api/docs/live</code> for the current catalog.</p>
@@ -1925,6 +1931,8 @@ Audio out   ◀──WebSocket──   stream response audio</pre>
 
 })();
 </script>
+
+  
 
   <!-- BEGIN-INLINED-SCRIPT -->
 <script>

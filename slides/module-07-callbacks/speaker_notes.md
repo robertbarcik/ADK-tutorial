@@ -178,7 +178,7 @@ Plugins are out of scope today; we'll touch on them later in the course when we 
 
 ## Slide 17 — Observability gotcha
 
-Before we wrap, there's a real observability gotcha worth naming so you're not surprised. Callback execution does not automatically appear in ADK's OpenTelemetry traces, at least as of version 1.28. So check the release notes if you're on a newer version, because this might change.
+Before we wrap, there's a real observability gotcha worth naming so you're not surprised. Callback execution does not automatically appear in ADK's OpenTelemetry traces, and we verified that through release 2.4. So check the release notes if you're on a newer version, because this might change.
 
 Concretely, if you're using something like Cloud Trace, Langfuse, or Arize to observe runs, you'll see LLM calls, tool calls, and state deltas. You will not see "before_model_callback ran, returned None" as a span.
 

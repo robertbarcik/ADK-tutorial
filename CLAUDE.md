@@ -113,7 +113,7 @@ Two environment variables students (and Claude) load from `.env` (copy from `.en
 | Variable | Powers | Cost strategy |
 |---|---|---|
 | `OPENROUTER_API_KEY` | M01–M10 + M14 via `LiteLlm("openrouter/<provider>/<model>")` | Default to cheap models when testing: `openrouter/google/gemini-2.5-flash-lite` or `openrouter/openai/gpt-4o-mini`. |
-| `GOOGLE_API_KEY` | M11–M13 via direct `google-genai` / ADK Gemini | Default to `gemini-2.5-flash` for text, `gemini-live-2.5-flash-native-audio` only where the Live API is the point. |
+| `GOOGLE_API_KEY` | M11–M13 via direct `google-genai` / ADK Gemini | Default to `gemini-2.5-flash` for text, `gemini-3.1-flash-live-preview` only where the Live API is the point (live models are audio-native — TEXT-only modality is rejected with 1007). |
 
 `GOOGLE_GENAI_USE_VERTEXAI=FALSE` in `.env` keeps ADK on the AI Studio path (no GCP billing).
 
@@ -140,7 +140,8 @@ Notebooks are committed **executed, with outputs** — they read like an article
 - **Structured output** breaks when `google-adk` and `litellm` versions drift. Pin them together; bump as a pair.
 - **Google Search / code execution / Vertex Search** can't coexist with other tools in the same agent. Split via `bypass_multi_tools_limit=True` (ADK ≥ 1.16) or wrap each in its own sub-agent.
 - **`adk eval`** hits PermissionError on read-only filesystems. Flag in M09; not a classroom blocker.
-- **A2A on ADK is `@a2a_experimental`.** Pin `a2a-sdk 0.3.24`, use `RemoteA2aAgent(..., use_legacy=False)`.
+- **A2A on ADK is `@a2a_experimental`.** ADK (through 2.4) requires `a2a-sdk >=0.3.4,<0.4` — the a2a-sdk 1.x proto rewrite is not yet supported. Use `RemoteA2aAgent(..., use_legacy=False)`.
+- **ADK 2.x `DatabaseSessionService` is async-only.** It lives behind the `[db]` extra (sqlalchemy no longer a hard dep) and *requires* an async driver URL (`sqlite+aiosqlite://`); the plain sync `sqlite://` scheme is rejected. Exactly inverted from 1.28 — see `DEMOS_BROKEN.md` M08 entry.
 - **Windows**: `PYTHONUTF8=1` — documented in `.env.example`.
 
 ## Building the textbook

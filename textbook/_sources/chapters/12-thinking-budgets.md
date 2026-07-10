@@ -41,7 +41,7 @@ labor time, and flour cost. Which has the highest profit margin? ..."""
 
 for budget in [0, 4096]:
     resp = client.models.generate_content(
-        model="gemini-2.5-flash",
+        model="gemini-3-flash-preview",
         contents=PROBLEM,
         config=types.GenerateContentConfig(
             thinking_config=types.ThinkingConfig(thinking_budget=budget),
@@ -97,7 +97,7 @@ from google.genai import types
 
 thinking_agent = LlmAgent(
     name="thinking_agent",
-    model="gemini-2.5-flash",
+    model="gemini-3-flash-preview",
     description="Reasoning agent with a generous thinking budget.",
     instruction="Answer user questions. Reason carefully for multi-step problems.",
     planner=BuiltInPlanner(
@@ -137,7 +137,7 @@ This is the M06 composition pattern applied to thinking. Use `AgentTool` so the 
 ```python
 # Sketch
 router = LlmAgent(
-    model="gemini-2.5-flash",
+    model="gemini-3-flash-preview",
     planner=BuiltInPlanner(thinking_config=types.ThinkingConfig(thinking_budget=0)),
     instruction="Classify the query. Call fast_specialist for lookups, "
                 "thinking_specialist for reasoning problems.",
@@ -154,7 +154,7 @@ One more Gemini-only fact worth naming. **Thought signatures persist across mult
 
 What that means practically: if the model reasoned through a problem in turn one, and turn two involves a follow-up that depends on the same reasoning, Gemini preserves the reasoning context without re-thinking from scratch. The thinking budget isn't consumed again; the prior reasoning carries through.
 
-No other frontier model ships this as of April 2026. OpenAI's `reasoning_effort` starts fresh each turn. Claude's extended thinking resets. Gemini carries forward.
+No other frontier model ships this as of mid-2026. OpenAI's `reasoning_effort` starts fresh each turn. Claude's extended thinking resets. Gemini carries forward.
 
 For agents that have multi-turn tool-heavy conversations on hard problems — coding assistants, research agents, debugging bots — this is meaningful. You pay the reasoning cost once per session, not per turn.
 
@@ -186,4 +186,4 @@ If reasoning budgets are a first-class requirement for your agent architecture, 
 2. **Scale the budget.** Agents at budgets 0, 512, 2048, 8192. Hard math problem. At what budget does quality stop improving?
 3. **Include thoughts.** Set `include_thoughts=True` in a `ThinkingConfig` and inspect the response. What does the model's internal reasoning look like?
 
-Module 13 — the last of the three Gemini unlocks — covers the **Live API**: bidirectional voice streaming with voice activity detection and interruption. It's the single most differentiated Gemini-only capability on the market as of April 2026. Fair warning: the Live API is genuinely fragile in some environments. If the notebook demo doesn't run end-to-end on your machine, the course's `DEMOS_BROKEN.md` logs the fallback path.
+Module 13 — the last of the three Gemini unlocks — covers the **Live API**: bidirectional voice streaming with voice activity detection and interruption. It's the single most differentiated Gemini-only capability on the market as of mid-2026. Fair warning: the Live API is preview-tier; it spent spring 2026 throwing transient server errors before Google patched the endpoint in July. If the notebook demo doesn't run end-to-end on your machine, the course's `DEMOS_BROKEN.md` logs the current state.

@@ -797,6 +797,8 @@ body {
 }
   </style>
 
+  
+
   <!-- BEGIN-INLINED-STYLES -->
   <style>
   /* shared.css — generated; edit slides/shared/shared.css */
@@ -1765,7 +1767,7 @@ runner = Runner(agent=remote, ...)</code></pre>
     <ol>
       <li><strong>Path rename</strong>: <code>/.well-known/agent.json</code> (v0.2) → <code>/.well-known/agent-card.json</code> (v0.3). Older blogs have the wrong path.</li>
       <li><strong>Legacy executor</strong>: pass <code>use_legacy=False</code> for new code.</li>
-      <li><strong>Version-pin</strong> <code>google-adk</code> + <code>a2a-sdk</code> together. ADK 1.28-1.31 = a2a-sdk 0.3.24.</li>
+      <li><strong>Version-pin</strong> <code>google-adk</code> + <code>a2a-sdk</code> together. ADK (through 2.4) = a2a-sdk 0.3.x.</li>
       <li><strong>Discovery is underspecified</strong>: <code>.well-known</code> is stable. Registries are future work.</li>
       <li><strong>Agent Engine is non-spec-default</strong>: serves card at <code>/v1/card</code> behind auth, not at <code>.well-known</code>.</li>
       <li><strong>Cross-org trust is unsolved.</strong> Every cross-org A2A response = untrusted input. Lethal trifecta applies fully.</li>
@@ -1965,6 +1967,8 @@ runner = Runner(agent=remote, ...)</code></pre>
 
 })();
 </script>
+
+  
 
   <!-- BEGIN-INLINED-SCRIPT -->
 <script>

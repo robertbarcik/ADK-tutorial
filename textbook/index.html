@@ -390,7 +390,7 @@ hr {
 <p>A framework earns its keep when it stops you writing that boilerplate. You write the things that are actually yours — your instruction, your tools, your business logic — and the framework handles the plumbing. That&rsquo;s the deal ADK is offering.</p>
 <p>This chapter establishes the mental model that every later chapter builds on. Four primitives. Agent, Runner, Event, Session. Write them on a sticky note. Say them out loud. They will show up in every subsequent chapter, and by the end of the course you will have added dozens of concepts on top of them, but none of those concepts require you to forget the four.</p>
 <h2>What ADK is, and what it isn&rsquo;t</h2>
-<p>ADK is Google&rsquo;s open-source Python framework for building LLM-driven agents. The 1.0 release shipped in May 2025; as of April 2026 it sits at v1.31, with biweekly releases. The Python implementation is the reference; there are Java, Go, and TypeScript SDKs if you need them, but features land in Python first and this course lives there.</p>
+<p>ADK is Google&rsquo;s open-source Python framework for building LLM-driven agents. The 1.0 release shipped in May 2025 and the 2.0 release in May 2026; as of July 2026 it sits at v2.4. The 2.0 release added a graph-based workflow runtime for advanced compositions — the classic agent API this course teaches carried over unchanged. The Python implementation is the reference; there are Java, Go, and TypeScript SDKs if you need them, but features land in Python first and this course lives there.</p>
 <p>Four things ADK is not, because these matter:</p>
 <p><strong>It is not a model.</strong> You bring your own. Gemini, Claude, GPT, Qwen, Gemma — it doesn&rsquo;t care. This is the single point people miss when they hear &ldquo;Google&rsquo;s agent framework&rdquo; and assume Gemini is bundled in. It isn&rsquo;t. We&rsquo;ll prove this by module four, at which point the same agent from module one will be running on Claude and on a locally-hosted open-weight model without a line of logic changing.</p>
 <p><strong>It is not a cloud.</strong> It runs on your laptop today, and on Google Cloud Run, AWS Fargate, Azure Container Apps, or a Raspberry Pi tomorrow. The deployment story is a Dockerfile, and the Dockerfile is yours to write. ADK ships a <code>deploy cloud_run</code> command because it lives in Google&rsquo;s ecosystem, but it is a convenience, not a requirement.</p>
@@ -1538,7 +1538,7 @@ stock_agent = LlmAgent(
 <p>A blocklist that applies to one specialist agent → callback. A company-wide audit trail that must fire on every agent in the app → plugin.</p>
 <p>Plugins are out of scope for this chapter — M10 touches on them for production deployments. For most day-to-day work, callbacks are the right reach.</p>
 <h2>The observability gotcha</h2>
-<p>Worth naming so you&rsquo;re not surprised in production. <strong>Callback execution does not automatically appear in the OpenTelemetry traces ADK emits</strong> — at least as of v1.28 (check release notes on newer versions; this may be addressed).</p>
+<p>Worth naming so you&rsquo;re not surprised in production. <strong>Callback execution does not automatically appear in the OpenTelemetry traces ADK emits</strong> — verified through v2.4 (check release notes on newer versions; this may be addressed).</p>
 <p>Concretely: if you use Cloud Trace, Langfuse, Arize, or any other observability tool consuming ADK&rsquo;s OTel output, you will see LLM calls, tool calls, and state deltas as spans. You will <strong>not</strong> see &ldquo;before_model_callback ran, returned None&rdquo; as a span.</p>
 <p>If you rely on callbacks for policy decisions in production and need to observe them, instrument your callbacks manually — a print, a log line, or an explicit OpenTelemetry span created from inside the callback. The documentation gap is known; Google&rsquo;s own ADK blog posts acknowledge it.</p>
 <h2>Putting callbacks in a larger architecture</h2>
@@ -2367,7 +2367,7 @@ labor time, and flour cost. Which has the highest profit margin? ...&quot;&quot;
 
 for budget in [0, 4096]:
     resp = client.models.generate_content(
-        model=&quot;gemini-2.5-flash&quot;,
+        model=&quot;gemini-3-flash-preview&quot;,
         contents=PROBLEM,
         config=types.GenerateContentConfig(
             thinking_config=types.ThinkingConfig(thinking_budget=budget),
@@ -2408,7 +2408,7 @@ from google.genai import types
 
 thinking_agent = LlmAgent(
     name=&quot;thinking_agent&quot;,
-    model=&quot;gemini-2.5-flash&quot;,
+    model=&quot;gemini-3-flash-preview&quot;,
     description=&quot;Reasoning agent with a generous thinking budget.&quot;,
     instruction=&quot;Answer user questions. Reason carefully for multi-step problems.&quot;,
     planner=BuiltInPlanner(
@@ -2441,7 +2441,7 @@ thinking_agent = LlmAgent(
 <p>This is the M06 composition pattern applied to thinking. Use <code>AgentTool</code> so the router calls the specialists like functions and stays in charge of composition. The result: reasoning quality on the queries that need it, low latency on the ones that don&rsquo;t.</p>
 <pre><code class="language-python"># Sketch
 router = LlmAgent(
-    model=&quot;gemini-2.5-flash&quot;,
+    model=&quot;gemini-3-flash-preview&quot;,
     planner=BuiltInPlanner(thinking_config=types.ThinkingConfig(thinking_budget=0)),
     instruction=&quot;Classify the query. Call fast_specialist for lookups, &quot;
                 &quot;thinking_specialist for reasoning problems.&quot;,
@@ -2453,7 +2453,7 @@ router = LlmAgent(
 <h2>Gemini-only property — thought-signature persistence</h2>
 <p>One more Gemini-only fact worth naming. <strong>Thought signatures persist across multi-turn tool calls</strong> within a conversation.</p>
 <p>What that means practically: if the model reasoned through a problem in turn one, and turn two involves a follow-up that depends on the same reasoning, Gemini preserves the reasoning context without re-thinking from scratch. The thinking budget isn&rsquo;t consumed again; the prior reasoning carries through.</p>
-<p>No other frontier model ships this as of April 2026. OpenAI&rsquo;s <code>reasoning_effort</code> starts fresh each turn. Claude&rsquo;s extended thinking resets. Gemini carries forward.</p>
+<p>No other frontier model ships this as of mid-2026. OpenAI&rsquo;s <code>reasoning_effort</code> starts fresh each turn. Claude&rsquo;s extended thinking resets. Gemini carries forward.</p>
 <p>For agents that have multi-turn tool-heavy conversations on hard problems — coding assistants, research agents, debugging bots — this is meaningful. You pay the reasoning cost once per session, not per turn.</p>
 <h2>LiteLLM parity — partial</h2>
 <p>Other providers ship similar knobs. None are as clean as Gemini&rsquo;s <code>ThinkingConfig</code>:</p>
@@ -2500,14 +2500,14 @@ router = LlmAgent(
 <li><strong>Scale the budget.</strong> Agents at budgets 0, 512, 2048, 8192. Hard math problem. At what budget does quality stop improving?</li>
 <li><strong>Include thoughts.</strong> Set <code>include_thoughts=True</code> in a <code>ThinkingConfig</code> and inspect the response. What does the model&rsquo;s internal reasoning look like?</li>
 </ol>
-<p>Module 13 — the last of the three Gemini unlocks — covers the <strong>Live API</strong>: bidirectional voice streaming with voice activity detection and interruption. It&rsquo;s the single most differentiated Gemini-only capability on the market as of April 2026. Fair warning: the Live API is genuinely fragile in some environments. If the notebook demo doesn&rsquo;t run end-to-end on your machine, the course&rsquo;s <code>DEMOS_BROKEN.md</code> logs the fallback path.</p>
+<p>Module 13 — the last of the three Gemini unlocks — covers the <strong>Live API</strong>: bidirectional voice streaming with voice activity detection and interruption. It&rsquo;s the single most differentiated Gemini-only capability on the market as of mid-2026. Fair warning: the Live API is preview-tier; it spent spring 2026 throwing transient server errors before Google patched the endpoint in July. If the notebook demo doesn&rsquo;t run end-to-end on your machine, the course&rsquo;s <code>DEMOS_BROKEN.md</code> logs the current state.</p>
         </section>
 
         <section class="chapter" id="live-api-voice-agent">
             <div class="chapter-number">Chapter 13</div>
             <h1>Live API voice agent</h1>
 <p>The third and most interesting of the three Gemini-only unlocks.</p>
-<p><strong>The Live API lets Gemini exchange audio bidirectionally with the user in real time.</strong> Voice in, voice out. Voice activity detection. User-interruption-aware. Sub-second latency on happy-path sessions. Nothing in the Claude, GPT, or open-weight ecosystem ships this cleanly as of April 2026. OpenAI&rsquo;s Realtime API is the closest alternative — different semantics, different pricing, different failure modes. Anthropic has no direct equivalent.</p>
+<p><strong>The Live API lets Gemini exchange audio bidirectionally with the user in real time.</strong> Voice in, voice out. Voice activity detection. User-interruption-aware. Sub-second latency on happy-path sessions. Nothing in the Claude, GPT, or open-weight ecosystem ships this cleanly as of mid-2026. OpenAI&rsquo;s Realtime API is the closest alternative — different semantics, different pricing, different failure modes. Anthropic has no direct equivalent.</p>
 <p>The production use cases are the obvious ones: voice assistants, live interpreter agents, real-time coaching tools, accessibility apps, voice-driven customer support. If voice-first conversational agents are your product, Gemini Live is where you build.</p>
 <p><strong>Fair warning before we begin.</strong> Live is the most fragile of the three Gemini unlocks. The API is preview-tier; model names change frequently; the happy-path session can fail with server-side errors that have nothing to do with your code. The course repo&rsquo;s <code>DEMOS_BROKEN.md</code> logs the specific current failure mode observed at recording time.</p>
 <p>This chapter teaches the <strong>mechanics</strong> — the API shape, the queue-based interaction pattern, what&rsquo;s special about it — even when the demo can&rsquo;t fully run end-to-end in some environments. The concepts are more durable than this month&rsquo;s version-string.</p>
@@ -2548,10 +2548,10 @@ router = LlmAgent(
 <p>Model names that ship the Live capability move around — check <a href="https://ai.google.dev/gemini-api/docs/live">ai.google.dev/gemini-api/docs/live</a> for the current catalog. As of this writing:</p>
 <ul>
 <li><strong><code>gemini-3.1-flash-live-preview</code></strong> — preview, free-tier-available. What the notebook tries.</li>
-<li><strong><code>gemini-live-2.5-flash-native-audio</code></strong> — paid, production-grade, ~$0.012 per minute of audio.</li>
+<li><strong><code>gemini-2.5-flash-native-audio-latest</code></strong> — paid, production-grade, ~$0.012 per minute of audio.</li>
 </ul>
-<h2>The API shape — text-mode Live</h2>
-<p>Before audio, see the API mechanics with text-only Live. Same WebSocket, same queue, same event generator — just text in text out.</p>
+<h2>The API shape — one Live audio turn</h2>
+<p>Current live models are <strong>audio-native</strong>: request <code>response_modalities=["TEXT"]</code> and the server rejects the session with error 1007. So the demo requests <code>AUDIO</code> and attaches <code>output_audio_transcription</code> — the audio bytes stream in as <code>inline_data</code> parts, and the words stream next to them as transcription chunks.</p>
 <pre><code class="language-python">from google.adk.agents import LlmAgent
 from google.adk.agents.run_config import RunConfig
 from google.adk.agents.live_request_queue import LiveRequestQueue
@@ -2570,7 +2570,10 @@ await session_service.create_session(app_name=&quot;m13&quot;, user_id=&quot;u&q
 runner = Runner(agent=live_agent, app_name=&quot;m13&quot;, session_service=session_service)
 
 queue = LiveRequestQueue()
-config = RunConfig(response_modalities=[&quot;TEXT&quot;])   # text out so we can print it
+config = RunConfig(
+    response_modalities=[&quot;AUDIO&quot;],                                # live models are audio-native
+    output_audio_transcription=types.AudioTranscriptionConfig(),  # ...so read the words here
+)
 
 # Push one user turn into the queue
 queue.send_content(
@@ -2578,14 +2581,18 @@ queue.send_content(
 )
 
 # Iterate events until the turn completes
+audio_bytes = 0
 async for event in runner.run_live(
     user_id=&quot;u&quot;, session_id=&quot;s1&quot;,
     live_request_queue=queue, run_config=config,
 ):
     if event.content and event.content.parts:
         for p in event.content.parts:
-            if p.text:
-                print(p.text, end=&quot;&quot;, flush=True)
+            if p.inline_data and p.inline_data.data:
+                audio_bytes += len(p.inline_data.data)   # 24kHz PCM chunks
+    ot = event.output_transcription
+    if ot and ot.text and not ot.finished:
+        print(ot.text, end=&quot;&quot;, flush=True)               # words as they stream
     if event.turn_complete:
         break
 
@@ -2593,8 +2600,8 @@ queue.close()
 </code></pre>
 <p>Four things to notice:</p>
 <ol>
-<li><code>queue.send_content(...)</code> pushes a Content object in. For audio, you&rsquo;d call <code>queue.send_realtime(audio_bytes)</code> with raw PCM at 16kHz, mono, 16-bit instead.</li>
-<li><code>response_modalities=["TEXT"]</code> asks Gemini for text out. Use <code>["AUDIO"]</code> for production voice; the response events contain <code>inline_data</code> with raw PCM at 24kHz.</li>
+<li><code>queue.send_content(...)</code> pushes a Content object in. For real voice input, you&rsquo;d call <code>queue.send_realtime(audio_bytes)</code> with raw PCM at 16kHz, mono, 16-bit instead.</li>
+<li><code>response_modalities=["AUDIO"]</code> is what current live models require (TEXT-only is rejected with 1007). The response events carry <code>inline_data</code> with raw PCM at 24kHz, and <code>output_audio_transcription</code> streams the words — partial chunks first, then one consolidated chunk flagged <code>finished=True</code>.</li>
 <li>Iteration uses <code>async for event in runner.run_live(...)</code> — same as <code>run_async</code>, but continues streaming until <code>event.turn_complete</code> or the queue closes.</li>
 <li><code>queue.close()</code> ends the session; do this in a <code>finally</code> block in production.</li>
 </ol>
@@ -2641,9 +2648,9 @@ Audio out   ◀──WebSocket──   stream response audio
 <h2>Fragility is real — and worth naming</h2>
 <p>The Live API is preview-tier, and preview means what it says. Expected failure modes you&rsquo;ll encounter:</p>
 <ul>
-<li><strong>APIError 1011 &ldquo;Internal error encountered&rdquo;</strong> on <code>live.connect(...)</code>. Happens at the WebSocket handshake; nothing you can do. Retry or wait.</li>
+<li><strong>Transient server errors</strong> on <code>live.connect(...)</code>. Through spring 2026 the free tier threw blanket 1011 handshake errors; Google patched the endpoint in July 2026 and sessions connect reliably now, with clearer error codes (e.g. 1007 for an unsupported modality combination). An occasional drop is still possible — retry.</li>
 <li><strong>Connection drops mid-session.</strong> Network blip, server rotation, quota exhaustion. Implement reconnection with session resumption (Live&rsquo;s session-handle feature persists state across reconnections — see docs).</li>
-<li><strong>Model-name rotation.</strong> The current free-tier preview model is <code>gemini-3.1-flash-live-preview</code> as of April 2026; it was <code>gemini-2.0-flash-live-preview-09-2025</code> last quarter. The course&rsquo;s <code>DEMOS_BROKEN.md</code> logs the current state.</li>
+<li><strong>Model-name rotation.</strong> The current free-tier preview model is <code>gemini-3.1-flash-live-preview</code> as of July 2026; the April-era <code>gemini-live-2.5-flash-native-audio</code> string no longer exists. The course&rsquo;s <code>DEMOS_BROKEN.md</code> logs the current state.</li>
 <li><strong>Transient latency spikes.</strong> When the service is under load, sub-second latency becomes multi-second. Not ADK&rsquo;s fault.</li>
 </ul>
 <p>The code shown in this chapter and the matching notebook is correct. What fails is server-side. When the Live API matures past preview — likely by late 2026 — this roughness goes away. The API shape you learn here will remain.</p>
@@ -2664,7 +2671,7 @@ Audio out   ◀──WebSocket──   stream response audio
 <td>Free up to quota</td>
 </tr>
 <tr>
-<td><code>gemini-live-2.5-flash-native-audio</code></td>
+<td><code>gemini-2.5-flash-native-audio-latest</code></td>
 <td>Paid, production-grade</td>
 <td>~$0.012 per minute audio in/out</td>
 </tr>
@@ -2687,7 +2694,7 @@ Audio out   ◀──WebSocket──   stream response audio
 <p>For everything else, <code>run_async</code> with text in, text out, plus separate STT and TTS services is simpler, cheaper, and more controllable. Live is a specific tool for a specific problem.</p>
 <h2>What to carry forward</h2>
 <ul>
-<li><strong>Live is the most differentiated Gemini capability.</strong> Bidirectional audio, VAD, interruption, sub-second latency. No competitor replicates it cleanly as of April 2026.</li>
+<li><strong>Live is the most differentiated Gemini capability.</strong> Bidirectional audio, VAD, interruption, sub-second latency. No competitor replicates it cleanly as of mid-2026.</li>
 <li><strong>Three primitives:</strong> <code>LiveRequestQueue</code>, <code>Runner.run_live()</code>, <code>RunConfig(response_modalities=[...])</code>.</li>
 <li><strong>API shape</strong>: push inputs via <code>send_content</code>/<code>send_realtime</code>, iterate events with <code>async for</code>, <code>turn_complete</code> ends a turn, <code>queue.close()</code> ends the session.</li>
 <li><strong>VAD + interruption</strong> server-side; tune via <code>RealtimeInputConfig.automatic_activity_detection</code>.</li>
@@ -2698,7 +2705,7 @@ Audio out   ◀──WebSocket──   stream response audio
 <h2>Your turn</h2>
 <ol>
 <li><strong>Enumerate Live models on your key.</strong> Which ones are listed under <code>supported_actions=["bidiGenerateContent"]</code>? Note which require a paid tier.</li>
-<li><strong>Run the text-mode Live cell several times.</strong> How consistently does it succeed? Do you hit 1011 errors?</li>
+<li><strong>Ask for TEXT-only output.</strong> Change <code>response_modalities</code> to <code>["TEXT"]</code> and re-run. What error comes back? (Expect 1007 — current live models are audio-native.)</li>
 <li><strong>Sketch audio-mode.</strong> Modify the notebook&rsquo;s Live cell to pass <code>response_modalities=["AUDIO"]</code>. Inspect response events — are there <code>inline_data</code> parts with audio bytes? Don&rsquo;t try to play them; just confirm they arrive.</li>
 <li><strong>Rate-limit exploration.</strong> Run multiple concurrent Live sessions. What rate limits appear on your key&rsquo;s tier?</li>
 </ol>
@@ -2879,7 +2886,7 @@ runner = Runner(agent=remote, ...)
 <ol>
 <li><strong>The <code>.well-known</code> path rename.</strong> <code>/.well-known/agent.json</code> (v0.2) became <code>/.well-known/agent-card.json</code> (v0.3). Code copied from older blogs has the wrong path.</li>
 <li><strong>Legacy executor bugs.</strong> <code>RemoteA2aAgent(..., use_legacy=True)</code> (the default) has three issues: user-message duplication, remote outputs mis-classified as thoughts, sub-agent output loss. Pass <code>use_legacy=False</code> always.</li>
-<li><strong>Version-pin ADK and a2a-sdk together.</strong> ADK 1.28-1.31 uses <code>a2a-sdk 0.3.24</code>; A2A v1.0 requires <code>a2a-sdk ≥ 1.0.0a1</code> which ADK doesn&rsquo;t yet speak. Don&rsquo;t mix.</li>
+<li><strong>Version-pin ADK and a2a-sdk together.</strong> ADK (through 2.4) requires <code>a2a-sdk &gt;=0.3.4,&lt;0.4</code>; A2A v1.0 requires <code>a2a-sdk ≥ 1.0</code> which ADK doesn&rsquo;t yet speak. Don&rsquo;t mix.</li>
 <li><strong>Discovery is underspecified.</strong> The <code>.well-known</code> path is stable; registries are explicitly future work. Don&rsquo;t build on registry features.</li>
 <li><strong>Agent Engine is non-spec-default.</strong> Google&rsquo;s Agent Engine serves the Agent Card at <code>/v1/card</code> behind authentication, not at <code>/.well-known/</code>. Third-party A2A clients expecting the standard path will fail against Agent Engine.</li>
 <li><strong>Cross-org trust is unsolved.</strong> Every cross-org A2A response is <strong>untrusted input</strong> to your planner. Simon Willison&rsquo;s lethal trifecta — private data + untrusted content + external communications — applies fully. Treat every remote agent&rsquo;s output as if a malicious user wrote it; run it through the same guardrails you&rsquo;d apply to user input.</li>

@@ -4,6 +4,8 @@ A vendor-agnostic course on Google's Agent Development Kit. Fourteen modules, fo
 
 Part 1 teaches the portable spine of ADK — the agent mental model, tools, state, workflow agents, multi-agent hierarchies, callbacks, memory, evaluation, deployment — running against any model via LiteLLM (OpenRouter by default). Part 2 covers what only unlocks with Gemini: search grounding, long context with caching, thinking budgets, and the Live voice API. A short side step on the A2A agent-to-agent protocol closes the course.
 
+The course runs on the **ADK 2.x line** (`google-adk==2.4.0` pinned in `requirements.txt`). ADK 2.0 (May 2026) added a graph-based workflow runtime for advanced compositions; the classic agent API taught throughout this course carried over from 1.x unchanged, so everything here applies to both lines.
+
 ---
 
 ## Two ways to take the course
@@ -151,7 +153,7 @@ CLAUDE.md                   project conventions for AI collaborators
 
 ## Cost notes
 
-All exercises are designed to run on cheap models. Default to `openrouter/google/gemini-2.5-flash-lite` or `openrouter/openai/gpt-4o-mini` on OpenRouter (typical module cost: under $0.05 when running all cells). On Google AI Studio, default to `gemini-2.5-flash`; the Live API demo in M13 uses `gemini-live-2.5-flash-native-audio` for short smoke tests only.
+All exercises are designed to run on cheap models. Default to `openrouter/google/gemini-2.5-flash-lite` or `openrouter/openai/gpt-4o-mini` on OpenRouter (typical module cost: under $0.05 when running all cells). On Google AI Studio, default to `gemini-2.5-flash`; the Live API demo in M13 uses `gemini-3.1-flash-live-preview` for short smoke tests only.
 
 A full Quick path costs under **$0.10** total on OpenRouter + Google AI Studio free tier combined.
 
