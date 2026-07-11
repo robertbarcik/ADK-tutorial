@@ -138,6 +138,7 @@ Notebooks are committed **executed, with outputs** — they read like an article
 - **LiteLLM + streaming + tool calls** is flaky on non-Gemini models. Default all OpenRouter demos to `stream=False`.
 - **Ollama**: use `ollama_chat/` prefix, not `ollama/` — the plain prefix causes infinite tool-call loops.
 - **Structured output** breaks when `google-adk` and `litellm` versions drift. Pin them together; bump as a pair.
+- **`google-adk[eval]` caps litellm** below 1.86 (via `google-cloud-aiplatform[evaluation]`). Pinning a newer litellm next to the eval extra makes pip's resolve fail — and `!pip install -q ... 2>/dev/null` hides that failure, so the crash surfaces later as "Eval module is not installed". Keep the course-wide litellm pin inside the cap.
 - **Google Search / code execution / Vertex Search** can't coexist with other tools in the same agent. Split via `bypass_multi_tools_limit=True` (ADK ≥ 1.16) or wrap each in its own sub-agent.
 - **`adk eval`** hits PermissionError on read-only filesystems. Flag in M09; not a classroom blocker.
 - **A2A on ADK is `@a2a_experimental`.** ADK (through 2.4) requires `a2a-sdk >=0.3.4,<0.4` — the a2a-sdk 1.x proto rewrite is not yet supported. Use `RemoteA2aAgent(..., use_legacy=False)`.

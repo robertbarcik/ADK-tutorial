@@ -4,8 +4,11 @@
 # litellm together; if you bump one, bump the other at the same time.
 
 # ─── Core ADK stack (pinned for classroom reproducibility) ──────────────
-google-adk==2.4.0
-litellm==1.91.1
+# [eval] is needed by M09 (AgentEvaluator). It pulls google-cloud-aiplatform's
+# evaluation extra, which caps litellm below 1.86 — that cap sets the litellm
+# pin for the whole course.
+google-adk[eval]==2.4.0
+litellm==1.85.7
 openai==2.45.0
 python-dotenv==1.0.1
 nest-asyncio==1.6.0
