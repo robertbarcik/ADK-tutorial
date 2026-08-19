@@ -7,15 +7,15 @@
 # [eval] is needed by M09 (AgentEvaluator). It pulls google-cloud-aiplatform's
 # evaluation extra, which caps litellm below 1.86 — that cap sets the litellm
 # pin for the whole course.
-google-adk[eval]==2.4.0
+google-adk[eval]==2.7.1
 litellm==1.85.7
-openai==2.45.0
+openai==2.54.0
 python-dotenv==1.0.1
 nest-asyncio==1.6.0
 deprecated==1.2.18
 
 # ─── Model Context Protocol (M02 tools, M14 A2A demos) ─────────────────
-mcp==1.28.1
+mcp==1.29.0
 httpx==0.28.1
 
 # ─── Google GenAI SDK (Part 2: M11-M13 grounding, caching, thinking, Live API) ─

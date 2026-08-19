@@ -16,6 +16,7 @@ ENV/
 env.bak/
 venv.bak/
 .venv/
+.venv*/
 
 # IDE
 .vscode/
@@ -83,7 +84,7 @@ textbook/_sources/output/
 # ADK runtime caches
 .adk/
 
-# Slide renders for video editing — regenerated via slides/render_slides.py.
-# Derived from slides/module-*/index.html; re-generating takes ~45 seconds.
+# Slide renders for video editing — regenerated via archive/scripted-voiceover/slides/render_slides.py.
+# Derived from archive/scripted-voiceover/slides/module-*/index.html; re-generating takes ~45 seconds.
 # Uncomment the next line to commit them alongside the source decks.
-slides-jpg/
+archive/scripted-voiceover/slides-jpg/

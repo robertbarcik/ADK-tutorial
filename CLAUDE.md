@@ -1,86 +1,67 @@
 # ADK Course — Claude instructions
 
-> **Picking up speaker-notes work?** Read [`SPEAKER_NOTES_STATUS.md`](SPEAKER_NOTES_STATUS.md) first. It tracks which modules have been rewritten, the conventions established (notebook breaks, slide-deck structure, prose rules), and a final-pass checklist. Janka and Claude have been iterating module by module; that file is the cross-session source of truth.
+> **Filming / course-plan work?** Read [`FILMING_PLAN.md`](FILMING_PLAN.md) first — it is the
+> video-course plan (Skillmea, Slovak, free-talk notebook walkthroughs, 30 lectures, 2026-08-19)
+> and mirrors the "ADK" tab of the Skillmea overview workbook (Management drive). Update both
+> together when the plan changes.
 
-A full course on Google's Agent Development Kit (ADK). Four aligned components per module: slides, speaker notes, textbook chapter, Jupyter notebook.
+A course on Google's Agent Development Kit (ADK). **The notebooks are the course**: 14 Jupyter
+notebooks (one per module), executed with outputs, plus a textbook. The video course is filmed
+by talking freely over the notebooks (Testing-GenAI style), not from a script.
 
 ## Course shape
 
-- **Part 1 — Vendor-agnostic spine (M01–M10).** ADK as a generic agent framework. Tested against **OpenRouter** so students can use Claude / GPT / Qwen / Gemma via LiteLLM.
-- **Part 2 — Gemini unlocks (M11–M13).** What you lose if you don't use Gemini. Tested against **Google AI Studio**.
-- **Side step — A2A protocol (M14).** 30 min on agent-to-agent communication. Tested against OpenRouter.
-- **Agentic Design Patterns interludes.** Selected concepts from `barcik-training-publications/_sources/agentic-design-patterns/` appear as 1–2 slide interludes embedded in relevant modules, not standalone.
+- **Part 1 — Vendor-agnostic spine (M01–M10).** ADK as a generic agent framework. Tested against
+  **OpenRouter** so students can use Claude / GPT / Qwen / Gemma via LiteLLM.
+- **Part 2 — Gemini unlocks (M11–M13).** What you lose if you don't use Gemini. Tested against
+  **Google AI Studio**.
+- **Side step — A2A protocol (M14).** Agent-to-agent communication. Tested against OpenRouter.
+- **Video MVP (2026-08-19):** Part 1 + M11 taster; M12–M14 stay in the materials as self-study.
+- **Agentic Design Patterns interludes** appear as short markdown sections inside relevant notebooks
+  (source: `barcik-training-publications/_sources/agentic-design-patterns/`).
 
 ## Two learner paths
 
-The README now exposes two paths. Any ⚡ marker you see — in the portal, in slide decks, in textbook chapters, in notebooks — is part of this.
-
 - **Full path** — all 14 modules, 6-8 hours.
-- **Quick path (~1 hour)** — **M01 → M02 → M05 → M11**. These four modules are marked ⚡ throughout the artifacts. If asked to modify the Quick path selection, update consistently across:
-  - `README.md` (tables + suggested reading order)
-  - `index.html` (portal — `.quick-path` classes + the amber callout)
-  - `slides/module-*/index.html` (progress-strip badge)
-  - `textbook/_sources/tools/build_html.py` → `QUICK_PATH_FILES` set
-  - `notebooks/*.ipynb` (first-cell blockquote)
+- **Quick path (~1 hour)** — **M01 → M02 → M05 → M11**, marked ⚡ in `README.md`, the notebooks'
+  first cell, and the textbook (`textbook/_sources/tools/build_html.py` → `QUICK_PATH_FILES`).
+  Keep them consistent if the selection changes.
 
-## Video-recording workflow (why `render_slides.py` exists)
+## The archived scripted-voiceover format
 
-Robert's production workflow for the course videos:
-
-1. Record audio only, reading from `slides/module-*/speaker_notes.md`.
-2. Import into a video editor (Premiere / Resolve / etc.).
-3. Drop the matching slide image from `slides-jpg/module-*/NN.jpg` onto the timeline at each slide transition.
-4. No on-screen presenter, no browser capture — just clean 1920×1080 stills timed to narration.
-
-This means:
-- **Speaker notes must read like spoken delivery.** One section per slide, no filler, no "let's look at this slide now" meta-language. Token Economics voice.
-- **Slide stills need to be production-clean.** The progress strip and font controls are hidden during render — no UI chrome to crop out in post.
-- **Slides should be information-complete.** The audio narrates what's on the slide; the slide carries the content. No speaker-notes-only information.
+`archive/scripted-voiceover/` holds the earlier production format intact: 15 HTML slide decks
+(`slides/module-NN-slug/index.html`, built by `slides/build_slides.py`), EN + SK speaker notes
+(`speaker_notes.md`, `speaker_notes_sk.md`), the 77-lecture `LECTURE_PLAN.md`, the slides portal
+`index.html`, and the renderer `slides/render_slides.py` (writes `slides-jpg/` next to it, gitignored).
+Robert parked it on 2026-08-19 in favour of free-talk notebook walkthroughs; it may come back if
+the new style doesn't work for him — **do not delete or "clean up" the archive**, and do not
+spend effort keeping it in sync with notebook changes unless asked. The build/render scripts still
+work from inside the archive (paths are relative to the script).
 
 ## Folder conventions
 
 ```
-index.html                  # slides portal / course front page (self-contained, deployable to S3)
-slides/shared/              # CANONICAL shared.css + slides.css + slides.js — edit here
-slides/build_slides.py      # inlines shared/*.{css,js} into each deck's index.html
-slides/module-NN-slug/      # index.html (generated, self-contained) + speaker_notes.md
-textbook/_sources/chapters/ # NN-slug.md — markdown canonical
-textbook/_sources/tools/    # build_html.py
-textbook/index.html         # generated output — do NOT hand-edit
-notebooks/                  # NN_slug.ipynb — one per module, plus legacy/ for the pre-course version
-mcp_servers/                # reusable MCP servers for M02 tools demos
-scripts/                    # python helpers loaded by notebooks when inline code would be too long
+FILMING_PLAN.md             video-course lecture plan (mirrors the Skillmea "ADK" tab)
+notebooks/                  NN_slug.ipynb — one per module, executed with outputs; legacy/ = pre-course version
+mcp_servers/                reusable MCP servers for M02 tools demos (and M14)
+scripts/                    python helpers loaded by notebooks when inline code would be too long
+textbook/_sources/chapters/ NN-slug.md — markdown canonical
+textbook/_sources/tools/    build_html.py
+textbook/index.html         generated output — do NOT hand-edit
+archive/scripted-voiceover/ slides, speaker notes, portal, old lecture plan (see above)
 ```
 
-## Why the slide deck HTMLs are "built"
-
-Safari — and some Chrome strict-mode configurations — block `file://`-path loads of relative CSS and JS as a security measure. That turns every double-click-to-open into a wall of unstyled text.
-
-Fix: each `slides/module-NN-slug/index.html` has the shared CSS/JS **inlined** by `slides/build_slides.py`. Each deck becomes a single self-contained HTML file that opens cleanly via `file://` in any browser, and still deploys cleanly over HTTPS.
-
-**Workflow**:
-1. Edit the canonical sources in `slides/shared/` (shared.css, slides.css, slides.js).
-2. Run `python3 slides/build_slides.py` — it walks every `slides/module-*/index.html` and re-inlines.
-3. Commit the regenerated deck HTMLs alongside the shared-source change.
-
-A banner comment at the top of each generated deck says: `<!-- Built by slides/build_slides.py — shared CSS/JS inlined for file:// portability. -->`. Don't hand-edit the inlined blocks; edit the shared source and re-run the builder.
-
-## Rendering slides as images
-
-`slides/render_slides.py` drives a headless Chromium (via Playwright) to produce per-slide JPG/PNG stills at 1920×1080, for video-editor workflows. Output goes to `slides-jpg/module-NN-slug/NN.jpg` (gitignored by default).
-
-One-time: `pip install playwright && python3 -m playwright install chromium`.
-Then: `python3 slides/render_slides.py` renders all 14 decks in ~45 seconds.
-
-CLI flags: `--module 05`, `--format png`, `--width 1280 --height 720`, `--quality 88`.
-
-The renderer hides the progress strip so each frame is a clean full-viewport slide.
+Drive sync (`training-ops/drive-push`, course key `adk`): only `notebooks/` (minus `legacy/`),
+`mcp_servers/` and `requirements.txt` go to the Courses drive folder
+`5. Google ADK (SYNCED)/course_materials (shared)` — slides/textbook/archive never reach students
+via Drive. Run `python3 training-ops/drive-push/push.py --status --course adk` before and after
+touching notebooks.
 
 ## Writing voice — read this before writing content
 
 Two voices. Use the right one for the artifact.
 
-### Slides + speaker notes + textbook → Token Economics voice
+### Textbook (and the archived slides + speaker notes) → Token Economics voice
 Reference: `barcik-training-publications/_sources/token-economics/chapters/01_genai_moment.md`.
 
 - Short declarative sentences. Reversals as one-line paragraphs.
@@ -103,9 +84,6 @@ April 2026 "notebook guidelines" updates — for the target tone.
 - **Markdown-cell content** still leans Token Economics in voice (direct, specific, no filler) — the friendly structure is in the scaffolding, not in padded prose.
 - **Pinned dependencies at install**: match `requirements.txt` versions exactly in `!pip install` lines, so Colab and local get identical environments.
 
-### Slides + speaker notes + textbook → Token Economics voice
-*(unchanged — no emojis, no filler, no "let's explore")*
-
 ## Keys and model choice
 
 Two environment variables students (and Claude) load from `.env` (copy from `.env.example`):
@@ -118,6 +96,10 @@ Two environment variables students (and Claude) load from `.env` (copy from `.en
 `GOOGLE_GENAI_USE_VERTEXAI=FALSE` in `.env` keeps ADK on the AI Studio path (no GCP billing).
 
 ## Running and testing notebooks
+
+venv: `.venv27` (py3.12, ADK 2.7.1 stack; created 2026-08-19 — the old `.venv` is the 2.4 stack,
+delete it when convenient). `jupyter nbconvert --execute` runs the `!pip install` cells too, so
+notebook pins must match `requirements.txt` or the kernel downgrades itself mid-run.
 
 Before committing a module change, the notebook must run top-to-bottom against a fresh kernel:
 
@@ -141,9 +123,19 @@ Notebooks are committed **executed, with outputs** — they read like an article
 - **`google-adk[eval]` caps litellm** below 1.86 (via `google-cloud-aiplatform[evaluation]`). Pinning a newer litellm next to the eval extra makes pip's resolve fail — and `!pip install -q ... 2>/dev/null` hides that failure, so the crash surfaces later as "Eval module is not installed". Keep the course-wide litellm pin inside the cap.
 - **Google Search / code execution / Vertex Search** can't coexist with other tools in the same agent. Split via `bypass_multi_tools_limit=True` (ADK ≥ 1.16) or wrap each in its own sub-agent.
 - **`adk eval`** hits PermissionError on read-only filesystems. Flag in M09; not a classroom blocker.
-- **A2A on ADK is `@a2a_experimental`.** ADK (through 2.4) requires `a2a-sdk >=0.3.4,<0.4` — the a2a-sdk 1.x proto rewrite is not yet supported. Use `RemoteA2aAgent(..., use_legacy=False)`.
+- **A2A on ADK is `@a2a_experimental`.** ADK (through 2.7) requires `a2a-sdk >=0.3.4,<0.4` — the a2a-sdk 1.x proto rewrite is not yet supported. Use `RemoteA2aAgent(..., use_legacy=False)`.
 - **ADK 2.x `DatabaseSessionService` is async-only.** It lives behind the `[db]` extra (sqlalchemy no longer a hard dep) and *requires* an async driver URL (`sqlite+aiosqlite://`); the plain sync `sqlite://` scheme is rejected. Exactly inverted from 1.28 — see `DEMOS_BROKEN.md` M08 entry.
 - **Windows**: `PYTHONUTF8=1` — documented in `.env.example`.
+- **LiteLLM 1.85 prints botocore/bedrock warnings at import** unless `LITELLM_LOG=ERROR` is set
+  before `import litellm` — every notebook's import cell does this now; keep it.
+- **ADK 2.7 logs a context_cache_config advisory on every sub_agent transfer** (M06) — silenced
+  with `logging.getLogger("google_adk").setLevel(logging.ERROR)` in that notebook.
+- **`gemini-2.5-flash-lite` is flaky on "what do I prefer?"-style recall** (M08): it answers
+  "no preference" without calling the tool ~half the time. The demo now uses an explicit
+  `recall_preference` tool + the prompt "What is my saved preference?", which is reliable. If a
+  live demo misbehaves, re-run the cell once before blaming the code.
+- **Port 8765 (M10 `adk api_server`)**: a stray local server on that port makes the notebook
+  fail with 404 on `/list-apps` — `lsof -i :8765` first.
 
 ## Building the textbook
 

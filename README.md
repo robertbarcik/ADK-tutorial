@@ -1,20 +1,20 @@
 # Google ADK — A Practical Course
 
-A vendor-agnostic course on Google's Agent Development Kit. Fourteen modules, four aligned artifacts each: **slides**, **speaker notes**, **textbook chapter**, **Jupyter notebook**.
+A vendor-agnostic course on Google's Agent Development Kit. Fourteen Jupyter notebooks, executed with outputs, plus a textbook. Part 1 (M01–M10) teaches the portable spine of ADK — the agent mental model, tools, state, workflow agents, multi-agent hierarchies, callbacks, memory, evaluation, deployment — running against any model via LiteLLM (OpenRouter by default). Part 2 (M11–M13) covers what only unlocks with Gemini: search grounding, long context with caching, thinking budgets, the Live voice API. M14 is a side step on the A2A agent-to-agent protocol.
 
-Part 1 teaches the portable spine of ADK — the agent mental model, tools, state, workflow agents, multi-agent hierarchies, callbacks, memory, evaluation, deployment — running against any model via LiteLLM (OpenRouter by default). Part 2 covers what only unlocks with Gemini: search grounding, long context with caching, thinking budgets, and the Live voice API. A short side step on the A2A agent-to-agent protocol closes the course.
+The course runs on the **ADK 2.x line** (`google-adk==2.7.1` pinned in `requirements.txt`, re-verified 2026-08-19; the classic agent API taught here is unchanged since 1.x — the graph workflow runtime added in 2.0 is additive).
 
-The course runs on the **ADK 2.x line** (`google-adk==2.4.0` pinned in `requirements.txt`). ADK 2.0 (May 2026) added a graph-based workflow runtime for advanced compositions; the classic agent API taught throughout this course carried over from 1.x unchanged, so everything here applies to both lines.
+**Video course (Skillmea, Slovak):** filmed as free-talk notebook walkthroughs — see [`FILMING_PLAN.md`](FILMING_PLAN.md) for the lecture list. The video course covers Part 1 (M01–M10) plus a Gemini taster (M11); notebooks 12–14 are included in the materials for self-study.
+
+> The earlier **scripted-voiceover format** (HTML slide decks, EN + SK speaker notes, 77-lecture plan, slides portal) is kept intact under [`archive/scripted-voiceover/`](archive/scripted-voiceover/) — nothing was deleted, it is simply not the filming path any more. Open `archive/scripted-voiceover/index.html` for the slide portal.
 
 ---
 
 ## Two ways to take the course
 
-Pick the path that matches what you have time for.
-
 ### ⚡ Quick path — ~1 hour
 
-For the impatient, or for a course preview before committing. Four modules, in order, give you the core ADK mental model plus the most-demonstrated wow capabilities.
+Four notebooks, in order, give you the core ADK mental model plus the most-demonstrated wow capabilities.
 
 | # | Module | Why it's on the quick path |
 |---|---|---|
@@ -23,20 +23,9 @@ For the impatient, or for a course preview before committing. Four modules, in o
 | **M05** | Workflow agents | The canonical Generator+Critic refinement loop — the "oh, this is what ADK is good at" moment. |
 | **M11** | Gemini grounding + caching | A taste of what Part 2 adds on top of vendor-agnostic ADK. Real citations, 90% caching discount. |
 
-Each quick-path module is marked with **⚡** on the portal, in slide-deck headers, and in the textbook sidebar. Everything else in the course is there for when you want to deepen a specific area.
-
-**Suggested reading order for Quick path:**
-1. Slides M01 + speaker notes — 15 min
-2. Notebook M01 — skim the code, no need to run it fully — 5 min
-3. Slides M02 — 20 min
-4. Textbook chapter 5 (Workflow agents) — 15 min
-5. Slides M11 — 10 min
-
-That's ~65 minutes; you'll be able to explain what ADK is, what agent software looks like, and why Gemini is the vendor with the most to offer.
+Quick-path modules are marked with **⚡** in the notebooks' first cell and in the textbook sidebar.
 
 ### Full path — 6–8 hours
-
-The deep track. All 14 modules; all four artifacts per module. Build, test, deploy. This is the course as authored.
 
 | # | Module | API key |
 |---|---|---|
@@ -54,8 +43,6 @@ The deep track. All 14 modules; all four artifacts per module. Build, test, depl
 | M12 | Thinking budgets | Google AI Studio |
 | M13 | Live API — voice agent with interruption | Google AI Studio |
 | M14 | A2A protocol — agent-to-agent | OpenRouter |
-
-Rows marked **⚡** are the quick-path modules. If you're on the full path, the marker is just a cue that those four carry the highest-density content — pay special attention.
 
 Every notebook opens directly in Google Colab via the "Open in Colab" badge on its first cell — no local setup needed to read along, since each is committed executed with outputs already in place.
 
@@ -78,75 +65,29 @@ cp .env.example .env
 jupyter notebook notebooks/
 ```
 
-### Open the slides portal
-
-The course front page — a compact grid of all 14 decks plus the Quick-path callout — lives at the repo root:
-
-```bash
-open index.html
-```
-
-Each module's slide deck is self-contained and opens standalone too:
-
-```bash
-open slides/module-01-mental-model/index.html
-```
-
 ### Open the textbook
 
 Single-page HTML booklet, 15 chapters (introduction plus one per module):
 
 ```bash
-# Generate if not already built
-python3 textbook/_sources/tools/build_html.py
-
+python3 textbook/_sources/tools/build_html.py   # generate if not already built
 open textbook/index.html
 ```
-
-Quick-path chapters are marked with **⚡** in the sidebar and chapter headers.
-
-### Render slides as images (for video editing)
-
-If you're recording a voiceover and need per-slide 1920×1080 stills for a video editor, `slides/render_slides.py` generates them in a headless browser via Playwright. Takes under a minute for all 14 decks (~274 slides).
-
-```bash
-# One-time setup
-pip install playwright
-python3 -m playwright install chromium
-
-# Render all decks as JPG at 1920×1080 → slides-jpg/module-NN-slug/NN.jpg
-python3 slides/render_slides.py
-
-# Just one module
-python3 slides/render_slides.py --module 05
-
-# PNG instead of JPG (lossless, bigger)
-python3 slides/render_slides.py --format png
-
-# Different resolution
-python3 slides/render_slides.py --width 1280 --height 720
-```
-
-The progress strip and on-screen controls are hidden in rendered output so each frame uses the full canvas. Output is `.gitignore`'d by default (re-generating is cheap); remove the entry if you want to commit stills alongside the source.
 
 ---
 
 ## Repository layout
 
 ```
-index.html                  slides portal / course front page (deployable to S3)
-slides/shared/              canonical CSS/JS — edit here
-slides/build_slides.py      inlines shared/*.{css,js} into each deck (run after edits)
-slides/render_slides.py     renders every slide as a 1920×1080 JPG/PNG for video editing
-slides/module-NN-slug/      per-module deck (self-contained) + speaker_notes.md
-slides-jpg/                 (generated; gitignored) per-slide image renders
+FILMING_PLAN.md             video-course lecture plan (free-talk notebook walkthroughs)
+notebooks/                  14 runnable exercises, one per module — THE course
+notebooks/legacy/           earlier notebooks, kept for reference
+mcp_servers/                reusable MCP servers used in M02 and M14
+scripts/                    python helpers for notebooks
 textbook/_sources/chapters/ chapter markdown (canonical)
 textbook/_sources/tools/    build_html.py
 textbook/index.html         generated booklet (do not hand-edit)
-notebooks/                  14 runnable exercises, one per module
-notebooks/legacy/           earlier notebooks, kept for reference during transition
-mcp_servers/                reusable MCP servers used in M02 and M14
-scripts/                    python helpers for notebooks
+archive/scripted-voiceover/ the earlier slides + speaker-notes format (intact, not deleted)
 DEMOS_BROKEN.md             running log of demos that need fixing
 CLAUDE.md                   project conventions for AI collaborators
 ```
