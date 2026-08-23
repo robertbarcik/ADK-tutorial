@@ -69,7 +69,7 @@ import uvicorn
 
 root_agent = LlmAgent(
     name="temperature_specialist",
-    model=LiteLlm(model="openrouter/google/gemini-2.5-flash-lite"),
+    model=LiteLlm(model="openrouter/openai/gpt-5.6-luna"),
     description="Converts Celsius to Fahrenheit via convert_c_to_f tool.",
     instruction="Convert temperatures. Return only the number.",
     tools=[convert_c_to_f],

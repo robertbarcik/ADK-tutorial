@@ -19,7 +19,8 @@ niečo vyjde prirodzenejšie zlúčiť alebo vyhodiť, urob to a ja potom zosúl
   v Colabe ako Secrets – ako v Testingu.
 - Kapitola 6_2 (nb10) štartuje server na porte **8765** – skontroluj `lsof -i :8765` (včera tam
   visel starý http.server z knihy).
-- Model je `gemini-2.5-flash-lite` (lacný, rýchly). Ak sa demo správa čudne, **spusti bunku ešte
+- Model je `openrouter/openai/gpt-5.6-luna` (lacný, rýchly, od 2026-08-23 nahrádza gemini-2.5-flash-lite;
+  zámerne **nie** Google model – ukazuje, že ADK je vendor-neutral). Ak sa demo správa čudne, **spusti bunku ešte
   raz** – je to nedeterministický model, nie chyba kódu. Outputy v notebooku sú dobré – keď sa
   ti nechce čakať, kľudne rozprávaj nad uloženým outputom a „naživo" spusti len wow bunky
   (2_3 MCP, 3_4 päť modelov, 4_3 Loop, 5_4 reštart, 6_2 HTTP).
@@ -47,7 +48,7 @@ niečo vyjde prirodzenejšie zlúčiť alebo vyhodiť, urob to a ja potom zosúl
 - Open in Colab → Secrets: `OPENROUTER_API_KEY`; bezplatný Google AI Studio kľúč len pre nb11.
 - Ukáž bunky 2–7 v nb01: pip (pinované verzie – ADK sa hýbe rýchlo), kľúč (Colab secret →
   .env → prompt), importy; `LiteLlm` = ten jeden riadok, ktorý robí ADK vendor-neutral.
-- Cena: celý kurz pár dolárov; model `gemini-2.5-flash-lite`.
+- Cena: celý kurz pár dolárov; model `gpt-5.6-luna` cez OpenRouter (Gemini len v nb11–13).
 
 ## Kapitola 1 · Mentálny model agenta (notebook 01)
 

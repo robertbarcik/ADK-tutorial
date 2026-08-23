@@ -42,7 +42,7 @@ from google.adk.models.lite_llm import LiteLlm
 
 greeter = Agent(
     name="greeter",
-    model=LiteLlm(model="openrouter/google/gemini-2.5-flash-lite"),
+    model=LiteLlm(model="openrouter/openai/gpt-5.6-luna"),
     description="Greets the user in a friendly way.",
     instruction="You are a friendly greeter. Respond in one short sentence.",
 )
@@ -131,7 +131,7 @@ If you're choosing a framework for a team, the right answer depends on your cont
 
 This is the single most common objection, and it's fair to name it here rather than hiding it. Google wrote ADK, Google maintains it, and Google has commercial incentives — it wants you to use Gemini and deploy on Vertex AI.
 
-The model question is settled in one line of code. `LlmAgent(model="gemini-2.5-flash")` is Gemini. `LlmAgent(model=LiteLlm(model="openrouter/anthropic/claude-haiku-4-5"))` is Claude. `LlmAgent(model=LiteLlm(model="ollama_chat/qwen3:8b"))` is a locally-hosted Qwen3. The rest of the code — the tools, the instruction, the session, the runner — does not change.
+The model question is settled in one line of code. `LlmAgent(model="gemini-2.5-flash")` is Gemini. `LlmAgent(model=LiteLlm(model="openrouter/anthropic/claude-haiku-4.5"))` is Claude. `LlmAgent(model=LiteLlm(model="ollama_chat/qwen3:8b"))` is a locally-hosted Qwen3. The rest of the code — the tools, the instruction, the session, the runner — does not change.
 
 Part 1 of this course uses OpenRouter with LiteLLM the whole way. Ten modules' worth of material, running against whatever model you pick, with the code unchanged. When we get to Part 2 in module eleven, we switch to Gemini directly because the features we teach then — Google Search grounding, long-context caching, thinking budgets, the Live voice API — only exist on Gemini, and swapping that out for Claude would break the chapter. Until then, ADK is as vendor-neutral as you want it to be.
 

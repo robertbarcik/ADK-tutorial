@@ -90,7 +90,7 @@ Two environment variables students (and Claude) load from `.env` (copy from `.en
 
 | Variable | Powers | Cost strategy |
 |---|---|---|
-| `OPENROUTER_API_KEY` | M01–M10 + M14 via `LiteLlm("openrouter/<provider>/<model>")` | Default to cheap models when testing: `openrouter/google/gemini-2.5-flash-lite` or `openrouter/openai/gpt-4o-mini`. |
+| `OPENROUTER_API_KEY` | M01–M10 + M14 via `LiteLlm("openrouter/<provider>/<model>")` | Course default (since 2026-08-23): `openrouter/openai/gpt-5.6-luna` — deliberately a **non-Google** model so Part 1 demonstrates vendor neutrality. Fallback with zero known LiteLLM quirks: `openrouter/anthropic/claude-haiku-4.5`. M04 comparison lineup: gemini-3.7-flash / gpt-5.6-luna / claude-haiku-4.5 / qwen3.7-flash (leaks thinking as text — intentional teaching point) / llama-4-scout. Check `curl https://openrouter.ai/api/v1/models` before changing. |
 | `GOOGLE_API_KEY` | M11–M13 via direct `google-genai` / ADK Gemini | Default to `gemini-2.5-flash` for text, `gemini-3.1-flash-live-preview` only where the Live API is the point (live models are audio-native — TEXT-only modality is rejected with 1007). |
 
 `GOOGLE_GENAI_USE_VERTEXAI=FALSE` in `.env` keeps ADK on the AI Studio path (no GCP billing).
@@ -130,7 +130,7 @@ Notebooks are committed **executed, with outputs** — they read like an article
   before `import litellm` — every notebook's import cell does this now; keep it.
 - **ADK 2.7 logs a context_cache_config advisory on every sub_agent transfer** (M06) — silenced
   with `logging.getLogger("google_adk").setLevel(logging.ERROR)` in that notebook.
-- **`gemini-2.5-flash-lite` is flaky on "what do I prefer?"-style recall** (M08): it answers
+- **`gemini-2.5-flash-lite` (the pre-2026-08-23 default) was flaky on "what do I prefer?"-style recall** (M08): it answers
   "no preference" without calling the tool ~half the time. The demo now uses an explicit
   `recall_preference` tool + the prompt "What is my saved preference?", which is reliable. If a
   live demo misbehaves, re-run the cell once before blaming the code.

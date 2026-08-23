@@ -94,7 +94,7 @@ CLAUDE.md                   project conventions for AI collaborators
 
 ## Cost notes
 
-All exercises are designed to run on cheap models. Default to `openrouter/google/gemini-2.5-flash-lite` or `openrouter/openai/gpt-4o-mini` on OpenRouter (typical module cost: under $0.05 when running all cells). On Google AI Studio, default to `gemini-2.5-flash`; the Live API demo in M13 uses `gemini-3.1-flash-live-preview` for short smoke tests only.
+All exercises are designed to run on cheap models. Default to `openrouter/openai/gpt-5.6-luna` (the course default — deliberately not a Google model, to show ADK is vendor-neutral) or `openrouter/anthropic/claude-haiku-4.5` on OpenRouter (typical module cost: under $0.05 when running all cells). On Google AI Studio, default to `gemini-2.5-flash`; the Live API demo in M13 uses `gemini-3.1-flash-live-preview` for short smoke tests only.
 
 A full Quick path costs under **$0.10** total on OpenRouter + Google AI Studio free tier combined.
 

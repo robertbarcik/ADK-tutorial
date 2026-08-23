@@ -408,7 +408,7 @@ from google.adk.models.lite_llm import LiteLlm
 
 greeter = Agent(
     name=&quot;greeter&quot;,
-    model=LiteLlm(model=&quot;openrouter/google/gemini-2.5-flash-lite&quot;),
+    model=LiteLlm(model=&quot;openrouter/openai/gpt-5.6-luna&quot;),
     description=&quot;Greets the user in a friendly way.&quot;,
     instruction=&quot;You are a friendly greeter. Respond in one short sentence.&quot;,
 )
@@ -465,7 +465,7 @@ async for event in runner.run_async(
 <p>If you&rsquo;re choosing a framework for a team, the right answer depends on your control-flow complexity and the vocabulary your team already uses. If you&rsquo;re choosing one to learn, ADK teaches you concepts that transfer cleanly to the others, which makes it an unusually good teaching vehicle.</p>
 <h2>&ldquo;But ADK is a Google framework&rdquo;</h2>
 <p>This is the single most common objection, and it&rsquo;s fair to name it here rather than hiding it. Google wrote ADK, Google maintains it, and Google has commercial incentives — it wants you to use Gemini and deploy on Vertex AI.</p>
-<p>The model question is settled in one line of code. <code>LlmAgent(model="gemini-2.5-flash")</code> is Gemini. <code>LlmAgent(model=LiteLlm(model="openrouter/anthropic/claude-haiku-4-5"))</code> is Claude. <code>LlmAgent(model=LiteLlm(model="ollama_chat/qwen3:8b"))</code> is a locally-hosted Qwen3. The rest of the code — the tools, the instruction, the session, the runner — does not change.</p>
+<p>The model question is settled in one line of code. <code>LlmAgent(model="gemini-2.5-flash")</code> is Gemini. <code>LlmAgent(model=LiteLlm(model="openrouter/anthropic/claude-haiku-4.5"))</code> is Claude. <code>LlmAgent(model=LiteLlm(model="ollama_chat/qwen3:8b"))</code> is a locally-hosted Qwen3. The rest of the code — the tools, the instruction, the session, the runner — does not change.</p>
 <p>Part 1 of this course uses OpenRouter with LiteLLM the whole way. Ten modules&rsquo; worth of material, running against whatever model you pick, with the code unchanged. When we get to Part 2 in module eleven, we switch to Gemini directly because the features we teach then — Google Search grounding, long-context caching, thinking budgets, the Live voice API — only exist on Gemini, and swapping that out for Claude would break the chapter. Until then, ADK is as vendor-neutral as you want it to be.</p>
 <p>The deployment question is the same shape. <code>adk deploy cloud_run</code> is a convenience. The container that command produces is a regular Docker container that runs on any cloud that runs Docker containers. We&rsquo;ll build one in module ten and deploy the same image two ways to prove the point.</p>
 <h2>What to leave this chapter with</h2>
@@ -810,13 +810,13 @@ agent = LlmAgent(
         <section class="chapter" id="the-one-line-model-swap">
             <div class="chapter-number">Chapter 4</div>
             <h1>The one-line model swap</h1>
-<p>Three chapters into this course, every example has used a single model string: <code>openrouter/google/gemini-2.5-flash-lite</code>. This chapter opens that abstraction up. By the end of the matching notebook, the <em>same</em> agent code will have run on five different providers — Claude, GPT, Gemini, Qwen, and Llama — with one line of configuration changing each time. The rest of the code is untouched.</p>
+<p>Three chapters into this course, every example has used a single model string: <code>openrouter/google/gemini-3.7-flash</code>. This chapter opens that abstraction up. By the end of the matching notebook, the <em>same</em> agent code will have run on five different providers — Claude, GPT, Gemini, Qwen, and Llama — with one line of configuration changing each time. The rest of the code is untouched.</p>
 <p>That is the shape of vendor-neutrality in ADK. This chapter explains how it works, when to use it, and the one prefix gotcha that bites anyone who tries to run a local model without reading the docs first.</p>
 <h2>What <code>LiteLlm</code> actually is</h2>
 <p>ADK was written by Google. It speaks Gemini natively — pass <code>model="gemini-2.5-flash"</code> to an <code>LlmAgent</code> and ADK goes directly to the <code>google-genai</code> SDK. No wrappers, no translation, just a native call.</p>
 <p>Every other model needs a translation layer. That layer is <strong>LiteLLM</strong> — an independent open-source library maintained by a separate team. It sits between your code and roughly one hundred LLM providers. Requests come in shaped like OpenAI&rsquo;s API; LiteLLM translates them to whatever the target expects; responses come back translated the other way.</p>
 <p>ADK&rsquo;s <code>LiteLlm</code> wrapper is a thin adapter that exposes LiteLLM as an ADK-compatible model. Google wrote this adapter precisely so they didn&rsquo;t have to write a custom shim per vendor. Every time LiteLLM adds support for a new provider, ADK inherits it for free.</p>
-<p>At runtime, a call to <code>model=LiteLlm(model="openrouter/anthropic/claude-haiku-4-5")</code> goes through two translations — OpenAI-shape in, Anthropic-shape out to the provider, Anthropic-shape response back, OpenAI-shape delivered to ADK:</p>
+<p>At runtime, a call to <code>model=LiteLlm(model="openrouter/anthropic/claude-haiku-4.5")</code> goes through two translations — OpenAI-shape in, Anthropic-shape out to the provider, Anthropic-shape response back, OpenAI-shape delivered to ADK:</p>
 <pre><code>ADK Agent
     │ OpenAI-shaped request
     ▼
@@ -847,23 +847,23 @@ ADK Agent
 <tbody>
 <tr>
 <td>Google</td>
-<td><code>openrouter/google/gemini-2.5-flash-lite</code></td>
+<td><code>openrouter/google/gemini-3.7-flash</code></td>
 </tr>
 <tr>
 <td>OpenAI</td>
-<td><code>openrouter/openai/gpt-4o-mini</code></td>
+<td><code>openrouter/openai/gpt-5.6-luna</code></td>
 </tr>
 <tr>
 <td>Anthropic</td>
-<td><code>openrouter/anthropic/claude-haiku-4-5</code></td>
+<td><code>openrouter/anthropic/claude-haiku-4.5</code></td>
 </tr>
 <tr>
 <td>Qwen</td>
-<td><code>openrouter/qwen/qwen3-32b</code></td>
+<td><code>openrouter/qwen/qwen3.7-flash</code></td>
 </tr>
 <tr>
 <td>Meta</td>
-<td><code>openrouter/meta-llama/llama-3.1-8b-instruct</code></td>
+<td><code>openrouter/meta-llama/llama-4-scout</code></td>
 </tr>
 </tbody>
 </table>
@@ -881,11 +881,11 @@ def make_agent(model_string: str) -&gt; LlmAgent:
     )
 
 MODELS = [
-    &quot;openrouter/google/gemini-2.5-flash-lite&quot;,
-    &quot;openrouter/openai/gpt-4o-mini&quot;,
-    &quot;openrouter/anthropic/claude-haiku-4-5&quot;,
-    &quot;openrouter/qwen/qwen3-32b&quot;,
-    &quot;openrouter/meta-llama/llama-3.1-8b-instruct&quot;,
+    &quot;openrouter/google/gemini-3.7-flash&quot;,
+    &quot;openrouter/openai/gpt-5.6-luna&quot;,
+    &quot;openrouter/anthropic/claude-haiku-4.5&quot;,
+    &quot;openrouter/qwen/qwen3.7-flash&quot;,
+    &quot;openrouter/meta-llama/llama-4-scout&quot;,
 ]
 
 for m in MODELS:
@@ -940,7 +940,7 @@ ollama pull qwen3:8b     # downloads the model
 model=&quot;gemini-2.5-flash&quot;
 
 # LiteLLM-wrapped — through OpenRouter, OpenAI-shaped
-model=LiteLlm(model=&quot;openrouter/google/gemini-2.5-flash-lite&quot;)
+model=LiteLlm(model=&quot;openrouter/google/gemini-3.7-flash&quot;)
 </code></pre>
 <p>Both work. The native form is the default if you pass a plain string. All Gemini-specific features are available there: Google Search grounding, thinking budgets, the Live API, long-context caching. Module 11 through Module 13 use this form exclusively, because those modules teach Gemini-only features that don&rsquo;t exist in the OpenAI-shaped interface.</p>
 <p>The LiteLLM-wrapped form is what lets you use Gemini interchangeably with Claude and GPT. Students who only have an OpenRouter key can still run every Part 1 demo. You lose access to Gemini-specific features, but you gain portability.</p>
@@ -991,7 +991,7 @@ For any code question:
 <p>Vendor-neutrality is a <strong>capability</strong>, not a habit. You don&rsquo;t swap models because you can. You swap for specific reasons. Three scenarios where it actually earns its keep.</p>
 <p><strong>Failover.</strong> A provider has an outage. Claude&rsquo;s API goes down, which happens every few months; GPT rate-limits you during a traffic spike; Gemini has a regional incident. A one-line config change sends traffic to a surviving provider. This is the main reason most production ADK deployments bother with LiteLLM at all. Done well, your users don&rsquo;t notice the failover happened.</p>
 <p><strong>Per-task capability.</strong> Different models are genuinely good at different things. GPT-5 reasons better through obscure math. Claude Opus writes cleaner code in several languages. Gemini grounds in live web results natively (a Gemini-only feature, see Module 11). Instead of forcing one model to do everything, compose with <code>sub_agents</code> or <code>AgentTool</code> (Module 06) and give each sub-agent the model best suited to its task.</p>
-<p><strong>Cost optimization.</strong> A coarse version: route cheap queries to Haiku / GPT-4o-mini / Flash-lite (cents per million tokens); route hard queries to Opus / GPT-5 / Pro (dollars per million). The agent&rsquo;s model parameter can be different per sub-agent. Module 07 (callbacks as middleware) and Module 09 (evaluation) give you the hooks to measure which queries are &ldquo;hard&rdquo; and route accordingly.</p>
+<p><strong>Cost optimization.</strong> A coarse version: route cheap queries to Haiku / GPT-5.6 Luna / Gemini Flash-Lite (cents per million tokens); route hard queries to Opus / GPT-5.6 Terra / Gemini Pro (dollars per million). The agent&rsquo;s model parameter can be different per sub-agent. Module 07 (callbacks as middleware) and Module 09 (evaluation) give you the hooks to measure which queries are &ldquo;hard&rdquo; and route accordingly.</p>
 <p>What you should <strong>not</strong> do: A/B-test model swaps on live users without measurement. Different models have different refusal patterns, different formatting biases, different accuracy profiles on your specific task. What looks like an improvement on your own eye-test can be a regression on 5% of your real user queries you never see. Always swap with eval.</p>
 <h2>What to carry forward</h2>
 <p>Six things from this chapter:</p>
@@ -2791,7 +2791,7 @@ import uvicorn
 
 root_agent = LlmAgent(
     name=&quot;temperature_specialist&quot;,
-    model=LiteLlm(model=&quot;openrouter/google/gemini-2.5-flash-lite&quot;),
+    model=LiteLlm(model=&quot;openrouter/openai/gpt-5.6-luna&quot;),
     description=&quot;Converts Celsius to Fahrenheit via convert_c_to_f tool.&quot;,
     instruction=&quot;Convert temperatures. Return only the number.&quot;,
     tools=[convert_c_to_f],

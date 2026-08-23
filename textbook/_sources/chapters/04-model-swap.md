@@ -1,6 +1,6 @@
 # The one-line model swap
 
-Three chapters into this course, every example has used a single model string: `openrouter/google/gemini-2.5-flash-lite`. This chapter opens that abstraction up. By the end of the matching notebook, the *same* agent code will have run on five different providers — Claude, GPT, Gemini, Qwen, and Llama — with one line of configuration changing each time. The rest of the code is untouched.
+Three chapters into this course, every example has used a single model string: `openrouter/google/gemini-3.7-flash`. This chapter opens that abstraction up. By the end of the matching notebook, the *same* agent code will have run on five different providers — Claude, GPT, Gemini, Qwen, and Llama — with one line of configuration changing each time. The rest of the code is untouched.
 
 That is the shape of vendor-neutrality in ADK. This chapter explains how it works, when to use it, and the one prefix gotcha that bites anyone who tries to run a local model without reading the docs first.
 
@@ -12,7 +12,7 @@ Every other model needs a translation layer. That layer is **LiteLLM** — an in
 
 ADK's `LiteLlm` wrapper is a thin adapter that exposes LiteLLM as an ADK-compatible model. Google wrote this adapter precisely so they didn't have to write a custom shim per vendor. Every time LiteLLM adds support for a new provider, ADK inherits it for free.
 
-At runtime, a call to `model=LiteLlm(model="openrouter/anthropic/claude-haiku-4-5")` goes through two translations — OpenAI-shape in, Anthropic-shape out to the provider, Anthropic-shape response back, OpenAI-shape delivered to ADK:
+At runtime, a call to `model=LiteLlm(model="openrouter/anthropic/claude-haiku-4.5")` goes through two translations — OpenAI-shape in, Anthropic-shape out to the provider, Anthropic-shape response back, OpenAI-shape delivered to ADK:
 
 ```
 ADK Agent
@@ -45,11 +45,11 @@ The providers we use across this course:
 
 | Provider | Model string |
 |---|---|
-| Google | `openrouter/google/gemini-2.5-flash-lite` |
-| OpenAI | `openrouter/openai/gpt-4o-mini` |
-| Anthropic | `openrouter/anthropic/claude-haiku-4-5` |
-| Qwen | `openrouter/qwen/qwen3-32b` |
-| Meta | `openrouter/meta-llama/llama-3.1-8b-instruct` |
+| Google | `openrouter/google/gemini-3.7-flash` |
+| OpenAI | `openrouter/openai/gpt-5.6-luna` |
+| Anthropic | `openrouter/anthropic/claude-haiku-4.5` |
+| Qwen | `openrouter/qwen/qwen3.7-flash` |
+| Meta | `openrouter/meta-llama/llama-4-scout` |
 
 The optional `:tier` suffix picks between `:free`, `:beta`, or `:nitro`. Skip it for real work. Free tiers on OpenRouter are aggressively rate-limited and often flaky — they're fine for kicking the tires once, not for a demo that runs reliably every time you open the notebook. The full catalog lives at [openrouter.ai/models](https://openrouter.ai/models).
 
@@ -69,11 +69,11 @@ def make_agent(model_string: str) -> LlmAgent:
     )
 
 MODELS = [
-    "openrouter/google/gemini-2.5-flash-lite",
-    "openrouter/openai/gpt-4o-mini",
-    "openrouter/anthropic/claude-haiku-4-5",
-    "openrouter/qwen/qwen3-32b",
-    "openrouter/meta-llama/llama-3.1-8b-instruct",
+    "openrouter/google/gemini-3.7-flash",
+    "openrouter/openai/gpt-5.6-luna",
+    "openrouter/anthropic/claude-haiku-4.5",
+    "openrouter/qwen/qwen3.7-flash",
+    "openrouter/meta-llama/llama-4-scout",
 ]
 
 for m in MODELS:
@@ -131,7 +131,7 @@ A clarification that comes up almost every time someone looks closely at the mod
 model="gemini-2.5-flash"
 
 # LiteLLM-wrapped — through OpenRouter, OpenAI-shaped
-model=LiteLlm(model="openrouter/google/gemini-2.5-flash-lite")
+model=LiteLlm(model="openrouter/google/gemini-3.7-flash")
 ```
 
 Both work. The native form is the default if you pass a plain string. All Gemini-specific features are available there: Google Search grounding, thinking budgets, the Live API, long-context caching. Module 11 through Module 13 use this form exclusively, because those modules teach Gemini-only features that don't exist in the OpenAI-shaped interface.
@@ -200,7 +200,7 @@ Vendor-neutrality is a **capability**, not a habit. You don't swap models becaus
 
 **Per-task capability.** Different models are genuinely good at different things. GPT-5 reasons better through obscure math. Claude Opus writes cleaner code in several languages. Gemini grounds in live web results natively (a Gemini-only feature, see Module 11). Instead of forcing one model to do everything, compose with `sub_agents` or `AgentTool` (Module 06) and give each sub-agent the model best suited to its task.
 
-**Cost optimization.** A coarse version: route cheap queries to Haiku / GPT-4o-mini / Flash-lite (cents per million tokens); route hard queries to Opus / GPT-5 / Pro (dollars per million). The agent's model parameter can be different per sub-agent. Module 07 (callbacks as middleware) and Module 09 (evaluation) give you the hooks to measure which queries are "hard" and route accordingly.
+**Cost optimization.** A coarse version: route cheap queries to Haiku / GPT-5.6 Luna / Gemini Flash-Lite (cents per million tokens); route hard queries to Opus / GPT-5.6 Terra / Gemini Pro (dollars per million). The agent's model parameter can be different per sub-agent. Module 07 (callbacks as middleware) and Module 09 (evaluation) give you the hooks to measure which queries are "hard" and route accordingly.
 
 What you should **not** do: A/B-test model swaps on live users without measurement. Different models have different refusal patterns, different formatting biases, different accuracy profiles on your specific task. What looks like an improvement on your own eye-test can be a regression on 5% of your real user queries you never see. Always swap with eval.
 
