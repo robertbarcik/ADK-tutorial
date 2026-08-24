@@ -1,12 +1,17 @@
 # ADK Course — Claude instructions
 
 > **Filming / course-plan work?** Read [`FILMING_PLAN.md`](FILMING_PLAN.md) first — it is the
-> video-course plan (Skillmea, Slovak, free-talk notebook walkthroughs, 30 lectures, 2026-08-19)
+> video-course plan (Skillmea, Slovak, free-talk notebook walkthroughs, 31 lectures; 2026-08-24
+> continuity rework: the course is a direct continuation of "Úvod do GenAI v Pythone")
 > and mirrors the "ADK" tab of the Skillmea overview workbook (Management drive). Update both
 > together when the plan changes.
 
-A course on Google's Agent Development Kit (ADK). **The notebooks are the course**: 14 Jupyter
-notebooks (one per module), executed with outputs, plus a textbook. The video course is filmed
+A course on Google's Agent Development Kit (ADK), taught as a **direct continuation of
+"Úvod do GenAI v Pythone"** (repo `genai-in-python-tutorial`): nb01 re-runs the student's own
+function-calling loop and maps it onto ADK; every notebook opens with a "Where you are" block;
+assume the arriving student knows NO async/classes/decorators (profile in
+`training-ops/curriculum/intakes/2026-08-24_adk-bridge/README.md`). **The notebooks are the
+course**: 14 Jupyter notebooks (one per module), executed with outputs, plus a textbook. The video course is filmed
 by talking freely over the notebooks (Testing-GenAI style), not from a script.
 
 ## Course shape
@@ -42,6 +47,7 @@ work from inside the archive (paths are relative to the script).
 
 ```
 FILMING_PLAN.md             video-course lecture plan (mirrors the Skillmea "ADK" tab)
+slides_intro/               7-slide deck for video 0_1 (self-contained HTML; talking-head corner free)
 notebooks/                  NN_slug.ipynb — one per module, executed with outputs; legacy/ = pre-course version
 mcp_servers/                reusable MCP servers for M02 tools demos (and M14)
 scripts/                    python helpers loaded by notebooks when inline code would be too long

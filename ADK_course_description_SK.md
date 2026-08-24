@@ -6,7 +6,7 @@
 
 O AI agentoch dnes hovorí každý, ale postaviť a nasadiť skutočného agenta vie málokto. Medzi jedným zavolaním LLM API a agentom, ktorý číta databázu, volá ďalšie služby, pamätá si konverzácie a beží za HTTPS endpointom, je priepasť. Tento kurz vás cez ňu prevedie.
 
-V štrnástich praktických moduloch prejdete od prvého agenta v Pythone k multi-agentovým orchestráciám, hlasovým agentom v reálnom čase a agentom, ktorí sa rozprávajú s cudzími agentmi cez nový protokol A2A. Ku každému konceptu patrí Jupyter notebook, ktorý si spúšťate s vlastným API kľúčom, takže každú myšlienku vyskúšate hneď, ako ju počujete.
+Kurz je priamym pokračovaním kurzu Úvod do GenAI v Pythone: tam ste si function-calling loop napísali vlastnými rukami, tu ten istý loop dostane mená a produkčnú podobu. V desiatich praktických moduloch prejdete od prvého agenta v Pythone cez nástroje, pamäť a výmenu modelu až po multi-agentové orchestrácie, evaluáciu a nasadenie; k tomu ochutnávka natívneho Gemini a tri bonusové notebooky na samoštúdium (thinking budgets, hlasové Live API, protokol A2A). Ku každému konceptu patrí Jupyter notebook, ktorý si spúšťate s vlastným API kľúčom, takže každú myšlienku vyskúšate hneď, ako ju počujete.
 
 Na konci kurzu budete mať za sebou reálnych fungujúcich agentov a budete presne vedieť, ako ich dostať do produkcie.
 
@@ -61,10 +61,10 @@ Na konci kurzu budete mať za sebou reálnych fungujúcich agentov a budete pres
 
 Toto je technický kurz. Zíde sa vám:
 
-- Slušná znalosť Pythonu.
-- Základná skúsenosť s REST API a príkazovým riadkom. V neskorších moduloch použijeme curl a Docker.
-- Aspoň jedno predchádzajúce zavolanie LLM API. Nemusíte byť expert na machine learning, ale kurz predpokladá, že ste si už niekedy skúsili „hello world" proti OpenAI, Anthropicu alebo Gemini.
-- Jeden API kľúč: buď OpenRouter (odporúčané, celá prvá časť vás vyjde na pár centov), alebo bezplatný kľúč z Google AI Studio pre druhú časť.
+- **Výhodou je absolvovaný kurz Úvod do GenAI v Pythone — tento kurz naň priamo nadväzuje.** V prvom notebooku doslova znovu spustíme function-calling kód z jeho piateho notebooku. Stačí ale aj ekvivalent: viete zavolať LLM API z Pythonu a viete, čo je function calling.
+- Základy Pythonu (funkcie, slovníky, try/except) — presne úroveň predchádzajúceho kurzu. Async, triedy ani dekorátory NEpotrebujete; všetko nové vysvetlíme pri prvom stretnutí.
+- Jeden nový API kľúč: OpenRouter (jeden kľúč = všetci vendori; celá prvá časť vás vyjde na pár dolárov). Bezplatný kľúč z Google AI Studio len na ochutnávku Gemini.
+- Moduly o nasadení sú komentovaná prehliadka — Docker ani cloud účet netreba inštalovať.
 
 Nepotrebujete GPU ani platený účet na Google Cloude.
 

@@ -14,7 +14,7 @@ By the end of the course, you'll have built real working agents, and you'll know
 
 **Built for production, not demos.** Other courses stop at "here's a chatbot that answers one question". This one goes the full distance: memory, evaluation, deployment, guardrails, observability, and the production gotchas that only surface after you ship.
 
-**Four aligned artifacts per module:** slides, speaker notes, a textbook chapter, and a runnable Jupyter notebook. Whichever way you learn best, watching, reading, or coding along, there's a version of every module for you.
+**A direct continuation of "Intro to GenAI in Python".** You hand-wrote a function-calling loop there; here that same loop gets proper names (Agent, Runner, Event, Session) and a production-grade body. Every module opens with a "Where you are" block tying it back to what you already know.
 
 **A one-hour quick path, for the impatient.** Four carefully chosen modules give you the mental model plus the most impressive demo in roughly sixty minutes. It's the fastest way to decide whether the full course is for you.
 
@@ -75,10 +75,10 @@ A focused thirty-minute module on the agent-to-agent protocol. You'll see how on
 
 This is a technical course. To succeed, you should bring:
 
-- **Comfortable Python skills.**
-- **Basic familiarity with REST APIs and the command line.** You'll use curl, Docker, and read OpenAPI specs in later modules.
-- **Experience calling an LLM API at least once before.** You don't need to be a machine learning expert, but the course assumes you've written at least a "hello world" against OpenAI, Anthropic, or Gemini.
-- **One API key.** Either an OpenRouter key (recommended, unlocks all of Part 1 for just a few cents total) or a free-tier Google AI Studio key for Part 2.
+- **Ideally, the "Intro to GenAI in Python" course — this course is its direct continuation.** The first notebook literally re-runs the function-calling code from its notebook 5. An equivalent works too: you can call an LLM API from Python and you know what function calling is.
+- **Basic Python** (functions, dicts, try/except) — exactly the level of the previous course. You do NOT need async, classes, or decorators; everything new is explained at first encounter.
+- **One new API key: OpenRouter** (one key = every vendor; all of Part 1 costs a couple of dollars). A free-tier Google AI Studio key only for the Gemini taster.
+- The deployment modules are a guided tour — no Docker or cloud account to install.
 
 You do NOT need:
 - A GPU

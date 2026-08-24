@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ADK 0_1 — Vitajte: od function callingu k agentom</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy:#1E3A5F; --navy-light:#2A5280; --navy-dark:#122542;
+  --amber:#F59E0B; --amber-dark:#B45309; --highlight-bg:#FEF3C7;
+  --gray-50:#F8F9FA; --gray-200:#E9ECEF; --gray-400:#CED4DA; --gray-600:#868E96; --gray-700:#495057; --gray-900:#212529;
+  --success:#2E7D32; --success-bg:#E8F5E9;
+  --font-sans:'Nunito','Segoe UI',system-ui,-apple-system,sans-serif;
+  --font-mono:'SF Mono','Cascadia Code','Fira Code','Consolas',monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;background:#0e1a2b;font-family:var(--font-sans);color:var(--gray-900)}
+.stage{position:fixed;inset:0;display:flex;align-items:center;justify-content:center}
+.slide{width:1920px;height:1080px;background:#fff;display:none;position:relative;overflow:hidden;
+  transform-origin:center center}
+.slide.active{display:block}
+/* content area keeps the bottom-right sixth (640x360) free for the talking head */
+.content{position:absolute;inset:0 0 0 0;padding:80px 90px 70px 100px}
+.reserve-safe{position:absolute;right:0;bottom:0;width:640px;height:360px;pointer-events:none}
+.kicker{font-size:26px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--amber-dark);margin-bottom:18px}
+h1{font-size:88px;font-weight:800;color:var(--navy);line-height:1.08}
+h2{font-size:64px;font-weight:800;color:var(--navy);margin-bottom:44px}
+.sub{font-size:38px;color:var(--gray-700);margin-top:30px;max-width:1250px;line-height:1.35}
+.footerline{position:absolute;left:110px;bottom:56px;font-size:26px;color:var(--gray-600)}
+.accentbar{position:absolute;left:0;top:0;width:14px;height:100%;background:linear-gradient(180deg,var(--amber),var(--navy))}
+code,.mono{font-family:var(--font-mono)}
+/* slide 1 */
+.title-wrap{display:flex;flex-direction:column;justify-content:center;height:100%;max-width:1400px}
+.title-badge{display:inline-block;background:var(--highlight-bg);color:var(--amber-dark);font-weight:700;
+  font-size:30px;padding:10px 26px;border-radius:999px;margin-bottom:36px;width:max-content}
+/* ladder (slide 2) */
+.ladder{display:flex;flex-direction:column-reverse;gap:22px;max-width:1180px}
+.rung{display:flex;align-items:center;gap:30px;background:var(--gray-50);border:2px solid var(--gray-200);
+  border-radius:14px;padding:26px 36px}
+.rung .num{font-size:30px;font-weight:800;color:#fff;background:var(--navy-light);border-radius:10px;
+  width:64px;height:64px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.rung h3{font-size:36px;color:var(--navy)}
+.rung p{font-size:27px;color:var(--gray-700);margin-top:4px}
+.rung.top{background:var(--highlight-bg);border-color:var(--amber)}
+.rung.top .num{background:var(--amber-dark)}
+/* loop diagram (slides 3,4) */
+.loop{display:grid;grid-template-columns:1fr 52px 1fr 52px 1fr 52px 1fr 52px 1fr;gap:14px;align-items:stretch;width:100%}
+.node{background:var(--gray-50);border:2px solid var(--gray-200);border-radius:14px;padding:20px 22px;min-height:230px}
+.node h4{font-size:25px;color:var(--navy);margin-bottom:10px}
+.node code{font-size:19px;color:var(--gray-700);display:block;line-height:1.45;word-break:break-word}
+.node .tag{display:inline-block;font-size:19px;font-weight:700;color:#fff;background:var(--navy);
+  border-radius:8px;padding:3px 12px;margin-bottom:12px}
+.node.adk{border-color:var(--amber);background:var(--highlight-bg)}
+.node.adk .tag{background:var(--amber-dark)}
+.arrow{display:flex;align-items:center;justify-content:center;font-size:38px;color:var(--gray-400);font-weight:800}
+.loopnote{margin-top:44px;font-size:31px;color:var(--gray-700);max-width:1250px;line-height:1.4}
+/* course map (slide 5) */
+.map{display:grid;grid-template-columns:repeat(2,1fr);gap:20px;max-width:1240px}
+.mrow{display:flex;gap:20px;align-items:center;background:var(--gray-50);border:2px solid var(--gray-200);border-radius:12px;padding:18px 26px}
+.mrow .code{font-family:var(--font-mono);font-weight:700;font-size:26px;color:var(--amber-dark);flex-shrink:0;width:120px}
+.mrow p{font-size:27px;color:var(--gray-800,#343A40)}
+/* cards (slide 6) */
+.cards{display:flex;flex-direction:column;gap:26px;max-width:1220px}
+.card{background:var(--gray-50);border:2px solid var(--gray-200);border-left:10px solid var(--navy-light);border-radius:14px;padding:30px 38px}
+.card.amber{border-left-color:var(--amber)}
+.card h3{font-size:35px;color:var(--navy);margin-bottom:8px}
+.card p{font-size:28px;color:var(--gray-700);line-height:1.4}
+.pageno{position:absolute;right:36px;top:30px;font-size:22px;color:var(--gray-400)}
+</style>
+</head>
+<body>
+<div class="stage">
+
+<!-- 1 · Title -->
+<section class="slide active">
+  <div class="accentbar"></div>
+  <div class="content"><div class="title-wrap">
+    <span class="title-badge">Priame pokračovanie kurzu Úvod do GenAI v Pythone</span>
+    <h1>Google ADK<br>agenti na ktoromkoľvek LLM</h1>
+    <p class="sub">Od function callingu k orchestrácii agentov. Rovnaké notebooky, rovnaký Colab,
+    o jednu vrstvu vyššie.</p>
+  </div></div>
+  <div class="footerline">Robert Barcik · Skillmea</div>
+  <div class="pageno">1 / 7</div>
+</section>
+
+<!-- 2 · The promise / ladder -->
+<section class="slide">
+  <div class="content">
+    <div class="kicker">Sľub z minulého kurzu</div>
+    <h2>Rebrík nad function callingom</h2>
+    <div class="ladder">
+      <div class="rung"><div class="num">1</div><div>
+        <h3>Function calling</h3>
+        <p>„pravdepodobne najužitočnejšia schopnosť veľkých jazykových modelov"</p></div></div>
+      <div class="rung"><div class="num">2</div><div>
+        <h3>Vlna open-source agentov</h3>
+        <p>popularizácia — každý zrazu chcel model, ktorý koná</p></div></div>
+      <div class="rung"><div class="num">3</div><div>
+        <h3>MCP</h3>
+        <p>štandardizácia nástrojov — dnes pod Linux Foundation</p></div></div>
+      <div class="rung top"><div class="num">4</div><div>
+        <h3>ADK — orchestračná vrstva</h3>
+        <p>aj zavolanie iného agenta je len function call. Tento kurz.</p></div></div>
+    </div>
+  </div>
+  <div class="pageno">2 / 7</div>
+</section>
+
+<!-- 3 · The agent you already built -->
+<section class="slide">
+  <div class="content">
+    <div class="kicker">Notebook 5 minulého kurzu</div>
+    <h2>Agenta ste už postavili</h2>
+    <div class="loop">
+      <div class="node"><span class="tag">váš kód</span><h4>Konverzácia</h4>
+        <code>messages = [system, user]</code></div>
+      <div class="arrow">→</div>
+      <div class="node"><span class="tag">váš kód</span><h4>Volanie modelu</h4>
+        <code>client.responses.create(...&nbsp;tools=tools)</code></div>
+      <div class="arrow">→</div>
+      <div class="node"><span class="tag">model</span><h4>Rozhodnutie</h4>
+        <code>function_call:<br>get_current_weather</code></div>
+      <div class="arrow">↩</div>
+      <div class="node"><span class="tag">váš kód</span><h4>Vykonanie</h4>
+        <code>available_functions[name](**args)</code></div>
+      <div class="arrow">→</div>
+      <div class="node"><span class="tag">model</span><h4>Finálna odpoveď</h4>
+        <code>„V Bratislave je 21 °C a slnečno."</code></div>
+    </div>
+    <p class="loopnote">Presne toto robí <span class="mono">chat_with_function_execution()</span> —
+    päť krokov, ktoré ste napísali vlastnými rukami. Agent bez toho mena.</p>
+  </div>
+  <div class="pageno">3 / 7</div>
+</section>
+
+<!-- 4 · What ADK adds -->
+<section class="slide">
+  <div class="content">
+    <div class="kicker">Ten istý obrázok, nové mená</div>
+    <h2>Čo pridáva ADK</h2>
+    <div class="loop">
+      <div class="node adk"><span class="tag">Session</span><h4>Konverzácia</h4>
+        <code>váš messages list —<br>uložený, viacužívateľský</code></div>
+      <div class="arrow">→</div>
+      <div class="node adk"><span class="tag">LlmAgent</span><h4>Definícia agenta</h4>
+        <code>inštrukcie + model +<br>tools=[funkcia]</code></div>
+      <div class="arrow">→</div>
+      <div class="node adk"><span class="tag">Runner</span><h4>Slučka</h4>
+        <code>vašich 5 krokov,<br>napísaných raz a poriadne</code></div>
+      <div class="arrow">↩</div>
+      <div class="node adk"><span class="tag">Event</span><h4>Každý krok viditeľný</h4>
+        <code>tool_call · tool_resp ·<br>final — typované objekty</code></div>
+      <div class="arrow">→</div>
+      <div class="node"><span class="tag">bonus</span><h4>Schéma zadarmo</h4>
+        <code>34 riadkov JSON schémy<br>vyrobí docstring</code></div>
+    </div>
+    <p class="loopnote">Žiadna mágia. Váš loop, zovšeobecnený tímom, ktorý narazil na všetky
+    jeho limity — a vendor-neutrálny: ten istý agent beží na GPT, Claude aj Gemini.</p>
+  </div>
+  <div class="pageno">4 / 7</div>
+</section>
+
+<!-- 5 · Course map -->
+<section class="slide">
+  <div class="content">
+    <div class="kicker">Mapa kurzu</div>
+    <h2>Desať notebookov, jeden rebrík</h2>
+    <div class="map">
+      <div class="mrow"><span class="code">01</span><p>Mentálny model: 4 primitívy, most z minulého kurzu</p></div>
+      <div class="mrow"><span class="code">02</span><p>Nástroje: 4 príchute (funkcia, API, MCP, agent)</p></div>
+      <div class="mrow"><span class="code">03</span><p>Session a state: čo si agent pamätá</p></div>
+      <div class="mrow"><span class="code">04</span><p>Výmena modelu: 5 vendorov, 1 riadok</p></div>
+      <div class="mrow"><span class="code">05–06</span><p>Skladanie agentov: workflow a multi-agent</p></div>
+      <div class="mrow"><span class="code">07–08</span><p>Produkčné návyky: callbacky, trvalá pamäť</p></div>
+      <div class="mrow"><span class="code">09–10</span><p>Evaluácia a nasadenie: prehliadky</p></div>
+      <div class="mrow"><span class="code">11</span><p>Bonus: čo získate s natívnym Gemini (12–14 samoštúdium)</p></div>
+    </div>
+    <p class="loopnote">Všetko beží v Colabe. Notebooky sú po anglicky, hovoríme po slovensky —
+    ako v predchádzajúcich kurzoch.</p>
+  </div>
+  <div class="pageno">5 / 7</div>
+</section>
+
+<!-- 6 · What you need -->
+<section class="slide">
+  <div class="content">
+    <div class="kicker">Vstupné požiadavky</div>
+    <h2>Čo potrebujete</h2>
+    <div class="cards">
+      <div class="card"><h3>Absolvovaný kurz Úvod do GenAI v Pythone</h3>
+        <p>hlavne kapitolu o function callingu — tento kurz na ňu priamo nadväzuje a v prvom
+        notebooku váš kód doslova znovu spustíme</p></div>
+      <div class="card amber"><h3>Jeden nový kľúč: OpenRouter</h3>
+        <p>jeden kľúč = všetci vendori (OpenAI, Anthropic, Google, Qwen, Meta). Celý kurz stojí
+        pár dolárov. Váš OPENAI_API_KEY otvára len jedného vendora — preto nestačí.</p></div>
+      <div class="card"><h3>Colab ako doteraz</h3>
+        <p>žiadna inštalácia, žiadne GPU, kľúč do Secrets presne ako v minulom kurze</p></div>
+    </div>
+  </div>
+  <div class="pageno">6 / 7</div>
+</section>
+
+<!-- 7 · How to study + what next -->
+<section class="slide">
+  <div class="content">
+    <div class="kicker">Ako študovať</div>
+    <h2>Klikajte so mnou, potom sami</h2>
+    <div class="cards">
+      <div class="card"><h3>Spúšťajte bunky spolu s videom</h3>
+        <p>každé video = jeden úsek notebooku; na konci každého modulu je „Your Turn" —
+        krátke úlohy bez známkovania</p></div>
+      <div class="card"><h3>Poradie: 01 → 10, lineárne</h3>
+        <p>každý modul stavia na predchádzajúcom; ponáhľate sa? Quick path: 01 → 02 → 05 → 11</p></div>
+      <div class="card amber"><h3>Čo potom</h3>
+        <p>Testovanie generatívnej AI — agentov, ktorých tu postavíte, tam budeme testovať
+        a útočiť na nich. A ďalej: MCP, vektorové databázy a RAG.</p></div>
+    </div>
+  </div>
+  <div class="pageno">7 / 7</div>
+</section>
+
+</div>
+<script>
+const slides=[...document.querySelectorAll('.slide')];let cur=0;
+function show(i){cur=Math.max(0,Math.min(slides.length-1,i));slides.forEach((s,j)=>s.classList.toggle('active',j===cur));}
+function fit(){const s=Math.min(innerWidth/1920,innerHeight/1080);
+  slides.forEach(sl=>sl.style.transform=`scale(${s})`);}
+addEventListener('keydown',e=>{
+  if(['ArrowRight','PageDown',' '].includes(e.key))show(cur+1);
+  if(['ArrowLeft','PageUp'].includes(e.key))show(cur-1);
+  if(e.key==='Home')show(0); if(e.key==='End')show(slides.length-1);});
+addEventListener('resize',fit);fit();
+// ?slide=N for the renderer
+const p=new URLSearchParams(location.search);if(p.has('slide'))show(+p.get('slide')-1);
+</script>
+</body>
+</html>

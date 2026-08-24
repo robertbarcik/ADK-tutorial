@@ -76,7 +76,7 @@ The production use case: your company already has an API with a spec. Point the 
 
 ## Flavor 3 — McpToolset
 
-Model Context Protocol is Anthropic's standard for exposing tools to agents. It was donated to the Linux Foundation in December 2025 and is now the de facto standard — Anthropic, Google, OpenAI, Microsoft, the open-source agent stack, every serious player ships MCP support. An MCP server is a separate process that exposes a set of tools; your agent connects to it over stdio or HTTP and uses its tools as if they were local.
+Model Context Protocol is Anthropic's standard for exposing tools to agents. It was donated to the Linux Foundation in December 2025 and is now the de facto standard — Anthropic, Google, OpenAI, Microsoft, the open-source agent stack, every serious player ships MCP support. An MCP server is a separate process that exposes a set of tools; a client connects, asks `list_tools`, then calls `call_tool`. You may have met MCP twice already: as a *remote* hosted tool in the Intro to GenAI in Python course (where OpenAI ran the client for you), and — if you took the MCP course — by writing servers yourself. What is new here: ADK is the client, it runs on your machine, and it launches a local server as a subprocess, so you finally watch the handshake up close.
 
 ```python
 from google.adk.tools.mcp_tool.mcp_toolset import McpToolset
