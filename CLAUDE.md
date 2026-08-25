@@ -78,16 +78,31 @@ Reference: `barcik-training-publications/_sources/token-economics/chapters/01_ge
 - **No emojis in slides, speaker notes, or textbook.**
 - Speaker notes are spoken delivery — readable straight into a microphone. No "let's take a look at...". Just say the thing.
 
-### Notebooks → hybrid voice
-Reference: the existing `notebooks/legacy/*.ipynb` — particularly after the
-April 2026 "notebook guidelines" updates — for the target tone.
+### Notebooks → classroom voice (changed 2026-08-25 — NOT Token Economics)
+Reference: `genai-in-python-tutorial/5_function_calling/5_function_calling.ipynb` (the course
+students take right before this one) and this repo's reworked `notebooks/01_…`/`02_…`. Robert's
+verdict on the earlier book-voice notebooks: "exhausting". The rules that fix it:
+
+- **Short markdown cells** — ~120 words / one idea per cell, hard max ~200. Never stack
+  three concepts in one cell; split around the code they explain (read → run → see → read).
+- **Motivation before machinery.** Every concept opens with the situation the student would
+  actually be in (one sentence), then the **bolded term + plain gloss/analogy**, then code.
+  Never definition-first.
+- **Ritual cells**: "### 🔍 What just happened?" after every demo run; "### 🎯 Mini-task"
+  interleaved right after each concept (not batched at the end).
+- **One running story per notebook** (nb02 = the IT help desk) — new concept, same story.
+- **Sectioning is load-bearing**: H1 section names are what FILMING_PLAN and the Skillmea tab
+  reference (videos = sections, not cell numbers). Renaming a section = update both.
+- Warm classroom tone: "Let's", restatements, encouragement are fine. Plumbing and caveats get
+  demoted to code comments or short ⚠️ notes after the demo, never full narrative weight.
+  Inline forward references to other modules are cut except in "Next up".
 
 - **Colab-first.** `!pip install -q` at the top, `userdata.get(...)` + `getpass` fallback + optional `.env` load. Notebooks must run unchanged on Colab and on a local Jupyter.
 - **Use `LlmAgent`** (the user-facing class name), not `Agent` (which is an alias).
 - **Friendly "Your Turn" framing for exercises** — keep this.
 - **Status emojis are fine and encouraged in code output**: ✅ for success, ❌ for error, 💡 for tips, 🔑 for key-setup. They aid visual parsing in a scrolling notebook. *Do not* use decorative emojis in markdown headings (no 🎯, 🛠️ in an `## Our Agent Goals` header).
 - **Verbose, use-case-framed docstrings** on tool functions are a strength — keep them.
-- **Markdown-cell content** still leans Token Economics in voice (direct, specific, no filler) — the friendly structure is in the scaffolding, not in padded prose.
+- **Markdown-cell content** follows the classroom rules above — specific and honest like Token Economics, but chunked, motivated, and warm. The book voice belongs to the textbook only.
 - **Pinned dependencies at install**: match `requirements.txt` versions exactly in `!pip install` lines, so Colab and local get identical environments.
 
 ## Keys and model choice
