@@ -4,7 +4,7 @@ The first time anyone builds an agent by hand, they end up writing roughly the s
 
 Sixty lines. Every time.
 
-If you came here from the *Intro to GenAI in Python* course, you have already written a version of those sixty lines yourself: `get_current_weather`, a hand-written JSON schema, an `available_functions` dispatch dict, and the `chat_with_function_execution` loop of notebook 5. This course's first notebook literally re-runs that code — one changed line points it at OpenRouter — and then maps each piece onto the framework: your loop becomes the `Runner`, your `messages` list becomes the `Session`, your hand-written schema becomes a docstring, your prints become typed `Event`s. Nothing in this course is magic; it is your code, generalized.
+If you came here from the *Intro to GenAI in Python* course, you have already written a version of those sixty lines yourself: `get_current_weather`, a hand-written JSON schema, an `available_functions` dispatch dict, and the `chat_with_function_execution` loop of its function-calling chapter. This course's first notebook literally re-runs that code — one changed line points it at OpenRouter — and then maps each piece onto the framework: your loop becomes the `Runner`, your `messages` list becomes the `Session`, your hand-written schema becomes a docstring, your prints become typed `Event`s. Nothing in this course is magic; it is your code, generalized.
 
 A framework earns its keep when it stops you writing that boilerplate. You write the things that are actually yours — your instruction, your tools, your business logic — and the framework handles the plumbing. That's the deal ADK is offering.
 

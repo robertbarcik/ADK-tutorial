@@ -5,7 +5,7 @@ v classroom štýle; videá kapitol 1–2 = pomenované sekcie notebooku, nie č
 **„ADK"** v `Skillmea overview.xlsx` (Management drive) – 31 lekcií, 9 sekcií, odhad ~3:25 h.
 
 **Kurz je priame pokračovanie „Úvod do GenAI v Pythone".** Študent prichádza s function callingom
-(notebook 5 tamtoho kurzu: `get_current_weather`, ručná JSON schéma, `available_functions`,
+(kapitola o function callingu tamtoho kurzu: `get_current_weather`, ručná JSON schéma, `available_functions`,
 `chat_with_function_execution`, `weather_assistant`), s OpenAI Responses API a Colab Secrets.
 NEPOZNÁ: async/await, triedy, dekorátory. nb01 začína mostom — jeho kód, jedna zmenená
 linka (`base_url` na OpenRouter) — a mapuje jeho loop na 4 primitívy ADK. Každý notebook má hore
@@ -43,7 +43,7 @@ niečo vyjde prirodzenejšie zlúčiť alebo vyhodiť, urob to a ja potom zosúl
 - **Slajdy `slides_intro/index.html`** (7 slajdov, pravý dolný roh voľný na talking head).
 - Sľub z konca minulého kurzu splnený: rebrík function calling → vlna open-source agentov (popularizácia)
   → MCP (štandardizácia) → **ADK = orchestračná vrstva** („aj sub-agent je len function call").
-- Kľúčová veta kurzu: **agenta ste už postavili** — `weather_assistant()` z notebooku 5; tu ten
+- Kľúčová veta kurzu: **agenta ste už postavili** — `weather_assistant()` z minulého kurzu; tu ten
   loop dostane mená: LlmAgent / Runner / Event / Session (slajdy 3–4, ten istý diagram dvakrát).
 - Mapa kurzu (slajd 5), vstupné požiadavky (slajd 6: absolvovaný GenAI v Pythone, OpenRouter kľúč,
   Colab), ako študovať + čo potom: Testing GenAI (slajd 7).
@@ -65,7 +65,7 @@ motivácia → kód → „🔍 What just happened?" → „🎯 Mini-task". Vid
 čísla buniek — pri natáčaní scrolluj po nadpisoch.
 
 ### 1_1 Agent, ktorého ste už postavili · ~8 min · nb01 sekcie „The Agent You Already Built" → „The Ceiling" → „The Map"
-- Otvor sekciou „The Agent You Already Built": rekap notebooku 5 ich menami (`get_current_weather`,
+- Otvor sekciou „The Agent You Already Built": rekap ich kódu z minulého kurzu, ich menami (`get_current_weather`,
   ručná `tools` schéma, `available_functions`, `chat_with_function_execution`).
 - **Spusti obe bunky mosta**: ich kód, jediná zmena = `base_url` na OpenRouter + prefix
   `openai/gpt-5.6-luna` (bez `openrouter/` – ten príde až s LiteLLM, povedz to nahlas).
@@ -132,7 +132,7 @@ príchuť = jedna požiadavka zamestnanca; tabuľka príchutí sa opakuje na za�
   MCP server v repe.
 - **Najprv „First, Look Inside"**: importuj `ticket_mcp_server.py` ako obyčajný modul,
   **spusti priame volanie** `call_tool("search_tickets", {"query": "wifi"})` – databáza je
-  dict, nástroje sú obyčajné funkcie; v súbore spoznajú SVOJ vzor z notebooku 5 (ručné
+  dict, nástroje sú obyčajné funkcie; v súbore spoznajú SVOJ vzor z minulého kurzu (ručné
   schémy v list_tools + if/elif dispatch v call_tool). MCP = len vrstva, ktorá to servíruje
   cez stdin/stdout iným programom. Až potom teória.
 - „MCP in 60 Seconds": stretli ho 2× (hosted tool v minulom kurze – klienta bežal OpenAI;

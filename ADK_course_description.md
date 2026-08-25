@@ -75,7 +75,7 @@ A focused thirty-minute module on the agent-to-agent protocol. You'll see how on
 
 This is a technical course. To succeed, you should bring:
 
-- **Ideally, the "Intro to GenAI in Python" course — this course is its direct continuation.** The first notebook literally re-runs the function-calling code from its notebook 5. An equivalent works too: you can call an LLM API from Python and you know what function calling is.
+- **Ideally, the "Intro to GenAI in Python" course — this course is its direct continuation.** The first notebook literally re-runs the function-calling code you wrote there. An equivalent works too: you can call an LLM API from Python and you know what function calling is.
 - **Basic Python** (functions, dicts, try/except) — exactly the level of the previous course. You do NOT need async, classes, or decorators; everything new is explained at first encounter.
 - **One new API key: OpenRouter** (one key = every vendor; all of Part 1 costs a couple of dollars). A free-tier Google AI Studio key only for the Gemini taster.
 - The deployment modules are a guided tour — no Docker or cloud account to install.
