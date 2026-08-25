@@ -96,6 +96,11 @@ verdict on the earlier book-voice notebooks: "exhausting". The rules that fix it
 - **No cross-course notebook numbers** (2026-08-25): never cite the prior course's notebook
   numbering ("notebook 5") — it may change. Say "the previous course" or "the
   function-calling chapter of the previous course".
+- **Plain vocabulary — no LLMish/writerly expressions** (2026-08-25, Robert's rule): words a
+  teacher wouldn't say aloud to a beginner are out. Named offenders: "load-bearing",
+  "interlude"; same family: "pays out", "the punchline", "cash the promise", "the beat",
+  "canonical", "first-class". Say it plainly: "matters here", "a short break for", "here's
+  the point". Section titles especially — a student must parse them instantly.
 - Warm classroom tone: "Let's", restatements, encouragement are fine. Plumbing and caveats get
   demoted to code comments or short ⚠️ notes after the demo, never full narrative weight.
   Inline forward references to other modules are cut except in "Next up".

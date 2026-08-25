@@ -150,7 +150,7 @@ príchuť = jedna požiadavka zamestnanca; tabuľka príchutí sa opakuje na za�
 - **Spusti prekladateľa.** Rodič zostáva pri kormidle; kontrast so `sub_agents` (transfer celej
   konverzácie) jednou vetou – naostro v 4_5.
 
-### 2_5 Nebezpečné nástroje: potvrdenie patrí do kódu · ~6 min · nb02 sekcie „Interlude" → „Cleanup" → „Key Takeaways"
+### 2_5 Nebezpečné nástroje: potvrdenie patrí do kódu · ~6 min · nb02 sekcie „Which Tools Are Dangerous?" → „Cleanup" → „Key Takeaways"
 - Helpdesk vie tikety čítať – má ich vedieť aj mazať? **Blast radius** ako os návrhu (tabuľka
   4 úrovní rizika).
 - **Spusti `delete_ticket`**: bez tokenu vráti náhľad, nie zmazanie. Stráž = porovnanie reťazcov
@@ -159,27 +159,27 @@ príchuť = jedna požiadavka zamestnanca; tabuľka príchutí sa opakuje na za�
 
 ## Kapitola 3 · Pamäť v rámci session a výmena modelu (notebooky 03 a 04)
 
-### 3_1 Session a state: prefixy rozhodujú, čo prežije · ~6 min · nb03 bunky 8–9 (teória)
+### 3_1 Session a state: prefixy rozhodujú, čo prežije · ~6 min · nb03 sekcie „What a Session Holds" → „State Prefixes" (teória)
 - Session = `(app_name, user_id, session_id)`; drží eventy (append-only) + state (dict).
   Tri služby: InMemory / Database / Vertex.
 - **Prefixy kľúčov** (málo zdokumentované, denne používané): bez prefixu = táto session,
   `user:` = používateľ naprieč sessionmi, `app:` = globálne, `temp:` = jedno volanie.
 
-### 3_2 Pamäť naprieč sessionmi v 80 riadkoch · ~8 min · nb03 bunky 10–19 (spusti 11, 13, 16, 19)
+### 3_2 Pamäť naprieč sessionmi v 80 riadkoch · ~8 min · nb03 sekcie „Writing State From a Tool" → „Three Ways to Write State" (spusti demá)
 - Nástroj s `tool_context: ToolContext` zapíše `user:favorite_color`; `output_key` uloží poslednú
   odpoveď bez prefixu.
 - Session 2 toho istého používateľa **štartuje** s `user:favorite_color`, `last_response` tam nie je.
   Agent zavolá `recall_favorite_color` → „Teal." Žiadna DB, žiadny vector store – prefix.
-- Pasca (bunka 19): `sess.state["..."] = ...` na vrátenej session sa **neuloží** – trvalé sú len
+- Pasca (sekcia „Three Ways to Write State — Only Two Persist"): `sess.state["..."] = ...` na vrátenej session sa **neuloží** – trvalé sú len
   `output_key` a `tool_context.state`.
 
-### 3_3 Každý krok je Event; súbory ako artefakty · ~5 min · nb03 bunky 20–24 (spusti 21)
+### 3_3 Každý krok je Event; súbory ako artefakty · ~5 min · nb03 sekcie „Events" → „Artifacts" → „Stored Memory Goes Stale" (spusti replay)
 - Prejdi históriu session 1: 4 eventy, `state_delta` pri každom zápise; state = projekcia eventov
   (event sourcing – log súbor so štruktúrou).
 - Artefakty = Git LFS pre agentov (binárne dáta mimo eventov), tri služby ako pri sessions.
 - Minúta z interlude: pamäť zastaráva – čo si agent „pamätá" o projekte spred mesiacov, over.
 
-### 3_4 Jeden agent, päť modelov: výmena jedným riadkom · ~7 min · nb04 bunky 8–13 (spusti 11, 12)
+### 3_4 Jeden agent, päť modelov: výmena jedným riadkom · ~7 min · nb04 sekcie „How the One-Line Swap Works" → „One Agent, Five Providers" (spusti päťmodelový beh)
 - `LiteLlm` = prekladová vrstva k ~100 poskytovateľom (OpenAI tvar → čokoľvek); Google ju
   zabalil do ADK, aby nepísal shim per vendor.
 - OpenRouter konvencia `openrouter/<provider>/<model>`; jeden kľúč, jedna faktúra.
@@ -188,7 +188,7 @@ príchuť = jedna požiadavka zamestnanca; tabuľka príchutí sa opakuje na za�
   nahlas" (reasoning z Pod kapotou presakuje ako text) – ukázať sa dá cez chat() z M01. (Tu môžeš pridať svoj pohľad
   vendor vs open-weight z Testing 4_4.)
 
-### 3_5 Ollama, natívny Gemini a kedy model naozaj meniť · ~5 min · nb04 bunky 14–15, 19 (nič nespúšťaš)
+### 3_5 Ollama, natívny Gemini a kedy model naozaj meniť · ~5 min · nb04 sekcie „Free and Local: Ollama" → „Native Gemini or Wrapped Gemini?" → „When Is Swapping Actually Worth It?" (nič nespúšťaš)
 - Lokálne modely cez Ollamu (v minulom kurze bežali Qwen cez HF – toto je ekvivalent pre vlastný
   stroj): **`ollama_chat/`**, nie `ollama/` (inak nekonečné tool-call slučky).
 - `model="gemini-2.5-flash"` (natívne) vs `LiteLlm("openrouter/google/...")` – oboje funguje,
@@ -198,57 +198,57 @@ príchuť = jedna požiadavka zamestnanca; tabuľka príchutí sa opakuje na za�
 
 ## Kapitola 4 · Skladanie agentov (notebooky 05 a 06)
 
-### 4_1 Skladanie agentov a prvý workflow: SequentialAgent · ~7 min · nb05 bunky 8–11 (spusti 10)
+### 4_1 Skladanie agentov a prvý workflow: SequentialAgent · ~7 min · nb05 sekcie „The Three Shapes — One Picture" → „SequentialAgent — Your First Pipeline" (spusti pipeline)
 - ASCII obrázok: Sequential / Parallel / Loop.
 - Pipeline sumarizátor → prekladateľ: `output_key="summary"` zapíše do state, `{summary}` v
   inštrukcii ďalšieho agenta číta. **State je rúra**; `{key?}` = voliteľné.
 
-### 4_2 Paralelné vetvy: ParallelAgent · ~5 min · nb05 bunky 12–14 (spusti 13)
+### 4_2 Paralelné vetvy: ParallelAgent · ~5 min · nb05 sekcia „ParallelAgent — Three at Once" (spusti)
 - Traja výskumníci súbežne, každý do vlastného kľúča; autori sa prepletajú podľa dokončenia;
   čas ≈ najpomalší, nie súčet (pozri `⏱ Total wall time`).
 
-### 4_3 LoopAgent: generátor a kritik · ~8 min · nb05 bunky 15–17 (spusti 16)
+### 4_3 LoopAgent: generátor a kritik · ~8 min · nb05 sekcia „LoopAgent — Generator and Critic" (spusti)
 - Kanonický vzor ADK: generátor → kritik zapíše kritiku do state → generátor číta `{critique?}`
   a opraví → kým kritik nezavolá `exit_loop`. **Vždy `max_iterations`.**
 - Prečítaj slučku v prúde eventov (niekedy prejde na prvý pokus – povedz, že to je tiež výsledok;
   prípadne sprísni kritika a spusti znova).
 
-### 4_4 Vnorené workflow a kedy nechať rozhodovať LLM · ~5 min · nb05 bunky 18–21 (spusti 19)
+### 4_4 Vnorené workflow a kedy nechať rozhodovať LLM · ~5 min · nb05 sekcie „Nesting Workflows" → „Workflow Agent, or Let the LLM Decide?" (spusti vnorený beh)
 - Workflow sú agenti → vnárajú sa: paralelný prieskum + sekvenčná syntéza (5 volaní za čas ~2).
 - Deterministické workflow (predvídateľné, testovateľné) vs orchestrátor s `sub_agents`, kde
   LLM vyberá ďalší krok (flexibilné, drahšie, ťažšie testovať).
 
-### 4_5 Dva vzory multi-agent: transfer a konzultant · ~9 min · nb06 bunky 8–23 (spusti 13, 14, 19, 20)
+### 4_5 Dva vzory multi-agent: transfer a konzultant · ~9 min · nb06 sekcie „Three Ways to Combine Agents" → „Pattern 1 — sub_agents" → „Pattern 2 — AgentTool" → „Which Pattern When?" (spusti demá oboch patternov)
 - Splnený sľub z videa o function callingu v minulom kurze: „sub-agent ako function call" –
   presne toto video. Rovnakí špecialisti (greeter, weather), iné zapojenie.
 - `sub_agents`: koordinátor → `transfer_to_agent` → **špecialista vlastní konverzáciu**
   (org chart). `AgentTool`: koordinátor položí otázku, dostane výsledok, **ostáva pri kormidle**.
-- Vedľa seba v prúde eventov (bunka 22); pravidlo výberu (bunka 23); kedy sa multi-agent
+- Vedľa seba v prúde eventov (sekcia „Side by Side"); pravidlo výberu (sekcia „Which Pattern When?"); kedy sa multi-agent
   vôbec neoplatí (jeden agent s nástrojmi je často dosť). Interlude 24 len spomenúť.
 
 ## Kapitola 5 · Produkčné zručnosti (notebooky 07 a 08)
 
-### 5_1 Callbacky: váš kód pred a po každom kroku agenta · ~5 min · nb07 bunky 8–10, 20 (teória)
+### 5_1 Callbacky: váš kód pred a po každom kroku agenta · ~5 min · nb07 úvod + sekcia „All Six Hooks at a Glance" (teória)
 - before/after × agent/model/tool = šesť hookov. **Jedno pravidlo**: vráť `None` = pokračuj,
   vráť hodnotu = prepíš výsledok (return-to-override). Analógia HTTP middleware.
-- Tabuľka šiestich hookov (bunka 20) – kedy ktorý.
+- Tabuľka šiestich hookov (sekcia „All Six Hooks at a Glance") – kedy ktorý.
 
-### 5_2 Guardrail pred modelom: blocklist · ~6 min · nb07 bunky 11–13 (spusti 12)
+### 5_2 Guardrail pred modelom: blocklist · ~6 min · nb07 sekcia „A Guardrail Before the Model: The Blocklist" (spusti)
 - `before_model_callback` vidí požiadavku skôr než LLM: `password` → pripravená odpoveď, **nula
   tokenov**. Normálna otázka prejde.
 - Zaraď vedľa LLM guardrailov z Testing kurzu (tam druhý model, tu deterministický kód).
 
-### 5_3 Redakcia PII po nástroji a mockovanie nástrojov v testoch · ~8 min · nb07 bunky 14–22 (spusti 15, 18)
+### 5_3 Redakcia PII po nástroji a mockovanie nástrojov v testoch · ~8 min · nb07 sekcie „Redact PII After a Tool" → „Mock a Tool for Tests" → „Which Mechanism When?" (spusti obe demá)
 - `after_tool_callback`: HR nástroj vráti plat/SSN/adresu → callback ich zamaskuje skôr, než
   ich model uvidí; odpoveď agenta to potvrdí.
 - `before_tool_callback`: pre AAPL vráti mock (short-circuit), MSFT ide na „skutočné" API –
   šev pre testy bez volania drahých API (most na Testing nb02).
-- Kedy callbacky vs inštrukcie vs kód nástroja vs pluginy (bunka 21: callbacky = logika jedného
-  agenta, pluginy = politika celej aplikácie) + gotcha pozorovateľnosti (bunka 22: callbacky sa
+- Kedy callbacky vs inštrukcie vs kód nástroja vs pluginy (sekcia „Which Mechanism When?": callbacky = logika jedného
+  agenta, pluginy = politika celej aplikácie) + gotcha pozorovateľnosti (sekcia „One Honest Gap": callbacky sa
   neobjavujú v OpenTelemetry trace – vidíš LLM a tool spany, nie „before_model_callback bežal“;
   ak to potrebuješ, loguj v callbacku sám).
 
-### 5_4 Perzistentné sessions: SQLite a reštart procesu · ~7 min · nb08 bunky 8–14 (spusti 10, 12, 14)
+### 5_4 Perzistentné sessions: SQLite a reštart procesu · ~7 min · nb08 sekcie „Two Ways an Agent Remembers" → „Sessions That Survive a Restart" (spusti before/after reštart)
 - Dve časové škály: session (minúty–hodiny) vs dlhodobá pamäť (mesiace).
 - `DatabaseSessionService(db_url="sqlite+aiosqlite:///...")` – jeden riadok namiesto InMemory
   (pozor: async driver povinný). Ulož preferenciu → súbor existuje → **nová služba nad tým istým
@@ -256,15 +256,15 @@ príchuť = jedna požiadavka zamestnanca; tabuľka príchutí sa opakuje na za�
   `recall_preference` odpovie.
 - Produkcia: vymeníš URL za Postgres/MySQL.
 
-### 5_5 Dlhodobá pamäť: MemoryService a load_memory · ~7 min · nb08 bunky 16–25 (spusti 19, 21, 23)
+### 5_5 Dlhodobá pamäť: MemoryService a load_memory · ~7 min · nb08 sekcie „Memory Across Conversations" → „Old Memories Can Be Wrong" (spusti kroky 1–3)
 - Minulá konverzácia (RaspiKitchen, Pi 5, ESP32) → `add_session_to_memory` → nová session:
   agent zavolá `load_memory` a vybaví si projekt aj hardvér.
 - InMemoryMemoryService = keyword search; produkcia = Vertex / vlastný vector store.
-- Interlude (bunka 25): skeptická pamäť – na dlhých horizontoch over, čo si vybavíš.
+- Sekcia „Old Memories Can Be Wrong": skeptická pamäť – na dlhých horizontoch over, čo si vybavíš.
 
 ## Kapitola 6 · Evaluácia a nasadenie – prehliadky (notebooky 09 a 10)
 
-### 6_1 Evaluácia agentov: prehliadka notebooku 09 · ~10 min · nb09 bunky 8–21 (scrollovať, outputy sú uložené)
+### 6_1 Evaluácia agentov: prehliadka notebooku 09 · ~10 min · nb09 sekcie „The Two Scores" → „Step 1–3" → „The Real Upgrade" → „One Warning" (scrollovať, outputy sú uložené)
 - Dve metriky: **trajektória nástrojov** (zavolal správne nástroje v správnom poradí?) a zhoda
   odpovede (ROUGE-1) – trajektória je tá dôležitá.
 - Modul agenta na disku + `.test.json` (prompt, očakávané tool calls, očakávaná odpoveď) →
@@ -273,22 +273,22 @@ príchuť = jedna požiadavka zamestnanca; tabuľka príchutí sa opakuje na za�
 - Pointa: ROUGE nie je kvalita → skutočný upgrade je LLM sudca (**Testing kurz, kapitola 3**);
   `adk eval` CLI slučka: konverzácia v `adk web` → Save as eval → spúšťaj v CI.
 
-### 6_2 Agent ako HTTP služba: adk api_server · ~7 min · nb10 bunky 5–11 (spusti 6, 8, 9, 11)
+### 6_2 Agent ako HTTP služba: adk api_server · ~7 min · nb10 sekcie „The Folder Every Deploy Tool Expects" → „Run It as a Real HTTP Service" (spusti; port 8765)
 - Nasaditeľný priečinok: `__init__.py`, `agent.py` s `root_agent`, `requirements.txt`, `.env`.
 - `adk api_server <dir>` → FastAPI; `/list-apps`, vytvor session, `POST /run` s JSON správou →
   3 eventy späť, finálna odpoveď. **Toto je produkčný tvar** – ten istý JSON voči Cloud Run.
-- Stopni server (bunka 11). (Ak 404 na `/list-apps`: port 8765 obsadený.)
+- Stopni server (koniec sekcie „Run It as a Real HTTP Service"). (Ak 404 na `/list-apps`: port 8765 obsadený.)
 
-### 6_3 Docker, Cloud Run, Agent Engine a checklist · ~6 min · nb10 bunky 12–22 (prehliadka)
+### 6_3 Docker, Cloud Run, Agent Engine a checklist · ~6 min · nb10 sekcie „Read-Along: Docker" → „The Production Checklist" + „Part 1 Wrap" (prehliadka, nič nespúšťaš)
 - Dockerfile (python slim, pip, `adk api_server --host 0.0.0.0 --port $PORT`) – nasadíš kamkoľvek.
 - `adk deploy cloud_run` (jeden príkaz, GCP účet), Vertex AI Agent Engine (spravovaná cesta,
   sessions/memory za teba), pluginy = prierezové veci (logging, rate limit, auth).
-- Production readiness checklist (bunka 18) – prečítaj body, ktoré považuješ za najdôležitejšie.
+- Production readiness checklist (sekcia „The Production Checklist") – prečítaj body, ktoré považuješ za najdôležitejšie.
 - „Part 1 wrap" – čo už vieš postaviť.
 
 ## Kapitola 7 · Bonus: natívne Gemini (notebook 11; 12–14 samoštúdium)
 
-### 7_1 Čo získate s natívnym Gemini: grounding cez Google Search · ~8 min · nb11 bunky 9–13 (spusti 11; potrebuje GOOGLE_API_KEY)
+### 7_1 Čo získate s natívnym Gemini: grounding cez Google Search · ~8 min · nb11 sekcie „Google Search Grounding" → „One Rule to Remember" (spusti grounding; potrebuje GOOGLE_API_KEY; od sekcie „Self-Study from Here" samoštúdium)
 - Prepnutie: Google AI Studio kľúč + **obyčajný string modelu** (nie LiteLlm) → Gemini-only funkcie.
 - `google_search` ako vstavaný nástroj: odpoveď s aktuálnymi dátami + grounding metadata
   (zdroje) v evente – skutočné citácie.
