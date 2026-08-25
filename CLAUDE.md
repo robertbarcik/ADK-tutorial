@@ -1,6 +1,6 @@
 # ADK Course — Claude instructions
 
-> **Filming / course-plan work?** Read [`FILMING_PLAN.md`](FILMING_PLAN.md) first — it is the
+> **Filming / course-plan work?** Read `training-ops/filming/adk/FILMING_PLAN.md` first — it is the
 > video-course plan (Skillmea, Slovak, free-talk notebook walkthroughs, 31 lectures; 2026-08-24
 > continuity rework: the course is a direct continuation of "Úvod do GenAI v Pythone")
 > and mirrors the "ADK" tab of the Skillmea overview workbook (Management drive). Update both
@@ -34,7 +34,7 @@ by talking freely over the notebooks (Testing-GenAI style), not from a script.
 
 ## The archived scripted-voiceover format
 
-`archive/scripted-voiceover/` holds the earlier production format intact: 15 HTML slide decks
+`training-ops/filming/adk/archive-scripted-voiceover/` holds the earlier production format intact (moved out of this public repo 2026-08-25): 15 HTML slide decks
 (`slides/module-NN-slug/index.html`, built by `slides/build_slides.py`), EN + SK speaker notes
 (`speaker_notes.md`, `speaker_notes_sk.md`), the 77-lecture `LECTURE_PLAN.md`, the slides portal
 `index.html`, and the renderer `slides/render_slides.py` (writes `slides-jpg/` next to it, gitignored).
@@ -46,7 +46,7 @@ work from inside the archive (paths are relative to the script).
 ## Folder conventions
 
 ```
-FILMING_PLAN.md             video-course lecture plan (mirrors the Skillmea "ADK" tab)
+(FILMING_PLAN.md — moved 2026-08-25 to training-ops/filming/adk/; behind-the-scenes files must NOT live in this public student repo)
 slides_intro/               7-slide deck for video 0_1 (self-contained HTML; talking-head corner free)
 notebooks/                  NN_slug.ipynb — one per module, executed with outputs; legacy/ = pre-course version
 mcp_servers/                reusable MCP servers for M02 tools demos (and M14)
@@ -54,7 +54,6 @@ scripts/                    python helpers loaded by notebooks when inline code 
 textbook/_sources/chapters/ NN-slug.md — markdown canonical
 textbook/_sources/tools/    build_html.py
 textbook/index.html         generated output — do NOT hand-edit
-archive/scripted-voiceover/ slides, speaker notes, portal, old lecture plan (see above)
 ```
 
 Drive sync (`training-ops/drive-push`, course key `adk`): only `notebooks/` (minus `legacy/`),

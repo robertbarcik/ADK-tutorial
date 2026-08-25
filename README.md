@@ -4,9 +4,8 @@ A vendor-agnostic course on Google's Agent Development Kit — and a **direct co
 
 The course runs on the **ADK 2.x line** (`google-adk==2.7.1` pinned in `requirements.txt`, re-verified 2026-08-19; the classic agent API taught here is unchanged since 1.x — the graph workflow runtime added in 2.0 is additive).
 
-**Video course (Skillmea, Slovak):** filmed as free-talk notebook walkthroughs — see [`FILMING_PLAN.md`](FILMING_PLAN.md) for the lecture list. The video course covers Part 1 (M01–M10) plus a Gemini taster (M11); notebooks 12–14 are included in the materials for self-study.
+**Video course (Skillmea, Slovak):** filmed as free-talk notebook walkthroughs. The video course covers Part 1 (M01–M10) plus a Gemini taster (M11); notebooks 12–14 are included in the materials for self-study.
 
-> The earlier **scripted-voiceover format** (HTML slide decks, EN + SK speaker notes, 77-lecture plan, slides portal) is kept intact under [`archive/scripted-voiceover/`](archive/scripted-voiceover/) — nothing was deleted, it is simply not the filming path any more. Open `archive/scripted-voiceover/index.html` for the slide portal.
 
 ---
 
@@ -79,7 +78,6 @@ open textbook/index.html
 ## Repository layout
 
 ```
-FILMING_PLAN.md             video-course lecture plan (free-talk notebook walkthroughs)
 notebooks/                  14 runnable exercises, one per module — THE course
 notebooks/legacy/           earlier notebooks, kept for reference
 mcp_servers/                reusable MCP servers used in M02 and M14
@@ -87,7 +85,6 @@ scripts/                    python helpers for notebooks
 textbook/_sources/chapters/ chapter markdown (canonical)
 textbook/_sources/tools/    build_html.py
 textbook/index.html         generated booklet (do not hand-edit)
-archive/scripted-voiceover/ the earlier slides + speaker-notes format (intact, not deleted)
 DEMOS_BROKEN.md             running log of demos that need fixing
 CLAUDE.md                   project conventions for AI collaborators
 ```
