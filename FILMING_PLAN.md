@@ -75,23 +75,29 @@ niečo vyjde prirodzenejšie zlúčiť alebo vyhodiť, urob to a ja potom zosúl
   napísaných raz; `Session` = tvoj messages list s domovom; tvoje printy = `Event`.
 - Voliteľne obrázok: archívny deck M01 slajdy 6–9.
 
-### 1_3 Prvý agent a prúd eventov · ~6 min · nb01 bunky 13–17 (spusti 14, 16)
+### 1_3 Prvý agent a prúd eventov · ~6 min · nb01 bunky 13–18 (spusti 14, 17)
 - `LlmAgent(name, model=LiteLlm(...), description, instruction)` – štyri povinné argumenty, zatiaľ
   bez nástrojov = LLM so system promptom v ADK obale.
 - Pred spustením: bunka 15 odpovedá na otázky v hlave študenta („načo Runner, doteraz mi stačili
   funkcie?", „čo je async a prečo?", „čo je stream?", „prečo je chat() taký dlhý?") – prejdi ich
   nahlas, je to prvý async v ich živote (2 pravidlá: `async def` + `await`).
+- Bunka 15: porovnanie s natívnym Gemini – `model="gemini-2.5-flash"` ako obyčajný string vs
+  `LiteLlm(...)` obal; jediný rozdiel, všetko ostatné (Runner, Session, eventy) identické.
+  Presne preto sme na LiteLlm forme – dôkaz, že ADK nie je viazané na Google modely.
 - `chat()` helper: session per volanie, `Runner`, `run_async()` → **prúd eventov**; budeme ho
   používať celý kurz. Jedna otázka → jeden event s finálnym textom.
 - Eventy = jednotka pozorovateľnosti; v ďalších videách sa prúd rozrastie.
 
-### 1_4 Pridáme nástroj: docstring namiesto schémy · ~6 min · nb01 bunky 18–21 (spusti 19)
+### 1_4 Pridáme nástroj: docstring namiesto schémy · ~6 min · nb01 bunky 19–24 (spusti 20, 22)
 - Najlepší riadok mapovacej tabuľky: v moste písali 34-riadkovú schému ručne; tu `tools=[funkcia]`
   a schému vyrobí ADK z docstringu + typových anotácií (ktoré už písať vedia).
+- **Spusti 20**: funkcia z mosta zopakovaná priamo pod výkladom (type hints + docstring pred očami)
+  a hneď vypísaná vygenerovaná JSON schéma (`_get_declaration()`) – porovnaj s ručnou schémou;
+  úprimná poznámka: ADK 2.7 posiela docstring vcelku, `Args:` sekciu nerozdeľuje per parameter.
 - Tok: model sa rozhodne → `[tool_call] get_current_weather({'location': 'Prague', ...})` → ADK
   vykoná → `[tool_resp]` → `[FINAL]`. Tri eventy; keby model zavolal nástroj zle, vidíš to.
 - `adk web` = bezplatný vizuálny debugger (event timeline); v kurze ostaneme pri textových výpisoch.
-- Domáca úloha = „Your turn" (bunka 22): úloha 0 = ich starý loop na Claude (1 riadok!), vymeniť
+- Domáca úloha = „Your turn" (bunka 25): úloha 0 = ich starý loop na Claude (1 riadok!), vymeniť
   model v ADK, rozbiť nástroj (Reykjavik), vrátiť `get_n_day_weather_forecast` z notebooku 5.
 
 ## Kapitola 2 · Nástroje: štyri príchute (notebook 02)

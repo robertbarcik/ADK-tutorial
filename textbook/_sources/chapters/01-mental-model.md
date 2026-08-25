@@ -52,7 +52,7 @@ greeter = Agent(
 
 The name is how ADK refers to this agent internally, and how other agents refer to it if they need to delegate work to it. The model is wrapped in the `LiteLlm` helper, which is what makes ADK model-agnostic: we'll swap the model string three ways in module four and the rest of the code won't change. The description matters when this agent is a child of another agent — the parent's LLM reads the description to decide whether to route a task here. And the instruction is, for our purposes, the system prompt.
 
-If you add `tools=[get_weather, lookup_ticket]`, the agent can call those Python functions. We'll do exactly that in the next few paragraphs.
+If you add `tools=[get_weather, lookup_ticket]`, the agent can call those Python functions. We'll do exactly that in the next few paragraphs. No schema dict accompanies them: ADK derives the JSON schema the model receives from the function's type hints and docstring, and the notebook prints the generated declaration so you can compare it, field by field, with the schema you hand-wrote in the previous course. One caveat: ADK 2.7 sends the docstring as a single block — the `Args:` section is not split into per-parameter descriptions — so write it to read well as one piece.
 
 ### Runner
 
