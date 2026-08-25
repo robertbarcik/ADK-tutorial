@@ -93,6 +93,9 @@ verdict on the earlier book-voice notebooks: "exhausting". The rules that fix it
 - **One running story per notebook** (nb02 = the IT help desk) — new concept, same story.
 - **Sectioning is load-bearing**: H1 section names are what FILMING_PLAN and the Skillmea tab
   reference (videos = sections, not cell numbers). Renaming a section = update both.
+- **No cross-course notebook numbers** (2026-08-25): never cite the prior course's notebook
+  numbering ("notebook 5") — it may change. Say "the previous course" or "the
+  function-calling chapter of the previous course".
 - Warm classroom tone: "Let's", restatements, encouragement are fine. Plumbing and caveats get
   demoted to code comments or short ⚠️ notes after the demo, never full narrative weight.
   Inline forward references to other modules are cut except in "Next up".
