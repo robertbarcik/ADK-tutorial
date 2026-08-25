@@ -1,8 +1,9 @@
 # Google ADK — plán natáčania (MVP, voľné rozprávanie nad notebookmi)
 
-Vytvorené 2026-08-19, prepracované 2026-08-24 (nadväznosť) a 2026-08-25 (notebooky 01–02
-v classroom štýle; videá kapitol 1–2 = pomenované sekcie notebooku, nie čísla buniek). Zrkadlí tab
-**„ADK"** v `Skillmea overview.xlsx` (Management drive) – 31 lekcií, 9 sekcií, odhad ~3:25 h.
+Vytvorené 2026-08-19, prepracované 2026-08-24 (nadväznosť) a 2026-08-25 (classroom štýl,
+2 prechody: celý kurz + priamejší výklad nb01–03, async ako vlastné video, mapa kurzu ako docx).
+Videá = pomenované sekcie notebooku, nie čísla buniek. Zrkadlí tab
+**„ADK"** v `Skillmea overview.xlsx` (Management drive) – 34 lekcií, 9 sekcií, odhad ~3:38 h.
 
 **Kurz je priame pokračovanie „Úvod do GenAI v Pythone".** Študent prichádza s function callingom
 (kapitola o function callingu tamtoho kurzu: `get_current_weather`, ručná JSON schéma, `available_functions`,
@@ -33,7 +34,7 @@ niečo vyjde prirodzenejšie zlúčiť alebo vyhodiť, urob to a ja potom zosúl
   ti nechce čakať, kľudne rozprávaj nad uloženým outputom a „naživo" spusti len wow bunky
   (2_3 MCP, 3_4 päť modelov, 4_3 Loop, 5_4 reštart, 6_2 HTTP).
 - Odporúčané rozdelenie na 3 dni: **deň 1** = 0_1–3_3 (úvod + most, nb01–03; kapitola 1 má teraz
-  4 videá), **deň 2** = 3_4–5_3 (nb04–07), **deň 3** = 5_4–8_1 (nb08–11, záver).
+  6 videí), **deň 2** = 3_4–5_3 (nb04–07), **deň 3** = 5_4–8_1 (nb08–11, záver).
 
 ---
 
@@ -48,7 +49,14 @@ niečo vyjde prirodzenejšie zlúčiť alebo vyhodiť, urob to a ja potom zosúl
 - Mapa kurzu (slajd 5), vstupné požiadavky (slajd 6: absolvovaný GenAI v Pythone, OpenRouter kľúč,
   Colab), ako študovať + čo potom: Testing GenAI (slajd 7).
 
-### 0_2 Materiály, prostredie a prečo OpenRouter · ~6 min · README + nb01 sekcia „Setup“
+### 0_2 Mapa kurzu: problém → riešenie · ~4 min · docx `slides_intro/Google_ADK_mapa_kurzu.docx`
+- Jednostranová mapa kurzu cez problémy: každý modul = problém, na ktorý narazíš („používateľ
+  sa vráti zajtra — čo si agent pamätá?"), a kde ho kurz rieši. Prejdi riadok po riadku, voľne.
+- Cieľ: študent vidí celý oblúk vopred → vyššia šanca, že kurz dokončí. V päte rýchla cesta
+  (M01 → M02 → M05 → M11).
+- Regenerácia: `python3 slides_intro/mapa_kurzu.py`.
+
+### 0_3 Materiály, prostredie a prečo OpenRouter · ~6 min · README + nb01 sekcia „Setup“
 - Drive priečinok (link do popisu) + GitHub `robertbarcik/ADK-tutorial`; materiály po anglicky,
   videá po slovensky (rovnaká logika ako v Testingu a GenAI v Pythone).
 - Notebooky 01–10 = časť 1 (OpenRouter), 11–14 = Gemini natívne + A2A (samoštúdium, ukážeme 11).
@@ -60,9 +68,9 @@ niečo vyjde prirodzenejšie zlúčiť alebo vyhodiť, urob to a ja potom zosúl
 
 ## Kapitola 1 · Váš prvý agent v ADK (notebook 01)
 
-Notebook 01 má po prerábke (2026-08-25) krátke bunky v štýle GenAI v Pythone: každá sekcia =
-motivácia → kód → „🔍 What just happened?" → „🎯 Mini-task". Video = sekcia (H1 nadpis), nie
-čísla buniek — pri natáčaní scrolluj po nadpisoch.
+Notebook 01 má po prerábke (2026-08-25, 2. prechod) krátke bunky v štýle GenAI v Pythone:
+každá sekcia = motivácia → kód → „🔍 What just happened?" → „🎯 Mini-task". Video = sekcia
+(H1 nadpis), nie čísla buniek — pri natáčaní scrolluj po nadpisoch.
 
 ### 1_1 Agent, ktorého ste už postavili · ~8 min · nb01 sekcie „The Agent You Already Built" → „The Ceiling" → „The Map"
 - Otvor sekciou „The Agent You Already Built": rekap ich kódu z minulého kurzu, ich menami (`get_current_weather`,
@@ -70,35 +78,51 @@ motivácia → kód → „🔍 What just happened?" → „🎯 Mini-task". Vid
 - **Spusti obe bunky mosta**: ich kód, jediná zmena = `base_url` na OpenRouter + prefix
   `openai/gpt-5.6-luna` (bez `openrouter/` – ten príde až s LiteLLM, povedz to nahlas).
 - „🔍 What just happened?": rozhodni – vykonaj – odpovedz = agent. Postavili ho pred mesiacmi.
-- Sekcia „The Ceiling": päť limitov (1 kolo, falošná user správa, loop per projekt, žiadna pamäť,
-  žiadna pozorovateľnosť). Sekcia „The Map": **mapovacia tabuľka kus→kus** – tá je celé video.
+- Sekcia „The Ceiling": päť limitov. Sekcia „The Map": mapa kus→kus — po novom v **celých
+  vetách** (nie tabuľka); prečítaj ju pomaly, zvyšok notebooku ju prechádza kus po kuse.
 
 ### 1_2 Čo je LiteLLM a štyri stavebné kocky ADK · ~6 min · nb01 sekcie „What Is LiteLLM?" → „The Four Building Blocks"
-- LiteLLM = `base_url` trik zovšeobecnený na 100+ providerov (knižnica, nie Google); `LiteLlm`
-  (trieda ADK) = malý adaptér do `model=`. Nemeníme nastavenia ADK, nepíšeme kód modelu.
+- `base_url` trik menil len ADRESU (tvar requestov ostal OpenAI-ovský) → LiteLLM = trik
+  zovšeobecnený na 100+ providerov, prekladá aj tvar.
+- Bunka „So — is LiteLLM part of ADK?": litellm knižnica (open source, nie od Googlu, NIE je
+  súčasť ADK) vs `LiteLlm` trieda (malý adaptér, ktorý JE súčasť ADK — preto import z
+  `google.adk.models`); reťaz agent → adaptér → knižnica → OpenRouter → model.
 - Trojdielny model string `openrouter / openai / gpt-5.6-luna` – ASCII diagram v notebooku.
-- Spusti importy. Sekcia „The Four Building Blocks": tabuľka + reprise (Runner = tvojich 5 krokov
-  napísaných raz; Session = messages list s domovom; printy = Eventy).
+- Spusti importy. Sekcia „The Four Building Blocks": tabuľka + reprise.
 
-### 1_3 Prvý agent: Runner, Session a dve pravidlá async · ~6 min · nb01 sekcia „Your First Agent"
+### 1_3 Prvý agent: LlmAgent je len popis; Runner a Session · ~5 min · nb01 sekcia „Your First Agent"
 - `LlmAgent(...)` = len popis, žiadne API volanie – preto hneď potrebujeme Runner.
 - Bunka „na natívnom Gemini": jeden obyčajný string vs `LiteLlm(...)` obal – celý rozdiel;
   presne preto sme na LiteLlm (dôkaz vendor-neutrality).
-- Tri krátke bunky odpovedajú na otázky v hlave študenta: načo Runner (agent je loop), čo je
-  Session, čo je async (**dve pravidlá**: `async def` + `await` – ich prvý async v živote),
-  čo je stream (`async for`, event za každý krok).
+- „Running It — Why a Runner?": agent je loop → Runner = tvojich 5 krokov napísaných raz;
+  Session = ktorú konverzáciu pokračujeme. Sekcia končí prechodom: medzi nami a spustením
+  stojí slovo `async`.
+
+### 1_4 Päťminútová pauza: async a await v čistom Pythone · ~5 min · nb01 sekcia „A Five-Minute Pause: async, Without Any ADK"
+- **ADK úplne bokom.** Problém: väčšina života agenta je čakanie (sieť). **Spusti sync bunku**:
+  3 predstierané API cally po 1 s, za sebou → `Total: 3.0 s`.
+- **Spusti async bunku**: `async def` (funkcia s čakaním, dá sa pozastaviť) + `await` (miesto
+  čakania; medzitým beží iné) → všetky tri „asking about…" PRED prvým výsledkom, `Total: 1.0 s`.
+- Pointa nahlas: async nerobí prácu rýchlejšie — len program nestojí pri čakaní. Dve pravidlá
+  na celý kurz: `async def` keď je vnútri `await`; volanie s `await`. Jupyter/Colab dovolia
+  `await` priamo v bunke.
+- Mini-task: sleep(2) — 6 sekúnd či 2?
+
+### 1_5 Spustenie agenta: prúd eventov a chat() helper · ~5 min · nb01 sekcia „Running the Agent — a Stream of Events"
+- `run_async()` vracia stream: `async for` → Event za každý krok, hneď ako sa stane.
 - Bunka „The helper, line by line": chat() v piatich obyčajných vetách (otvor priečinok,
   najmi operátora, odovzdaj obálku Content/Part, sleduj eventy, zvyšok je printovanie).
-- Spusti `chat()` helper + greeter; „🔍": jeden event = minimum konverzácie.
+- **Spusti chat() + greeter**; „🔍": jeden event = minimum konverzácie.
 
-### 1_4 Pridáme nástroj: docstring je schéma · ~6 min · nb01 sekcie „Add a Tool" → „A Word on adk web" → „Key Takeaways"
-- Najlepší riadok mapy: v moste 34-riadková schéma ručne; tu `tools=[funkcia]`.
+### 1_6 Pridáme nástroj: docstring je schéma · ~6 min · nb01 sekcie „Add a Tool" → „A Word on adk web" → „Key Takeaways"
+- Najlepší sľub mapy: v moste 34-riadková schéma ručne; tu `tools=[funkcia]`.
 - **Spusti bunku so schémou**: funkcia z mosta zopakovaná + vygenerovaná JSON schéma
   (`_get_declaration()`); porovnaj s ručnou. Úprimne: ADK 2.7 posiela docstring vcelku
   (`Args:` sekciu nerozdeľuje per parameter).
 - **Spusti weather agenta**: prúd narastie na tri eventy (tool_call → tool_resp → FINAL).
-- `adk web` = bezplatný vizuálny debugger (folder layout, event timeline); v kurze ostávame
-  v notebookoch. „🎯 Mini-tasks" ako domáca úloha; Key Takeaways prečítaj voľne.
+- `adk web` = bezplatný vizuálny debugger — teraz s kompletnými krokmi (aktivuj venv, kde sú
+  balíky → `.env` s kľúčom v priečinku agenta → `adk web my_agents` z priečinka NAD ním);
+  v kurze ostávame v notebookoch. „🎯 Mini-tasks" ako domáca úloha; Key Takeaways prečítaj voľne.
 
 ## Kapitola 2 · Nástroje: štyri príchute, jeden príbeh (notebook 02)
 
@@ -108,7 +132,8 @@ príchuť = jedna požiadavka zamestnanca; tabuľka príchutí sa opakuje na za�
 
 ### 2_1 Príbeh IT helpdesku a 1. príchuť: vlastná funkcia · ~8 min · nb02 sekcie „One Story, Four Flavors" → „How Every Tool Works" → „Flavor 1"
 - Otvor príbehom: staviame agenta pre IT helpdesk; štyri požiadavky dňa = štyri príchute nástrojov.
-- Setup len preleť (rovnaký rituál ako M01; plumbing vysvetlený v komentároch).
+- Setup len preleť (rovnaký rituál ako M01; plumbing má v Imports bunke jasne označený
+  voliteľný odsek — netreba vysvetľovať).
 - „How Every Tool Works": diagram (LLM rozhodne → ADK dispatch → nástroj → výsledok) + tabuľka
   štyroch príchutí (odkiaľ je schéma, kde žije kód).
 - **Spusti Flavor 1**: `check_system_status` („nejde mi VPN – je down?") + checklist dobrého
@@ -121,6 +146,9 @@ príchuť = jedna požiadavka zamestnanca; tabuľka príchutí sa opakuje na za�
   schéma nástroja z minulého kurzu).
 - Prejdi spec zhora nadol (servers → paths → get → parameters → responses); `description` polia
   hrajú rolu docstringu.
+- Bunka „Where does a spec come from, in real life?": spec publikuje autor API (docs, často
+  naživo na `/openapi.json`) — nepíšeš ho; + anatómia volania ako URL (server / path /
+  argumenty za `?` — dá sa vložiť do prehliadača).
 - Bunka „The key line": `OpenAPIToolset(spec_dict=...)` dekódovaná upokojujúco – tá istá
   dvojica schéma + kód ako pri Flavor 1, len schéma je zo spec-u a „kód" je HTTP request,
   ktorý ADK napíše za teba; `tools=[fx_toolset]` = balík nástrojov do toho istého slotu.
@@ -133,13 +161,15 @@ príchuť = jedna požiadavka zamestnanca; tabuľka príchutí sa opakuje na za�
 - **Najprv „First, Look Inside"**: importuj `ticket_mcp_server.py` ako obyčajný modul,
   **spusti priame volanie** `call_tool("search_tickets", {"query": "wifi"})` – databáza je
   dict, nástroje sú obyčajné funkcie; v súbore spoznajú SVOJ vzor z minulého kurzu (ručné
-  schémy v list_tools + if/elif dispatch v call_tool). MCP = len vrstva, ktorá to servíruje
-  cez stdin/stdout iným programom. Až potom teória.
+  schémy v list_tools + if/elif dispatch v call_tool). MCP = len balenie: z tých istých funkcií
+  spraví samostatný tool server, ktorého sa hocijaký agent vie spýtať „aké máš nástroje?"
+  a „spusti tento". Až potom teória.
 - „MCP in 60 Seconds": stretli ho 2× (hosted tool v minulom kurze – klienta bežal OpenAI;
   MCP kurz – písali obe strany). Tabuľka „What's Different This Time": tu je klientom ADK
   a server beží ako **subprocess** (vysvetlený: druhý program, stdin/stdout, žiadna sieť).
-- Vnorený `McpToolset(StdioConnectionParams(StdioServerParameters(...)))` čítaj zvnútra von:
-  ktorý program spustiť → ako s ním hovoriť (stdio) → odovzdaj ADK. **Spusti** – handshake,
+- Vnorený `McpToolset(StdioConnectionParams(StdioServerParameters(...)))` čítaj zvnútra von
+  ako tri otázky: ktorý program spustiť → ako s ním hovoriť (bežný textový vstup/výstup
+  programu, s časovým limitom) → kto to celé riadi (ADK). **Spusti** – handshake,
   5 nástrojov, ten istý WiFi tiket ako pri priamom volaní. „🔍": reasoning summary GPT-5.6 (Pod kapotou)
   + dva tool cally v jednom evente (paralelné volania = schopnosť modelu).
 - Cleanup (koniec notebooku): `await ticket_toolset.close()` – nezabudni spustiť pri 2_5.
@@ -160,8 +190,10 @@ príchuť = jedna požiadavka zamestnanca; tabuľka príchutí sa opakuje na za�
 ## Kapitola 3 · Pamäť v rámci session a výmena modelu (notebooky 03 a 04)
 
 ### 3_1 Session a state: prefixy rozhodujú, čo prežije · ~6 min · nb03 sekcie „What a Session Holds" → „State Prefixes" (teória)
+- Nový nábeh na začiatku: kde sa to ukladá (RAM? súbor? DB?), čo presne (celý dialóg vs
+  vytiahnuté fakty), pre koho — a Session už konverzáciu rieši.
 - Session = `(app_name, user_id, session_id)`; drží eventy (append-only) + state (dict).
-  Tri služby: InMemory / Database / Vertex.
+  Kde žije: zatiaľ RAM (InMemory, priznane naivné) — skutočná DB príde v M08 jednou zmenou.
 - **Prefixy kľúčov** (málo zdokumentované, denne používané): bez prefixu = táto session,
   `user:` = používateľ naprieč sessionmi, `app:` = globálne, `temp:` = jedno volanie.
 
@@ -177,7 +209,7 @@ príchuť = jedna požiadavka zamestnanca; tabuľka príchutí sa opakuje na za�
 - Prejdi históriu session 1: 4 eventy, `state_delta` pri každom zápise; state = projekcia eventov
   (event sourcing – log súbor so štruktúrou).
 - Artefakty = Git LFS pre agentov (binárne dáta mimo eventov), tri služby ako pri sessions.
-- Minúta z interlude: pamäť zastaráva – čo si agent „pamätá" o projekte spred mesiacov, over.
+- Minúta zo sekcie „Stored Memory Goes Stale": pamäť zastaráva – čo si agent „pamätá" o projekte spred mesiacov, over.
 
 ### 3_4 Jeden agent, päť modelov: výmena jedným riadkom · ~7 min · nb04 sekcie „How the One-Line Swap Works" → „One Agent, Five Providers" (spusti päťmodelový beh)
 - `LiteLlm` = prekladová vrstva k ~100 poskytovateľom (OpenAI tvar → čokoľvek); Google ju

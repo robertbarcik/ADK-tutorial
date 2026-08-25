@@ -91,7 +91,7 @@ verdict on the earlier book-voice notebooks: "exhausting". The rules that fix it
 - **Ritual cells**: "### 🔍 What just happened?" after every demo run; "### 🎯 Mini-task"
   interleaved right after each concept (not batched at the end).
 - **One running story per notebook** (nb02 = the IT help desk) — new concept, same story.
-- **Sectioning is load-bearing**: H1 section names are what FILMING_PLAN and the Skillmea tab
+- **Sections are the contract**: H1 section names are what FILMING_PLAN and the Skillmea tab
   reference (videos = sections, not cell numbers). Renaming a section = update both.
 - **No cross-course notebook numbers** (2026-08-25): never cite the prior course's notebook
   numbering ("notebook 5") — it may change. Say "the previous course" or "the
@@ -115,6 +115,34 @@ verdict on the earlier book-voice notebooks: "exhausting". The rules that fix it
   import the server module and call its function directly, show the "database" is a dict —
   then present the protocol as "only the layer that serves this to other programs". nb02's
   Flavor 3 look-inside cell is the reference.
+- **Direct voice — name the want first** (added 2026-08-25, 2nd pass): introduce every
+  mechanism from the concrete thing the student wants ("We want the agent to remember the
+  user's favorite color. How? With a tool —"), never from the mechanism or a writerly hook.
+  Banned framings: "One more writer hides in…", "The cleanest way: ask for the running
+  context", any opener whose subject is the prose itself. If the student's goal isn't in the
+  first sentence, rewrite. (nb03's "Writing State From a Tool" is the reference.)
+- **Tables only over known terms** (added 2026-08-25, 2nd pass): a table is a summary device
+  for terms the student already has. If any row introduces a term for the first time, write
+  whole sentences instead — nb01's "The Map" became a slow bulleted list of sentences for
+  exactly this reason.
+- **Label optional depth** (added 2026-08-25, 2nd pass): a skippable technical aside comes
+  *after* a one-sentence conceptual version and starts with an explicit marker — "*Optional
+  detail, only if you're curious:*". Never mix must-know and can-skip in one undifferentiated
+  paragraph. (nb02's Imports cell is the reference.)
+- **Say where things come from in real life** (added 2026-08-25, 2nd pass): when an artifact
+  appears (an OpenAPI spec, a schema, a URL), one cell answers "where would I get this outside
+  the course?" and shows the raw thing — e.g. the API call as one browser-pasteable URL with
+  an annotation ruler. (nb02's "Where does a spec come from" cell is the reference.)
+- **New programming concepts get a pure-Python pause** (added 2026-08-25, 2nd pass): a
+  genuinely new language concept (async) gets its own H1 section — its own video — with a
+  runnable no-ADK demo *before* ADK uses it. (nb01's "A Five-Minute Pause: `async`" is the
+  reference: sync 3.0 s vs async 1.0 s.)
+- **Terminal instructions must be complete** (added 2026-08-25, 2nd pass): any "run this
+  command" includes environment activation, key/`.env` location, and which directory to run
+  from. (nb01's `adk web` steps are the reference.)
+- **Course map docx**: `slides_intro/Google_ADK_mapa_kurzu.docx` (regenerate via
+  `python3 slides_intro/mapa_kurzu.py`) is the one-page problem→module map shown in intro
+  video 0_2 — keep it in sync when modules change.
 
 - **Colab-first.** `!pip install -q` at the top, `userdata.get(...)` + `getpass` fallback + optional `.env` load. Notebooks must run unchanged on Colab and on a local Jupyter.
 - **Use `LlmAgent`** (the user-facing class name), not `Agent` (which is an alias).
