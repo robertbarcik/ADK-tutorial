@@ -87,6 +87,8 @@ motivácia → kód → „🔍 What just happened?" → „🎯 Mini-task". Vid
 - Tri krátke bunky odpovedajú na otázky v hlave študenta: načo Runner (agent je loop), čo je
   Session, čo je async (**dve pravidlá**: `async def` + `await` – ich prvý async v živote),
   čo je stream (`async for`, event za každý krok).
+- Bunka „The helper, line by line": chat() v piatich obyčajných vetách (otvor priečinok,
+  najmi operátora, odovzdaj obálku Content/Part, sleduj eventy, zvyšok je printovanie).
 - Spusti `chat()` helper + greeter; „🔍": jeden event = minimum konverzácie.
 
 ### 1_4 Pridáme nástroj: docstring je schéma · ~6 min · nb01 sekcie „Add a Tool" → „A Word on adk web" → „Key Takeaways"
@@ -118,16 +120,27 @@ príchuť = jedna požiadavka zamestnanca; tabuľka príchutí sa opakuje na za�
   per endpoint, dáme ADK **„menu" celého API** = OpenAPI špecifikáciu (tá istá idea menu ako
   schéma nástroja z minulého kurzu).
 - Prejdi spec zhora nadol (servers → paths → get → parameters → responses); `description` polia
-  hrajú rolu docstringu. **Spusti** – Frankfurter, CHF→JPY.
+  hrajú rolu docstringu.
+- Bunka „The key line": `OpenAPIToolset(spec_dict=...)` dekódovaná upokojujúco – tá istá
+  dvojica schéma + kód ako pri Flavor 1, len schéma je zo spec-u a „kód" je HTTP request,
+  ktorý ADK napíše za teba; `tools=[fx_toolset]` = balík nástrojov do toho istého slotu.
+- **Spusti** – Frankfurter, CHF→JPY.
 - „🔍": ⚠️ `getLatestRate` → `get_latest_rate` (snake_case!); surový HTTP JSON sa vracia nezmenený.
 
 ### 2_3 3. príchuť: MCP server (s rekapituláciou MCP) · ~8 min · nb02 sekcia „Flavor 3"
 - Požiadavka: „aký je stav môjho tiketu?" – tikety žijú v databáze, nástroje už existujú ako
   MCP server v repe.
+- **Najprv „First, Look Inside"**: importuj `ticket_mcp_server.py` ako obyčajný modul,
+  **spusti priame volanie** `call_tool("search_tickets", {"query": "wifi"})` – databáza je
+  dict, nástroje sú obyčajné funkcie; v súbore spoznajú SVOJ vzor z notebooku 5 (ručné
+  schémy v list_tools + if/elif dispatch v call_tool). MCP = len vrstva, ktorá to servíruje
+  cez stdin/stdout iným programom. Až potom teória.
 - „MCP in 60 Seconds": stretli ho 2× (hosted tool v minulom kurze – klienta bežal OpenAI;
   MCP kurz – písali obe strany). Tabuľka „What's Different This Time": tu je klientom ADK
   a server beží ako **subprocess** (vysvetlený: druhý program, stdin/stdout, žiadna sieť).
-- **Spusti** – handshake, 5 nástrojov, WiFi tiket. „🔍": reasoning summary GPT-5.6 (Pod kapotou)
+- Vnorený `McpToolset(StdioConnectionParams(StdioServerParameters(...)))` čítaj zvnútra von:
+  ktorý program spustiť → ako s ním hovoriť (stdio) → odovzdaj ADK. **Spusti** – handshake,
+  5 nástrojov, ten istý WiFi tiket ako pri priamom volaní. „🔍": reasoning summary GPT-5.6 (Pod kapotou)
   + dva tool cally v jednom evente (paralelné volania = schopnosť modelu).
 - Cleanup (koniec notebooku): `await ticket_toolset.close()` – nezabudni spustiť pri 2_5.
 

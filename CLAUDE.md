@@ -96,6 +96,17 @@ verdict on the earlier book-voice notebooks: "exhausting". The rules that fix it
 - Warm classroom tone: "Let's", restatements, encouragement are fine. Plumbing and caveats get
   demoted to code comments or short ⚠️ notes after the demo, never full narrative weight.
   Inline forward references to other modules are cut except in "Next up".
+- **Key-line decode** (added 2026-08-25): every new API construct the student meets
+  (`OpenAPIToolset(spec_dict=...)`, `McpToolset(StdioConnectionParams(...))`,
+  `Runner(...)`, `AgentTool(agent=...)`) gets a plain-words conceptual decode *adjacent to its
+  cell* — quote the line, then calm, not technical: "same schema + code pair as before, only X
+  changed, because Y". Nested constructors are read inside-out as three plain answers. A key
+  line with no adjacent decode is a bug.
+- **Tangibility before protocol** (added 2026-08-25): before introducing wrapping machinery
+  (MCP, deployment servers, eval harnesses), let the student *touch the thing underneath* —
+  import the server module and call its function directly, show the "database" is a dict —
+  then present the protocol as "only the layer that serves this to other programs". nb02's
+  Flavor 3 look-inside cell is the reference.
 
 - **Colab-first.** `!pip install -q` at the top, `userdata.get(...)` + `getpass` fallback + optional `.env` load. Notebooks must run unchanged on Colab and on a local Jupyter.
 - **Use `LlmAgent`** (the user-facing class name), not `Agent` (which is an alias).
