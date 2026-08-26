@@ -22,8 +22,10 @@ by talking freely over the notebooks (Testing-GenAI style), not from a script.
   **Google AI Studio**.
 - **Side step — A2A protocol (M14).** Agent-to-agent communication. Tested against OpenRouter.
 - **Video MVP (2026-08-19):** Part 1 + M11 taster; M12–M14 stay in the materials as self-study.
-- **Agentic Design Patterns interludes** appear as short markdown sections inside relevant notebooks
-  (source: `barcik-training-publications/_sources/agentic-design-patterns/`).
+- **Agentic Design Patterns material** survives as short theory sections inside relevant notebooks
+  (source: `barcik-training-publications/_sources/agentic-design-patterns/`) — but since
+  2026-08-26 **without naming the publication**: Robert's rule, no external-publication
+  name-drops in student materials. Keep the concepts, drop the citation.
 
 ## Two learner paths
 
@@ -139,6 +141,22 @@ verdict on the earlier book-voice notebooks: "exhausting". The rules that fix it
 - **Terminal instructions must be complete** (added 2026-08-25, 2nd pass): any "run this
   command" includes environment activation, key/`.env` location, and which directory to run
   from. (nb01's `adk web` steps are the reference.)
+- **Show, then theorize** (added 2026-08-26, 3rd pass): a module-defining capability gets a
+  runnable demo *before* any theory about it — its own H1 section, its own video. (nb03's
+  "See It First — Conversations Are Stored" is the reference: monday/tuesday sessions,
+  list_sessions, resume — only then "What a Session Holds".)
+- **Everyday words for CS jargon** (added 2026-08-26, 3rd pass): never lean on a term the
+  student can't be assumed to know. Banned without explanation: "dispatch" (say **lookup
+  table**, name → function, no parentheses), "invocation" (say turn or call), "middleware".
+  **client/server** get one plain sentence each on first use (nb02's "What's Different This
+  Time" is the reference). When ADK fills in an argument (ToolContext), say who fills it and
+  that the model never sees it — plainly, before the demo.
+- **Notebook 01 is the course's front door** (added 2026-08-26, 3rd pass): its intro cell is
+  a full welcome — first-notebook framing + GitHub repo link, quick-path note, "what we assume
+  you already know" (concrete skills, not course names), a "What is ADK?" paragraph with the
+  docs link, and the notebook's goal. **No relative links to repo files** (README) — they
+  break in Colab; **no prior-course name references** — platforms rename courses, say "the
+  previous course".
 - **Course map docx**: `slides_intro/Google_ADK_mapa_kurzu.docx` (regenerate via
   `python3 slides_intro/mapa_kurzu.py`) is the one-page problem→module map shown in intro
   video 0_2 — keep it in sync when modules change.
