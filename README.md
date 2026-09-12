@@ -11,9 +11,9 @@ The course runs on the **ADK 2.x line** (`google-adk==2.7.1` pinned in `requirem
 
 ## Two ways to take the course
 
-### ⚡ Quick path — 1½ to 2 hours
+### ⚡ Quick path — 2 to 2½ hours
 
-Four notebooks, in order, on a single OpenRouter key: the core ADK mental model, tools, and both ways of putting agents together.
+Five notebooks, in order, on a single OpenRouter key: the core ADK mental model, tools, both ways of putting agents together, and your own code around every step.
 
 | # | Module | Why it's on the quick path |
 |---|---|---|
@@ -21,6 +21,7 @@ Four notebooks, in order, on a single OpenRouter key: the core ADK mental model,
 | **M02** | Tools as verbs | Tools are what make an agent useful. Four flavors in 20 minutes. |
 | **M05** | Workflow agents | The canonical Generator+Critic refinement loop — the "oh, this is what ADK is good at" moment. |
 | **M06** | Multi-agent hierarchies | The promise the course opens with, kept: a sub-agent is just a function call. `sub_agents` vs `AgentTool`, side by side. |
+| **M07** | Callbacks | Short and essential: six doors where your code runs before or after every step — guardrails, PII redaction, mocks. |
 
 Quick-path modules are marked with **⚡** in the notebooks' first cell and in the textbook sidebar. Optional dessert if you have a Google AI Studio key: **M11** (search grounding with real citations — one import).
 
@@ -34,7 +35,7 @@ Quick-path modules are marked with **⚡** in the notebooks' first cell and in t
 | M04 | The one-line model swap (LiteLLM) | OpenRouter |
 | **M05** ⚡ | Workflow agents — Sequential, Parallel, Loop | OpenRouter |
 | **M06** ⚡ | Multi-agent hierarchies — `sub_agents` vs `AgentTool` | OpenRouter |
-| M07 | Callbacks as middleware | OpenRouter |
+| **M07** ⚡ | Callbacks as middleware | OpenRouter |
 | M08 | Memory — sessions, long-term recall, `load_memory` | OpenRouter |
 | M09 | Evaluation — trajectories, EvalSets | OpenRouter |
 | M10 | Deployment — Cloud Run and vanilla Docker | OpenRouter |

@@ -339,7 +339,7 @@ hr {
 <li><a href="#the-one-line-model-swap">4. The one-line model swap</a></li>
 <li><a href="#workflow-agents" class="quick-path">5. Workflow agents</a></li>
 <li><a href="#multi-agent-hierarchies" class="quick-path">6. Multi-agent hierarchies</a></li>
-<li><a href="#callbacks-as-middleware">7. Callbacks as middleware</a></li>
+<li><a href="#callbacks-as-middleware" class="quick-path">7. Callbacks as middleware</a></li>
 <li><a href="#memory">8. Memory</a></li>
 <li><a href="#evaluation">9. Evaluation</a></li>
 <li><a href="#deployment">10. Deployment</a></li>
@@ -1364,7 +1364,7 @@ coordinator = LlmAgent(
         </section>
 
         <section class="chapter" id="callbacks-as-middleware">
-            <div class="chapter-number">Chapter 7</div>
+            <div class="chapter-number">Chapter 7<span class="quick-path-badge">⚡ Quick path</span></div>
             <h1>Callbacks as middleware</h1>
 <p>Six lifecycle hooks wrap every invocation of an ADK agent. You can intercept any step — the agent starting, the LLM being called, a tool running — observe it, transform it, or <strong>short-circuit it entirely</strong>. This is the cleanest mechanism in the framework for guardrails, caching, PII redaction, mocking, and every other cross-cutting concern that should apply to an agent&rsquo;s lifecycle without polluting its instruction.</p>
 <p>If you have used Express.js middleware, Django middleware, or plugin hooks in any framework, the shape is familiar. <strong>Callbacks are for agents what middleware is for web handlers.</strong> A pipeline of before- and after-hooks around each meaningful step, each of which can decide to let the step proceed or replace it with something else.</p>

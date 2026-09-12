@@ -422,13 +422,14 @@ def build():
         print(f"No chapter files found in {CHAPTERS_DIR}")
         return
 
-    # Filenames that belong to the ~2-hour Quick path (one OpenRouter key). Marked
+    # Filenames that belong to the ~2½-hour Quick path (one OpenRouter key). Marked
     # with a badge in both the sidebar and the chapter header. See README "Quick path".
     QUICK_PATH_FILES = {
         "01-mental-model.md",
         "02-tools.md",
         "05-workflow-agents.md",
         "06-multi-agent.md",
+        "07-callbacks.md",
     }
 
     chapters = []

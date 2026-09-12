@@ -31,8 +31,9 @@ by talking freely over the notebooks (Testing-GenAI style), not from a script.
 ## Two learner paths
 
 - **Full path** — all 13 modules, 6-8 hours.
-- **Quick path (1½–2 hours, one OpenRouter key)** — **M01 → M02 → M05 → M06** (changed
-  2026-09-12 from …→M11: M11 needs a second key; M06 keeps the course's opening promise), marked
+- **Quick path (2–2½ hours, one OpenRouter key)** — **M01 → M02 → M05 → M06 → M07** (changed
+  2026-09-12 from …→M11: M11 needs a second key; M06 keeps the course's opening promise; M07 added
+  the same day at Robert's request — short and essential), marked
   ⚡ in `README.md`, the notebooks' first cell, the textbook (`build_html.py` → `QUICK_PATH_FILES`),
   the intro deck slide 6, the course-map docx footer and the filming plan. M11 is the optional
   add-on. Keep them consistent if the selection changes.
