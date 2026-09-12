@@ -338,12 +338,12 @@ hr {
 <li><a href="#sessions-state-events-artifacts">3. Sessions, State, Events, Artifacts</a></li>
 <li><a href="#the-one-line-model-swap">4. The one-line model swap</a></li>
 <li><a href="#workflow-agents" class="quick-path">5. Workflow agents</a></li>
-<li><a href="#multi-agent-hierarchies">6. Multi-agent hierarchies</a></li>
+<li><a href="#multi-agent-hierarchies" class="quick-path">6. Multi-agent hierarchies</a></li>
 <li><a href="#callbacks-as-middleware">7. Callbacks as middleware</a></li>
 <li><a href="#memory">8. Memory</a></li>
 <li><a href="#evaluation">9. Evaluation</a></li>
 <li><a href="#deployment">10. Deployment</a></li>
-<li><a href="#gemini-unlocks-grounding-and-context-caching" class="quick-path">11. Gemini unlocks — grounding and context caching</a></li>
+<li><a href="#gemini-unlocks-grounding-and-context-caching">11. Gemini unlocks — grounding and context caching</a></li>
 <li><a href="#thinking-budgets">12. Thinking budgets</a></li>
 <li><a href="#live-api-voice-agent">13. Live API voice agent</a></li>
 <li><a href="#a2a-protocol-the-side-step">14. A2A protocol — the side step</a></li>
@@ -1214,7 +1214,7 @@ pipeline = SequentialAgent(
         </section>
 
         <section class="chapter" id="multi-agent-hierarchies">
-            <div class="chapter-number">Chapter 6</div>
+            <div class="chapter-number">Chapter 6<span class="quick-path-badge">⚡ Quick path</span></div>
             <h1>Multi-agent hierarchies</h1>
 <p>Chapter 05 gave you workflow agents — named, declarative control flow. <code>SequentialAgent</code>, <code>ParallelAgent</code>, <code>LoopAgent</code>. You use them when you can name the workflow: &ldquo;always summarize, then translate,&rdquo; &ldquo;always fan out these three researchers,&rdquo; &ldquo;always refine with critic feedback.&rdquo;</p>
 <p>This chapter gives you the other half. <strong>LLM-driven</strong> control flow. When the user&rsquo;s input decides which specialist runs, you don&rsquo;t want a workflow agent. You want the LLM to route. ADK has two patterns for this.</p>
@@ -2096,7 +2096,7 @@ runner = Runner(
         </section>
 
         <section class="chapter" id="gemini-unlocks-grounding-and-context-caching">
-            <div class="chapter-number">Chapter 11<span class="quick-path-badge">⚡ Quick path</span></div>
+            <div class="chapter-number">Chapter 11</div>
             <h1>Gemini unlocks — grounding and context caching</h1>
 <p><strong>Part 2 of the course starts here.</strong></p>
 <p>Ten chapters of vendor-neutral ADK. Everything ran on whichever model you picked — Claude, GPT, Qwen, Gemma, Gemini — via the <code>LiteLlm</code> wrapper. Part 2 is honest about what you give up by staying neutral. Three Gemini-specific capabilities earn their own chapters because nothing else in the market replicates them:</p>

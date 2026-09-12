@@ -30,9 +30,11 @@ by talking freely over the notebooks (Testing-GenAI style), not from a script.
 ## Two learner paths
 
 - **Full path** — all 14 modules, 6-8 hours.
-- **Quick path (~1 hour)** — **M01 → M02 → M05 → M11**, marked ⚡ in `README.md`, the notebooks'
-  first cell, and the textbook (`textbook/_sources/tools/build_html.py` → `QUICK_PATH_FILES`).
-  Keep them consistent if the selection changes.
+- **Quick path (1½–2 hours, one OpenRouter key)** — **M01 → M02 → M05 → M06** (changed
+  2026-09-12 from …→M11: M11 needs a second key; M06 keeps the course's opening promise), marked
+  ⚡ in `README.md`, the notebooks' first cell, the textbook (`build_html.py` → `QUICK_PATH_FILES`),
+  the intro deck slide 6, the course-map docx footer and the filming plan. M11 is the optional
+  add-on. Keep them consistent if the selection changes.
 
 ## The archived scripted-voiceover format
 
@@ -58,9 +60,10 @@ textbook/_sources/tools/    build_html.py
 textbook/index.html         generated output — do NOT hand-edit
 ```
 
-Drive sync (`training-ops/drive-push`, course key `adk`): only `notebooks/` (minus `legacy/`),
-`mcp_servers/` and `requirements.txt` go to the Courses drive folder
-`5. Google ADK (SYNCED)/course_materials (shared)` — slides/textbook/archive never reach students
+Drive sync (`training-ops/drive-push`, course key `adk`): `notebooks/` (minus `legacy/`),
+`mcp_servers/`, `requirements.txt` and `slides_intro/` (intro deck + course-map docx — Robert
+opens them from Drive when lecturing; added 2026-09-12) go to the Courses drive folder
+`5. Google ADK (SYNCED)/course_materials (shared)` — textbook/archive never reach students
 via Drive. Run `python3 training-ops/drive-push/push.py --status --course adk` before and after
 touching notebooks.
 

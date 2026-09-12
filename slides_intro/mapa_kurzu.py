@@ -130,7 +130,7 @@ for module, problem, solution in ROWS:
 
 foot = doc.add_paragraph()
 foot.paragraph_format.space_before = Pt(10)
-r = foot.add_run("Ponáhľate sa?  Rýchla cesta kurzom (~1 hodina): M01 → M02 → M05 → M11.")
+r = foot.add_run("Ponáhľate sa?  Rýchla cesta kurzom (~2 hodiny, jeden kľúč): M01 → M02 → M05 → M06.")
 r.font.bold = True
 r.font.size = Pt(10)
 r.font.color.rgb = DARK

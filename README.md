@@ -11,18 +11,18 @@ The course runs on the **ADK 2.x line** (`google-adk==2.7.1` pinned in `requirem
 
 ## Two ways to take the course
 
-### ⚡ Quick path — ~1 hour
+### ⚡ Quick path — 1½ to 2 hours
 
-Four notebooks, in order, give you the core ADK mental model plus the most-demonstrated wow capabilities.
+Four notebooks, in order, on a single OpenRouter key: the core ADK mental model, tools, and both ways of putting agents together.
 
 | # | Module | Why it's on the quick path |
 |---|---|---|
 | **M01** | Why agents, why ADK | The four primitives (Agent, Runner, Event, Session). Non-negotiable foundation. |
 | **M02** | Tools as verbs | Tools are what make an agent useful. Four flavors in 20 minutes. |
 | **M05** | Workflow agents | The canonical Generator+Critic refinement loop — the "oh, this is what ADK is good at" moment. |
-| **M11** | Gemini grounding + caching | A taste of what Part 2 adds on top of vendor-agnostic ADK. Real citations, 90% caching discount. |
+| **M06** | Multi-agent hierarchies | The promise the course opens with, kept: a sub-agent is just a function call. `sub_agents` vs `AgentTool`, side by side. |
 
-Quick-path modules are marked with **⚡** in the notebooks' first cell and in the textbook sidebar.
+Quick-path modules are marked with **⚡** in the notebooks' first cell and in the textbook sidebar. Optional dessert if you have a Google AI Studio key: **M11** (search grounding with real citations — one import).
 
 ### Full path — 6–8 hours
 
@@ -33,12 +33,12 @@ Quick-path modules are marked with **⚡** in the notebooks' first cell and in t
 | M03 | Sessions, State, Events, Artifacts | OpenRouter |
 | M04 | The one-line model swap (LiteLLM) | OpenRouter |
 | **M05** ⚡ | Workflow agents — Sequential, Parallel, Loop | OpenRouter |
-| M06 | Multi-agent hierarchies — `sub_agents` vs `AgentTool` | OpenRouter |
+| **M06** ⚡ | Multi-agent hierarchies — `sub_agents` vs `AgentTool` | OpenRouter |
 | M07 | Callbacks as middleware | OpenRouter |
 | M08 | Memory — sessions, long-term recall, `load_memory` | OpenRouter |
 | M09 | Evaluation — trajectories, EvalSets | OpenRouter |
 | M10 | Deployment — Cloud Run and vanilla Docker | OpenRouter |
-| **M11** ⚡ | Google Search grounding, long context, context caching | Google AI Studio |
+| M11 | Google Search grounding, long context, context caching | Google AI Studio |
 | M12 | Thinking budgets | Google AI Studio |
 | M13 | Live API — voice agent with interruption | Google AI Studio |
 | M14 | A2A protocol — agent-to-agent | OpenRouter |
@@ -93,7 +93,7 @@ CLAUDE.md                   project conventions for AI collaborators
 
 All exercises are designed to run on cheap models. Default to `openrouter/openai/gpt-5.6-luna` (the course default — deliberately not a Google model, to show ADK is vendor-neutral) or `openrouter/anthropic/claude-haiku-4.5` on OpenRouter (typical module cost: under $0.05 when running all cells). On Google AI Studio, default to `gemini-2.5-flash`; the Live API demo in M13 uses `gemini-3.1-flash-live-preview` for short smoke tests only.
 
-A full Quick path costs under **$0.10** total on OpenRouter + Google AI Studio free tier combined.
+A full Quick path costs under **$0.10** total on OpenRouter — no second key needed.
 
 ## License
 
