@@ -112,11 +112,11 @@ code,.mono{font-family:var(--font-mono)}
 <!-- 3 · The agent you already built -->
 <section class="slide">
   <div class="content">
-    <div class="kicker">Notebook 5 minulého kurzu</div>
+    <div class="kicker">Function calling z minulého kurzu</div>
     <h2>Agenta ste už postavili</h2>
     <div class="loop">
       <div class="node"><span class="tag">váš kód</span><h4>Konverzácia</h4>
-        <code>messages = [system, user]</code></div>
+        <code>conversation = [developer, user]</code></div>
       <div class="arrow">→</div>
       <div class="node"><span class="tag">váš kód</span><h4>Volanie modelu</h4>
         <code>client.responses.create(...&nbsp;tools=tools)</code></div>
@@ -125,13 +125,13 @@ code,.mono{font-family:var(--font-mono)}
         <code>function_call:<br>get_current_weather</code></div>
       <div class="arrow">↩</div>
       <div class="node"><span class="tag">váš kód</span><h4>Vykonanie</h4>
-        <code>available_functions[name](**args)</code></div>
+        <code>functions[name](**args)</code></div>
       <div class="arrow">→</div>
       <div class="node"><span class="tag">model</span><h4>Finálna odpoveď</h4>
         <code>„V Bratislave je 21 °C a slnečno."</code></div>
     </div>
-    <p class="loopnote">Presne toto robí <span class="mono">chat_with_function_execution()</span> —
-    päť krokov, ktoré ste napísali vlastnými rukami. Agent bez toho mena.</p>
+    <p class="loopnote">Presne toto robí <span class="mono">run_with_tools()</span> —
+    slučka, ktorú ste napísali vlastnými rukami. Agent bez toho mena.</p>
   </div>
   <div class="pageno">3 / 7</div>
 </section>
@@ -143,19 +143,19 @@ code,.mono{font-family:var(--font-mono)}
     <h2>Čo pridáva ADK</h2>
     <div class="loop">
       <div class="node adk"><span class="tag">Session</span><h4>Konverzácia</h4>
-        <code>váš messages list —<br>uložený, viacužívateľský</code></div>
+        <code>váš conversation list —<br>uložený, viacužívateľský</code></div>
       <div class="arrow">→</div>
       <div class="node adk"><span class="tag">LlmAgent</span><h4>Definícia agenta</h4>
         <code>inštrukcie + model +<br>tools=[funkcia]</code></div>
       <div class="arrow">→</div>
       <div class="node adk"><span class="tag">Runner</span><h4>Slučka</h4>
-        <code>vašich 5 krokov,<br>napísaných raz a poriadne</code></div>
+        <code>váš run_with_tools,<br>napísaný raz a poriadne</code></div>
       <div class="arrow">↩</div>
       <div class="node adk"><span class="tag">Event</span><h4>Každý krok viditeľný</h4>
         <code>tool_call · tool_resp ·<br>final — typované objekty</code></div>
       <div class="arrow">→</div>
       <div class="node"><span class="tag">bonus</span><h4>Schéma zadarmo</h4>
-        <code>34 riadkov JSON schémy<br>vyrobí docstring</code></div>
+        <code>ručnú JSON schému<br>vyrobí docstring</code></div>
     </div>
     <p class="loopnote">Žiadna mágia. Váš loop, zovšeobecnený tímom, ktorý narazil na všetky
     jeho limity — a vendor-neutrálny: ten istý agent beží na GPT, Claude aj Gemini.</p>
