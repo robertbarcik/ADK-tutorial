@@ -7,11 +7,10 @@ Ten chapters of vendor-neutral ADK. Everything ran on whichever model you picked
 - **Google Search grounding** (this chapter) — Gemini calls Google Search as a built-in tool, returns cited answers with real URLs, surfaces grounding metadata on the event.
 - **Long context + context caching** (this chapter) — 1M-token input windows (2M on Pro), with 75–90% discount on cached content.
 - **Thinking budgets** (Chapter 12) — a knob that trades latency for reasoning quality.
-- **Live API voice** (Chapter 13) — bidirectional audio streaming with interruption.
 
 The switch from Part 1 is mechanical. Replace `LiteLlm(model="openrouter/google/...")` with the bare string `"gemini-2.5-flash"`. Everything else — tools, sessions, workflow agents, callbacks, memory, eval — stays identical. One line changes; the agent keeps working.
 
-You'll need a `GOOGLE_API_KEY` from [aistudio.google.com/apikey](https://aistudio.google.com/apikey). Free tier is enough for most of Part 2. Context caching (this chapter, second half) and some Live API features (Chapter 13) require a paid tier.
+You'll need a `GOOGLE_API_KEY` from [aistudio.google.com/apikey](https://aistudio.google.com/apikey). Free tier is enough for most of Part 2. Context caching (this chapter, second half) requires a paid tier.
 
 ## Part 1 — Google Search grounding
 
@@ -190,7 +189,7 @@ An honest trade-off matrix:
 | `BuiltInCodeExecutor` (sandboxed Python) | ✅ | ❌ |
 | Context caching (implicit + explicit) | ✅ | ❌ |
 | `ThinkingConfig` / thinking budgets (M12) | ✅ | ⚠️ partial (`reasoning` param) |
-| Live API / voice agents (M13) | ✅ | ❌ |
+| Live API / voice agents | ✅ | ❌ |
 | One-line swap to Claude / GPT / Qwen | ❌ | ✅ |
 
 **The practical rule: native Gemini when you need a feature that doesn't translate through LiteLLM.** Otherwise LiteLLM keeps your code portable. The two are not alternatives; they're different tools for different jobs.
@@ -198,7 +197,7 @@ An honest trade-off matrix:
 In a production system, it's common to have *both*:
 
 - **LiteLLM-wrapped agents** for routine queries — portable, multi-model failover, per-task model routing.
-- **Native Gemini agents** for tasks that need grounding, long context, or Live API — locked to Gemini, but with capabilities nothing else provides.
+- **Native Gemini agents** for tasks that need grounding or long context — locked to Gemini, but with capabilities nothing else provides.
 
 Compose them with `sub_agents` or `AgentTool` from M06. The top-level coordinator routes to whichever agent fits the query.
 

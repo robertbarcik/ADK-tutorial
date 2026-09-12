@@ -16,53 +16,9 @@ Use this format for each entry:
 
 ---
 
-## M13 — Live API text-mode session
+## M13 — Live API voice agent (module retired 2026-09-12)
 
-**Status:** FIXED (2026-07-10) — demo reworked to audio mode and verified twice end-to-end
-**Observed:** 2026-04-20 on Google AI Studio free tier; re-tested 2026-07-10 on google-adk 2.4.0
-
-**Resolution (2026-07-10):** Google patched the Live endpoint on 2026-07-09 (announced on the AI developer forum). The blanket 1011 handshake failures are gone. What remains is a *behavioral* change: current live models (`gemini-3.1-flash-live-preview`, `gemini-2.5-flash-native-audio-latest`) are **audio-native** and reject `response_modalities=["TEXT"]` with a clear **error 1007** ("requested combination of response modalities not supported"). The notebook demo now requests `["AUDIO"]` with `output_audio_transcription=types.AudioTranscriptionConfig()`, counts the returned 24kHz PCM bytes, and prints the streamed transcript (partial chunks, then a consolidated chunk with `finished=True`). Verified twice in a row: ~33–146KB audio per short turn, transcript arrives correctly. Also note `gemini-live-2.5-flash-native-audio` (the model string used in April) no longer exists on the key; references updated to `gemini-2.5-flash-native-audio-latest`.
-
-Original entry kept below for history:
-
-**What works:**
-- Listing Live-capable models on the API key (the `supported_actions` filter returns the current Live models).
-- Building `LlmAgent(model="gemini-3.1-flash-live-preview", ...)`, creating a `LiveRequestQueue`, calling `runner.run_live(...)` — the ADK-side plumbing is all correct.
-
-**What breaks:**
-- The `client.aio.live.connect(...)` call inside `runner.run_live(...)` returns a server-side **APIError 1011 "Internal error encountered"**. Happens on both `gemini-3.1-flash-live-preview` and the older `gemini-2.5-flash-native-audio-*` variants. Failure is at Google's side — the WebSocket handshake returns 1011 before any frame is exchanged.
-
-**Reproduce:**
-```
-python - <<'PY'
-import asyncio, os
-from dotenv import load_dotenv; load_dotenv()
-from google import genai
-from google.genai import types
-
-async def main():
-    client = genai.Client(api_key=os.getenv("GOOGLE_API_KEY"))
-    cfg = types.LiveConnectConfig(response_modalities=["TEXT"])
-    async with client.aio.live.connect(model="gemini-3.1-flash-live-preview", config=cfg) as session:
-        await session.send_client_content(turns=[types.Content(role="user", parts=[types.Part(text="hi")])])
-        async for r in session.receive():
-            if r.text: print(r.text)
-            break
-
-asyncio.run(main())
-PY
-```
-→ `google.genai.errors.APIError: 1011 None. Internal error encountered.`
-
-**Student workaround:**
-- The M13 notebook's Live cell catches the error and reports it clearly; the notebook continues without raising. Students read the material, see the code, understand the mechanics. The code is correct — the live endpoint is just unreliable on the free tier.
-- For a verified working Live demo, try again in a few weeks (Live is preview-tier and actively being stabilized), or switch to a paid tier, or run against Vertex AI (`GOOGLE_GENAI_USE_VERTEXAI=TRUE`) which has different quota/backend behavior.
-- For full audio-mode end-to-end (browser microphone → ADK → audio response), see the `adk-samples` voice-agent example at github.com/google/adk-samples — that sample bundles the browser client, WebSocket bridge, and audio playback that a notebook cannot.
-
-**Fix-later notes:**
-- Watch ai.google.dev/gemini-api/docs/live for the current stable Live model string; the preview models rotate.
-- Separate issue if it becomes reproducible: check `GOOGLE_GENAI_USE_VERTEXAI=FALSE` is actually being respected on the request path.
-- Long-term this will resolve as the Live API exits preview. The module's teaching of the API shape is durable.
+The Live voice notebook was removed from the course: the Live API stayed preview-tier and its model names kept rotating, so the demo broke more often than it taught. The notebook and its textbook chapter are in git history (`notebooks/13_live_api_voice.ipynb`, last at commit 001847d). Module 13 is now the A2A side step.
 
 ---
 

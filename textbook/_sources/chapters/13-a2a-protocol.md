@@ -1,23 +1,22 @@
 # A2A protocol — the side step
 
-The course finale. Thirty minutes on something that isn't strictly ADK at all — the **A2A protocol**, the industry standard for agent-to-agent communication.
+The course finale. Thirty minutes on something that isn't strictly ADK at all — the **A2A protocol** (Agent2Agent), the open standard for one agent calling another.
 
-You've spent thirteen chapters building ADK agents that talk to tools. This chapter is about those agents talking to **other agents** — across processes, across organizations, possibly written in completely different frameworks. This is the single most durable thing in this course. **MCP and A2A together will outlast any specific model, any specific framework, any specific vendor.**
+You've spent twelve chapters building ADK agents that talk to tools. This chapter is about those agents talking to **other agents** — across processes, across organizations, possibly written in completely different frameworks. This is the single most durable thing in this course. **MCP and A2A together will outlast any specific model, any specific framework, any specific vendor.**
 
 ## The framing
 
 One sentence that captures everything. **MCP is agent↔tool. A2A is agent↔agent.**
 
-You saw MCP in Module 02 — connecting an agent to a separate tool-server process. A2A is the protocol for the next layer up: one agent calling another agent across a network boundary. They're both under Linux Foundation governance now (A2A since June 2025, MCP since December 2025), so they evolve together as the standard for the agentic-AI infrastructure layer.
+You saw MCP in Module 02 — connecting an agent to a separate tool-server process. A2A is the protocol for the next layer up: one agent calling another agent across a network boundary. Since August 2026 both live under the same roof — the Linux Foundation's Agentic AI Foundation — so they evolve together as the agentic-AI infrastructure layer.
 
 ## The journey — fast
 
 - **April 2025** — Google launches A2A at Cloud Next.
-- **June 2025** — Donated to the Linux Foundation. Technical Steering Committee forms.
-- **August 2025** — IBM's competing Agent Communication Protocol (ACP) merged in.
-- **December 2025** — MCP also donated to the Linux Foundation's Agentic AI Foundation; A2A and MCP under cross-vendor governance together.
-- **Early 2026** — A2A v1.0 spec landed. Five official language SDKs (Python, JavaScript, Java, Go, .NET).
-- **Now** — ~150 founding-member organizations. ~23K GitHub stars. ADK's A2A integration still marked `@a2a_experimental`.
+- **June 2025** — Donated to the Linux Foundation.
+- **March 2026** — A2A v1.0: three interchangeable transports (JSON-RPC, gRPC, REST), signed Agent Cards.
+- **August 2026** — A2A joins the Agentic AI Foundation, MCP's home since its founding — the two protocols now under one roof.
+- **Now** — 150+ member organizations; live agent cards on the open web still number in the dozens. ADK's A2A integration still marked `@a2a_experimental`.
 
 The spec is real and stable. The ecosystem is real but thin.
 
@@ -131,24 +130,25 @@ ADK auto-generates the Agent Card from your agent's name, description, and tools
 {
   "name": "temperature_specialist",
   "description": "Converts Celsius to Fahrenheit via convert_c_to_f tool.",
-  "protocolVersion": "0.3.0",
-  "preferredTransport": "JSONRPC",
-  "capabilities": {},
+  "supportedInterfaces": [
+    {"url": "http://localhost:8123", "protocolBinding": "JSONRPC", "protocolVersion": "1.0"}
+  ],
+  "version": "0.0.1",
+  "capabilities": {"streaming": false, "pushNotifications": false},
   "defaultInputModes": ["text/plain"],
   "defaultOutputModes": ["text/plain"],
   "skills": [
     {
       "id": "temperature_specialist",
       "name": "model",
-      "description": "Converts Celsius to Fahrenheit... Convert temperatures using the tool. Return only the number.",
-      "tags": ["llm"],
-      "examples": []
+      "description": "Converts Celsius to Fahrenheit via convert_c_to_f tool.",
+      "tags": ["llm"]
     },
     {
       "id": "temperature_specialist-convert_c_to_f",
+      "name": "convert_c_to_f",
       "description": "Convert Celsius to Fahrenheit.",
-      "tags": ["tool"],
-      "examples": []
+      "tags": ["llm", "tools"]
     }
   ]
 }
@@ -168,9 +168,9 @@ The auto-generated version is fine for internal and demo use; the carefully-auth
 What's real:
 
 - **A2A v1.0** is a stable, published specification.
-- **Linux Foundation governance** is in place with a cross-vendor Technical Steering Committee.
+- **One foundation for both protocols** — A2A and MCP under the Agentic AI Foundation since August 2026.
 - **Five official SDKs** — Python, JavaScript, Java, Go, .NET.
-- **150+ founding-member organizations** have signed on.
+- **150+ member organizations** have signed on.
 
 What's thin:
 
@@ -184,12 +184,12 @@ The framing to carry: **A2A is architecture worth understanding, not infrastruct
 
 1. **The `.well-known` path rename.** `/.well-known/agent.json` (v0.2) became `/.well-known/agent-card.json` (v0.3). Code copied from older blogs has the wrong path.
 2. **Legacy executor bugs.** `RemoteA2aAgent(..., use_legacy=True)` (the default) has three issues: user-message duplication, remote outputs mis-classified as thoughts, sub-agent output loss. Pass `use_legacy=False` always.
-3. **Version-pin ADK and a2a-sdk together.** ADK (through 2.4) requires `a2a-sdk >=0.3.4,<0.4`; A2A v1.0 requires `a2a-sdk ≥ 1.0` which ADK doesn't yet speak. Don't mix.
+3. **Version-pin ADK and a2a-sdk together.** ADK 2.7 accepts both the 0.3 line and the current 1.x line, and the auto-generated Agent Card follows whichever is installed — two teams on different pins is the first thing to check when discovery fails. The course pins `a2a-sdk[http-server]==1.1.2`.
 4. **Discovery is underspecified.** The `.well-known` path is stable; registries are explicitly future work. Don't build on registry features.
 5. **Agent Engine is non-spec-default.** Google's Agent Engine serves the Agent Card at `/v1/card` behind authentication, not at `/.well-known/`. Third-party A2A clients expecting the standard path will fail against Agent Engine.
-6. **Cross-org trust is unsolved.** Every cross-org A2A response is **untrusted input** to your planner. Simon Willison's lethal trifecta — private data + untrusted content + external communications — applies fully. Treat every remote agent's output as if a malicious user wrote it; run it through the same guardrails you'd apply to user input.
+6. **Cross-org trust is unsolved.** Every cross-org A2A response is **untrusted input** to your planner. The dangerous combination — private data, untrusted content and a way to send data out — applies fully. Treat every remote agent's output as if a malicious user wrote it; run it through the same guardrails you'd apply to user input.
 
-## What to carry forward — M14
+## What to carry forward — M13
 
 - **Four A2A nouns**: Agent Card, Task, Message, Artifact.
 - **Two patterns**: A2A for agent↔agent; MCP for agent↔tool.
@@ -201,17 +201,17 @@ The framing to carry: **A2A is architecture worth understanding, not infrastruct
 
 ## Course finale
 
-Fourteen chapters. From "what is an agent" to "agents talking to agents across organizations."
+Thirteen chapters. From "what is an agent" to "agents talking to agents across organizations."
 
 **Part 1 — Vendor-agnostic spine** (M01-M10). The four primitives; four tool flavors; state with scope prefixes; one-line model swaps; workflow agents (Sequential / Parallel / Loop); multi-agent via `sub_agents` and `AgentTool`; callbacks as middleware; memory with persistence and long-term recall; automated eval; deployment as HTTP service.
 
-**Part 2 — Gemini unlocks** (M11-M13). Google Search grounding with real citations; long context + 90%-discount caching; thinking budgets; Live API voice agents.
+**Part 2 — Gemini unlocks** (M11-M12). Google Search grounding with real citations; long context + 90%-discount caching; thinking budgets.
 
-**Side step** (M14). A2A protocol for cross-framework agent-to-agent communication.
+**Side step** (M13). A2A protocol for cross-framework agent-to-agent communication.
 
 ### What to do next
 
-- **Build something.** A voice-first customer-support bot. A research orchestrator. A personal assistant that survives restarts. The course taught mechanics; building teaches the rest.
+- **Build something.** A research orchestrator. A customer-support agent with real guardrails. A personal assistant that survives restarts. The course taught mechanics; building teaches the rest.
 - **Follow the protocols.** A2A and MCP are both under Linux Foundation governance. The protocols outlast frameworks; invest in understanding them as durable.
 - **Watch the course repo.** `DEMOS_BROKEN.md` tracks what's broken at preview-tier; entries will be cleared as the APIs stabilize.
 

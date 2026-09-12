@@ -147,7 +147,7 @@ Three artifact services mirror the session services:
 - `GcsArtifactService` — Google Cloud Storage, for production.
 - Roll your own `BaseArtifactService` for S3, Azure Blob, MinIO, whatever.
 
-You won't need artifacts for the text-only agents in Part 1 of this course. Module 13 (Live API voice agent) is the first module where they carry real weight — audio clips need to live somewhere that isn't the event stream.
+You won't need artifacts for the text-only agents in this course. They carry real weight once an agent accepts uploaded images or produces audio — payloads that need to live somewhere that isn't the event stream.
 
 ## Interlude — Skeptical Memory
 

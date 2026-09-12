@@ -11,17 +11,18 @@ A course on Google's Agent Development Kit (ADK), taught as a **direct continuat
 function-calling loop and maps it onto ADK; every notebook opens with a "Where you are" block;
 assume the arriving student knows NO async/classes/decorators (profile in
 `training-ops/curriculum/intakes/2026-08-24_adk-bridge/README.md`). **The notebooks are the
-course**: 14 Jupyter notebooks (one per module), executed with outputs, plus a textbook. The video course is filmed
+course**: 13 Jupyter notebooks (one per module), executed with outputs, plus a textbook. The video course is filmed
 by talking freely over the notebooks (Testing-GenAI style), not from a script.
 
 ## Course shape
 
 - **Part 1 — Vendor-agnostic spine (M01–M10).** ADK as a generic agent framework. Tested against
   **OpenRouter** so students can use Claude / GPT / Qwen / Gemma via LiteLLM.
-- **Part 2 — Gemini unlocks (M11–M13).** What you lose if you don't use Gemini. Tested against
+- **Part 2 — Gemini unlocks (M11–M12).** What you lose if you don't use Gemini. Tested against
   **Google AI Studio**.
-- **Side step — A2A protocol (M14).** Agent-to-agent communication. Tested against OpenRouter.
-- **Video MVP (2026-08-19):** Part 1 + M11 taster; M12–M14 stay in the materials as self-study.
+- **Side step — A2A protocol (M13).** Agent-to-agent communication. Tested against OpenRouter.
+- **Video MVP (2026-08-19):** Part 1 + M11 taster; M12–M13 stay in the materials as self-study.
+- **M13 Live voice API retired 2026-09-12** (Robert's call: preview API too fragile to teach; notebook and textbook chapter live in git history up to commit 001847d; the voice-agents course idea is parked in training-ops `BACKLOG.md`). A2A moved from M14 to M13.
 - **Agentic Design Patterns material** survives as short theory sections inside relevant notebooks
   (source: `barcik-training-publications/_sources/agentic-design-patterns/`) — but since
   2026-08-26 **without naming the publication**: Robert's rule, no external-publication
@@ -29,7 +30,7 @@ by talking freely over the notebooks (Testing-GenAI style), not from a script.
 
 ## Two learner paths
 
-- **Full path** — all 14 modules, 6-8 hours.
+- **Full path** — all 13 modules, 6-8 hours.
 - **Quick path (1½–2 hours, one OpenRouter key)** — **M01 → M02 → M05 → M06** (changed
   2026-09-12 from …→M11: M11 needs a second key; M06 keeps the course's opening promise), marked
   ⚡ in `README.md`, the notebooks' first cell, the textbook (`build_html.py` → `QUICK_PATH_FILES`),
@@ -53,7 +54,7 @@ work from inside the archive (paths are relative to the script).
 (FILMING_PLAN.md — moved 2026-08-25 to training-ops/filming/adk/; behind-the-scenes files must NOT live in this public student repo)
 slides_intro/               7-slide deck for video 0_1 (self-contained HTML; talking-head corner free)
 notebooks/                  NN_slug.ipynb — one per module, executed with outputs; legacy/ = pre-course version
-mcp_servers/                reusable MCP servers for M02 tools demos (and M14)
+mcp_servers/                reusable MCP servers for M02 tools demos (and M13)
 scripts/                    python helpers loaded by notebooks when inline code would be too long
 textbook/_sources/chapters/ NN-slug.md — markdown canonical
 textbook/_sources/tools/    build_html.py
@@ -97,6 +98,7 @@ verdict on the earlier book-voice notebooks: "exhausting". The rules that fix it
 - **One running story per notebook** (nb02 = the IT help desk) — new concept, same story.
 - **Sections are the contract**: H1 section names are what FILMING_PLAN and the Skillmea tab
   reference (videos = sections, not cell numbers). Renaming a section = update both.
+- **Escape dollar amounts in markdown** (2026-09-12): write `\$0.30`, never a bare `$0.30` — Jupyter and Colab pair `$…$` as LaTeX and a price table turns to mush (bit us twice in one day: genai-in-python, then ADK M10–M12).
 - **No cross-course notebook numbers** (2026-08-25): never cite the prior course's notebook
   numbering ("notebook 5") — it may change. Say "the previous course" or "the
   function-calling chapter of the previous course".
@@ -178,8 +180,8 @@ Two environment variables students (and Claude) load from `.env` (copy from `.en
 
 | Variable | Powers | Cost strategy |
 |---|---|---|
-| `OPENROUTER_API_KEY` | M01–M10 + M14 via `LiteLlm("openrouter/<provider>/<model>")` | Course default (since 2026-08-23): `openrouter/openai/gpt-5.6-luna` — deliberately a **non-Google** model so Part 1 demonstrates vendor neutrality. Fallback with zero known LiteLLM quirks: `openrouter/anthropic/claude-haiku-4.5`. M04 comparison lineup: gemini-3.7-flash / gpt-5.6-luna / claude-haiku-4.5 / qwen3.7-flash (leaks thinking as text — intentional teaching point) / llama-4-scout. Check `curl https://openrouter.ai/api/v1/models` before changing. |
-| `GOOGLE_API_KEY` | M11–M13 via direct `google-genai` / ADK Gemini | Default to `gemini-2.5-flash` for text, `gemini-3.1-flash-live-preview` only where the Live API is the point (live models are audio-native — TEXT-only modality is rejected with 1007). |
+| `OPENROUTER_API_KEY` | M01–M10 + M13 via `LiteLlm("openrouter/<provider>/<model>")` | Course default (since 2026-08-23): `openrouter/openai/gpt-5.6-luna` — deliberately a **non-Google** model so Part 1 demonstrates vendor neutrality. Fallback with zero known LiteLLM quirks: `openrouter/anthropic/claude-haiku-4.5`. M04 comparison lineup: gemini-3.7-flash / gpt-5.6-luna / claude-haiku-4.5 / qwen3.7-flash (leaks thinking as text — intentional teaching point) / llama-4-scout. Check `curl https://openrouter.ai/api/v1/models` before changing. |
+| `GOOGLE_API_KEY` | M11–M12 via direct `google-genai` / ADK Gemini | Default to `gemini-2.5-flash` for text; M12 uses `gemini-3-flash-preview` for thinking budgets. |
 
 `GOOGLE_GENAI_USE_VERTEXAI=FALSE` in `.env` keeps ADK on the AI Studio path (no GCP billing).
 
@@ -201,7 +203,7 @@ jupyter nbconvert --to notebook --execute notebooks/NN_slug.ipynb --output-dir /
 
 If a demo cannot be made to run, do not skip the material — write the slides / chapter / notebook against the intended design, and log the failure in `DEMOS_BROKEN.md` with reproduction steps and a workaround for students.
 
-Notebooks are committed **executed, with outputs** — they read like an article, not a blank template. Refresh outputs by re-running headless (`jupyter nbconvert --to notebook --execute --inplace`); do not blank cell outputs before committing. Each of the 14 current notebooks carries an Open-in-Colab badge as its first markdown cell.
+Notebooks are committed **executed, with outputs** — they read like an article, not a blank template. Refresh outputs by re-running headless (`jupyter nbconvert --to notebook --execute --inplace`); do not blank cell outputs before committing. Each of the 13 current notebooks carries an Open-in-Colab badge as its first markdown cell.
 
 ## Known gotchas (pre-empt these in code)
 
@@ -211,7 +213,7 @@ Notebooks are committed **executed, with outputs** — they read like an article
 - **`google-adk[eval]` caps litellm** below 1.86 (via `google-cloud-aiplatform[evaluation]`). Pinning a newer litellm next to the eval extra makes pip's resolve fail — and `!pip install -q ... 2>/dev/null` hides that failure, so the crash surfaces later as "Eval module is not installed". Keep the course-wide litellm pin inside the cap.
 - **Google Search / code execution / Vertex Search** can't coexist with other tools in the same agent. Split via `bypass_multi_tools_limit=True` (ADK ≥ 1.16) or wrap each in its own sub-agent.
 - **`adk eval`** hits PermissionError on read-only filesystems. Flag in M09; not a classroom blocker.
-- **A2A on ADK is `@a2a_experimental`.** ADK (through 2.7) requires `a2a-sdk >=0.3.4,<0.4` — the a2a-sdk 1.x proto rewrite is not yet supported. Use `RemoteA2aAgent(..., use_legacy=False)`.
+- **A2A on ADK is `@a2a_experimental`.** ADK 2.7.1 accepts `a2a-sdk >=0.3.4,<2`; the course pins `a2a-sdk[http-server]==1.1.2` (spec 1.0 — the auto-generated card carries `supportedInterfaces`, no top-level `protocolVersion`; verified end-to-end 2026-09-12; the `[http-server]` extra is required by `to_a2a()`). Use `RemoteA2aAgent(..., use_legacy=False)`.
 - **ADK 2.x `DatabaseSessionService` is async-only.** It lives behind the `[db]` extra (sqlalchemy no longer a hard dep) and *requires* an async driver URL (`sqlite+aiosqlite://`); the plain sync `sqlite://` scheme is rejected. Exactly inverted from 1.28 — see `DEMOS_BROKEN.md` M08 entry.
 - **Windows**: `PYTHONUTF8=1` — documented in `.env.example`.
 - **LiteLLM 1.85 prints botocore/bedrock warnings at import** unless `LITELLM_LOG=ERROR` is set

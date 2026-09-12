@@ -134,7 +134,7 @@ model="gemini-2.5-flash"
 model=LiteLlm(model="openrouter/google/gemini-3.7-flash")
 ```
 
-Both work. The native form is the default if you pass a plain string. All Gemini-specific features are available there: Google Search grounding, thinking budgets, the Live API, long-context caching. Module 11 through Module 13 use this form exclusively, because those modules teach Gemini-only features that don't exist in the OpenAI-shaped interface.
+Both work. The native form is the default if you pass a plain string. All Gemini-specific features are available there: Google Search grounding, thinking budgets, long-context caching. Module 11 and Module 12 use this form exclusively, because those modules teach Gemini-only features that don't exist in the OpenAI-shaped interface.
 
 The LiteLLM-wrapped form is what lets you use Gemini interchangeably with Claude and GPT. Students who only have an OpenRouter key can still run every Part 1 demo. You lose access to Gemini-specific features, but you gain portability.
 

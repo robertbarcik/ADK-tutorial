@@ -135,7 +135,7 @@ This is the single most common objection, and it's fair to name it here rather t
 
 The model question is settled in one line of code. `LlmAgent(model="gemini-2.5-flash")` is Gemini. `LlmAgent(model=LiteLlm(model="openrouter/anthropic/claude-haiku-4.5"))` is Claude. `LlmAgent(model=LiteLlm(model="ollama_chat/qwen3:8b"))` is a locally-hosted Qwen3. The rest of the code — the tools, the instruction, the session, the runner — does not change.
 
-Part 1 of this course uses OpenRouter with LiteLLM the whole way. Ten modules' worth of material, running against whatever model you pick, with the code unchanged. When we get to Part 2 in module eleven, we switch to Gemini directly because the features we teach then — Google Search grounding, long-context caching, thinking budgets, the Live voice API — only exist on Gemini, and swapping that out for Claude would break the chapter. Until then, ADK is as vendor-neutral as you want it to be.
+Part 1 of this course uses OpenRouter with LiteLLM the whole way. Ten modules' worth of material, running against whatever model you pick, with the code unchanged. When we get to Part 2 in module eleven, we switch to Gemini directly because the features we teach then — Google Search grounding, long-context caching, thinking budgets — only exist on Gemini, and swapping that out for Claude would break the chapter. Until then, ADK is as vendor-neutral as you want it to be.
 
 The deployment question is the same shape. `adk deploy cloud_run` is a convenience. The container that command produces is a regular Docker container that runs on any cloud that runs Docker containers. We'll build one in module ten and deploy the same image two ways to prove the point.
 

@@ -248,6 +248,6 @@ After these chapters you can build:
 
 All on whichever model you want — Claude, GPT, Gemini, Qwen, Gemma — because the LiteLLM wrapper made the model a configuration, not a dependency.
 
-Module 11 — Part 2 — shifts gears. We switch from LiteLLM-wrapped models to native Gemini and explore the features ADK + Gemini do that nothing else does: Google Search grounding with inline citations, long-context windows with context caching, thinking budgets, and — in Module 13 — the Live API voice agent, the single most differentiated Gemini-only capability in the market.
+Module 11 — Part 2 — shifts gears. We switch from LiteLLM-wrapped models to native Gemini and explore the features ADK + Gemini do that nothing else does: Google Search grounding with inline citations, long-context windows with context caching, and thinking budgets.
 
-Switch your `.env` to include `GOOGLE_API_KEY` (free tier at aistudio.google.com is enough for M11–M13). See you in Part 2.
+Switch your `.env` to include `GOOGLE_API_KEY` (free tier at aistudio.google.com is enough for M11–M12). See you in Part 2.

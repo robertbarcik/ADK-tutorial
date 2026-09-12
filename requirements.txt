@@ -14,16 +14,17 @@ python-dotenv==1.0.1
 nest-asyncio==1.6.0
 deprecated==1.2.18
 
-# ─── Model Context Protocol (M02 tools, M14 A2A demos) ─────────────────
+# ─── Model Context Protocol (M02 tools, M13 A2A demos) ─────────────────
 mcp==1.29.0
 httpx==0.28.1
 
-# ─── Google GenAI SDK (Part 2: M11-M13 grounding, caching, thinking, Live API) ─
+# ─── Google GenAI SDK (Part 2: M11-M12 grounding, caching, thinking) ─
 # ADK 2.4 requires google-genai >=2.9,<3.
 google-genai>=2.9,<3.0
 
-# ─── A2A protocol SDK (M14 — ADK 2.4 still targets 0.3.x, not the 1.x proto rewrite) ──
-a2a-sdk>=0.3.24,<0.4.0
+# ─── A2A protocol SDK (M13 — spec 1.0; ADK 2.7.1 accepts >=0.3.4,<2; the [http-server]
+# extra is what to_a2a() needs to serve. Verified end-to-end 2026-09-12.) ──
+a2a-sdk[http-server]==1.1.2
 
 # ─── Persistence (M08 DatabaseSessionService) ──────────────────────────
 # ADK 2.x ships DatabaseSessionService behind the [db] extra; sqlalchemy must

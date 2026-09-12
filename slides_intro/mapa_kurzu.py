@@ -19,7 +19,7 @@ GREY = RGBColor(0x5F, 0x63, 0x68)
 
 ROWS = [
     ("M01 · Prvý agent",
-     "Function-calling loop z minulého kurzu funguje — ale schému, dispatch aj slučku píšete ručne, pre každý projekt odznova.",
+     "Function-calling loop z minulého kurzu funguje — ale schému, tabuľku funkcií aj slučku píšete ručne, pre každý projekt odznova.",
      "ADK to celé napíše za vás. Váš kód dostane mená: LlmAgent, Runner, Event, Session — a spustíme ho s jednou zmenenou linkou."),
     ("M02 · Nástroje",
      "Agent potrebuje viac než vaše funkcie: cudzie API, hotový tool server, pomoc iného agenta.",
@@ -48,9 +48,9 @@ ROWS = [
     ("M10 · Nasadenie",
      "Agent žije v notebooku — zákazník ho tam nenájde.",
      "Z notebooku na HTTP službu; Docker, cloud a produkčný checklist."),
-    ("M11–M14 · Časť 2 (samoštúdium)",
+    ("M11–M13 · Časť 2 (samoštúdium)",
      "A čo navyše ponúka natívne Gemini?",
-     "Grounding cez Google Search, thinking budgets, hlas naživo, protokol A2A — ochutnáme M11, zvyšok je samoštúdium."),
+     "Grounding cez Google Search, thinking budgets, protokol A2A — ochutnáme M11, zvyšok je samoštúdium."),
 ]
 
 

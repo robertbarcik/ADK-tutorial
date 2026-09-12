@@ -1,10 +1,10 @@
 # Google ADK — A Practical Course
 
-A vendor-agnostic course on Google's Agent Development Kit — and a **direct continuation of [Intro to GenAI in Python](https://github.com/robertbarcik/genai-in-python-tutorial)**: notebook 01 re-runs the function-calling loop you built there (one changed line) and maps it onto ADK's primitives, and every module opens with a "Where you are" block linking back to what you already know. You need no async, classes, or decorators coming in — each is explained at first encounter. Fourteen Jupyter notebooks, executed with outputs, plus a textbook. Part 1 (M01–M10) teaches the portable spine of ADK — the agent mental model, tools, state, workflow agents, multi-agent hierarchies, callbacks, memory, evaluation, deployment — running against any model via LiteLLM (OpenRouter by default). Part 2 (M11–M13) covers what only unlocks with Gemini: search grounding, long context with caching, thinking budgets, the Live voice API. M14 is a side step on the A2A agent-to-agent protocol.
+A vendor-agnostic course on Google's Agent Development Kit — and a **direct continuation of [Intro to GenAI in Python](https://github.com/robertbarcik/genai-in-python-tutorial)**: notebook 01 re-runs the function-calling loop you built there (one changed line) and maps it onto ADK's primitives, and every module opens with a "Where you are" block linking back to what you already know. You need no async, classes, or decorators coming in — each is explained at first encounter. Thirteen Jupyter notebooks, executed with outputs, plus a textbook. Part 1 (M01–M10) teaches the portable spine of ADK — the agent mental model, tools, state, workflow agents, multi-agent hierarchies, callbacks, memory, evaluation, deployment — running against any model via LiteLLM (OpenRouter by default). Part 2 (M11–M12) covers what only unlocks with Gemini: search grounding, long context with caching, thinking budgets. M13 is a side step on the A2A agent-to-agent protocol.
 
 The course runs on the **ADK 2.x line** (`google-adk==2.7.1` pinned in `requirements.txt`, re-verified 2026-08-19; the classic agent API taught here is unchanged since 1.x — the graph workflow runtime added in 2.0 is additive).
 
-**Video course (Skillmea, Slovak):** filmed as free-talk notebook walkthroughs. The video course covers Part 1 (M01–M10) plus a Gemini taster (M11); notebooks 12–14 are included in the materials for self-study.
+**Video course (Skillmea, Slovak):** filmed as free-talk notebook walkthroughs. The video course covers Part 1 (M01–M10) plus a Gemini taster (M11); notebooks 12–13 are included in the materials for self-study.
 
 
 ---
@@ -40,8 +40,7 @@ Quick-path modules are marked with **⚡** in the notebooks' first cell and in t
 | M10 | Deployment — Cloud Run and vanilla Docker | OpenRouter |
 | M11 | Google Search grounding, long context, context caching | Google AI Studio |
 | M12 | Thinking budgets | Google AI Studio |
-| M13 | Live API — voice agent with interruption | Google AI Studio |
-| M14 | A2A protocol — agent-to-agent | OpenRouter |
+| M13 | A2A protocol — agent-to-agent | OpenRouter |
 
 Every notebook opens directly in Google Colab via the "Open in Colab" badge on its first cell — no local setup needed to read along, since each is committed executed with outputs already in place.
 
@@ -66,7 +65,7 @@ jupyter notebook notebooks/
 
 ### Open the textbook
 
-Single-page HTML booklet, 15 chapters (introduction plus one per module):
+Single-page HTML booklet, 14 chapters (introduction plus one per module):
 
 ```bash
 python3 textbook/_sources/tools/build_html.py   # generate if not already built
@@ -78,9 +77,9 @@ open textbook/index.html
 ## Repository layout
 
 ```
-notebooks/                  14 runnable exercises, one per module — THE course
+notebooks/                  13 runnable exercises, one per module — THE course
 notebooks/legacy/           earlier notebooks, kept for reference
-mcp_servers/                reusable MCP servers used in M02 and M14
+mcp_servers/                reusable MCP servers used in M02 and M13
 scripts/                    python helpers for notebooks
 textbook/_sources/chapters/ chapter markdown (canonical)
 textbook/_sources/tools/    build_html.py
@@ -91,7 +90,7 @@ CLAUDE.md                   project conventions for AI collaborators
 
 ## Cost notes
 
-All exercises are designed to run on cheap models. Default to `openrouter/openai/gpt-5.6-luna` (the course default — deliberately not a Google model, to show ADK is vendor-neutral) or `openrouter/anthropic/claude-haiku-4.5` on OpenRouter (typical module cost: under $0.05 when running all cells). On Google AI Studio, default to `gemini-2.5-flash`; the Live API demo in M13 uses `gemini-3.1-flash-live-preview` for short smoke tests only.
+All exercises are designed to run on cheap models. Default to `openrouter/openai/gpt-5.6-luna` (the course default — deliberately not a Google model, to show ADK is vendor-neutral) or `openrouter/anthropic/claude-haiku-4.5` on OpenRouter (typical module cost: under $0.05 when running all cells). On Google AI Studio, default to `gemini-2.5-flash`.
 
 A full Quick path costs under **$0.10** total on OpenRouter — no second key needed.
 

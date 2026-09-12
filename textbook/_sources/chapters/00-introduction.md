@@ -8,11 +8,11 @@ This course does neither.
 
 ## What you'll build
 
-Fourteen modules, each shipping four aligned artifacts — slides, speaker notes, a textbook chapter, and a runnable Jupyter notebook. The modules are not independent. Module one builds the mental model. Module two puts tools on it. Module three adds sessions. Every module after that composes on the primitives of the first three. By module ten you have an agent that calls tools, holds state, writes its own critiques in a loop, delegates to specialists, short-circuits itself in a callback, remembers across conversations, passes an evaluation suite, and ships to production — and it does so while running on any model you can route through LiteLLM.
+Thirteen modules, each shipping a textbook chapter and a runnable Jupyter notebook. The modules are not independent. Module one builds the mental model. Module two puts tools on it. Module three adds sessions. Every module after that composes on the primitives of the first three. By module ten you have an agent that calls tools, holds state, writes its own critiques in a loop, delegates to specialists, short-circuits itself in a callback, remembers across conversations, passes an evaluation suite, and ships to production — and it does so while running on any model you can route through LiteLLM.
 
-Modules eleven through thirteen are the Gemini-specific part of the course. Search grounding with citations. Long context with caching. Thinking budgets. The Live voice API. Three hours of material you can't replicate with Claude or GPT. These modules are honest about the trade: you get real capability and real lock-in, in that order.
+Modules eleven and twelve are the Gemini-specific part of the course. Search grounding with citations. Long context with caching. Thinking budgets. Two hours of material you can't replicate with Claude or GPT. These modules are honest about the trade: you get real capability and real lock-in, in that order.
 
-Module fourteen is thirty minutes on A2A — the agent-to-agent protocol that Google launched in April 2025 and handed over to the Linux Foundation two months later. It is nowhere near infrastructure-grade yet, but the shape of the protocol is already settling, and being ahead of it by thirty minutes is worth the investment.
+Module thirteen is thirty minutes on A2A — the agent-to-agent protocol Google launched in 2025, a v1.0 standard since March 2026, under the same foundation as MCP. It is nowhere near infrastructure-grade yet, but the shape of the protocol is already settling, and being ahead of it by thirty minutes is worth the investment.
 
 ## Why ADK, honestly
 

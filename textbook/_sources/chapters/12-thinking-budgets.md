@@ -186,4 +186,4 @@ If reasoning budgets are a first-class requirement for your agent architecture, 
 2. **Scale the budget.** Agents at budgets 0, 512, 2048, 8192. Hard math problem. At what budget does quality stop improving?
 3. **Include thoughts.** Set `include_thoughts=True` in a `ThinkingConfig` and inspect the response. What does the model's internal reasoning look like?
 
-Module 13 — the last of the three Gemini unlocks — covers the **Live API**: bidirectional voice streaming with voice activity detection and interruption. It's the single most differentiated Gemini-only capability on the market as of mid-2026. Fair warning: the Live API is preview-tier; it spent spring 2026 throwing transient server errors before Google patched the endpoint in July. If the notebook demo doesn't run end-to-end on your machine, the course's `DEMOS_BROKEN.md` logs the current state.
+Module 13 — the side step that closes the course — leaves Gemini behind and goes back to the OpenRouter key: the **A2A protocol**, one agent calling another across a network, in a different process or a different framework.
