@@ -23,7 +23,7 @@ Five notebooks, in order, on a single OpenRouter key: the core ADK mental model,
 | **M06** | Multi-agent hierarchies | The promise the course opens with, kept: a sub-agent is just a function call. `sub_agents` vs `AgentTool`, side by side. |
 | **M07** | Callbacks | Short and essential: six doors where your code runs before or after every step — guardrails, PII redaction, mocks. |
 
-Quick-path modules are marked with **⚡** in the notebooks' first cell and in the textbook sidebar. Optional dessert if you have a Google AI Studio key: **M11** (search grounding with real citations — one import).
+Quick-path modules are marked with **⚡** in the notebooks' first cell and in the textbook sidebar. Their files also carry a `_CORE` suffix (e.g. `05_workflow_agents_CORE.ipynb`), so you can pick them out of the folder on GitHub or Drive at a glance. Optional dessert if you have a Google AI Studio key: **M11** (search grounding with real citations — one import).
 
 ### Full path — 6–8 hours
 

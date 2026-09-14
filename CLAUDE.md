@@ -37,6 +37,10 @@ by talking freely over the notebooks (Testing-GenAI style), not from a script.
   ⚡ in `README.md`, the notebooks' first cell, the textbook (`build_html.py` → `QUICK_PATH_FILES`),
   the intro deck slide 6, the course-map docx footer and the filming plan. M11 is the optional
   add-on. Keep them consistent if the selection changes.
+  **Since 2026-09-14 the quick-path notebooks carry a `_CORE` filename suffix** (Robert's
+  request: participants must spot the essential notebooks from the file names on Drive and
+  GitHub). Changing the selection = `git mv` in the repo + server-side `rclone moveto` on
+  Drive (keeps file IDs) + Colab badge URL in the notebook's first cell.
 
 ## The archived scripted-voiceover format
 
@@ -54,7 +58,7 @@ work from inside the archive (paths are relative to the script).
 ```
 (FILMING_PLAN.md — moved 2026-08-25 to training-ops/filming/adk/; behind-the-scenes files must NOT live in this public student repo)
 slides_intro/               7-slide deck for video 0_1 (self-contained HTML; talking-head corner free)
-notebooks/                  NN_slug.ipynb — one per module, executed with outputs; legacy/ = pre-course version
+notebooks/                  NN_slug.ipynb — one per module, executed with outputs; quick-path ones end in _CORE; legacy/ = pre-course version
 mcp_servers/                reusable MCP servers for M02 tools demos (and M13)
 scripts/                    python helpers loaded by notebooks when inline code would be too long
 textbook/_sources/chapters/ NN-slug.md — markdown canonical
