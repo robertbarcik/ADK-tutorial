@@ -36,6 +36,7 @@ Quick-path modules are marked with **⚡** in the notebooks' first cell and in t
 | **M05** ⚡ | Workflow agents — Sequential, Parallel, Loop | OpenRouter |
 | **M06** ⚡ | Multi-agent hierarchies — `sub_agents` vs `AgentTool` | OpenRouter |
 | **M07** ⚡ | Callbacks as middleware | OpenRouter |
+| 07b | *Reading:* Can the Runner get stuck in a loop? — the `max_llm_calls` fuse, a ten-line circuit breaker, the retry plugin | none (stand-in model) |
 | M08 | Memory — sessions, long-term recall, `load_memory` | OpenRouter |
 | M09 | Evaluation — trajectories, EvalSets | OpenRouter |
 | M10 | Deployment — Cloud Run and vanilla Docker | OpenRouter |

@@ -59,6 +59,7 @@ work from inside the archive (paths are relative to the script).
 (FILMING_PLAN.md — moved 2026-08-25 to training-ops/filming/adk/; behind-the-scenes files must NOT live in this public student repo)
 slides_intro/               7-slide deck for video 0_1 (self-contained HTML; talking-head corner free)
 notebooks/                  NN_slug.ipynb — one per module, executed with outputs; quick-path ones end in _CORE; legacy/ = pre-course version
+                            07b_runner_loop_guards.ipynb = keyless READING after M07 (stub BaseLlm model, deterministic loop demos; added 2026-09-15)
 mcp_servers/                reusable MCP servers for M02 tools demos (and M13)
 scripts/                    python helpers loaded by notebooks when inline code would be too long
 textbook/_sources/chapters/ NN-slug.md — markdown canonical
@@ -229,6 +230,11 @@ Notebooks are committed **executed, with outputs** — they read like an article
   "no preference" without calling the tool ~half the time. The demo now uses an explicit
   `recall_preference` tool + the prompt "What is my saved preference?", which is reliable. If a
   live demo misbehaves, re-run the cell once before blaming the code.
+- **Model calls answered by a `before_model_callback` never reach `increment_llm_call_count`** — they do not
+  count toward `RunConfig.max_llm_calls` (the short-circuit happens first in `base_llm_flow`). A callback that
+  keeps returning a `function_call` loops forever regardless of the fuse; 07b's stub model subclasses `BaseLlm`
+  for exactly this reason. Also: ADK logs a full traceback for every exception it re-raises, so demos that
+  *expect* an exception set `logging.getLogger("google_adk").setLevel(logging.CRITICAL)` and print it themselves.
 - **Port 8765 (M10 `adk api_server`)**: a stray local server on that port makes the notebook
   fail with 404 on `/list-apps` — `lsof -i :8765` first.
 
