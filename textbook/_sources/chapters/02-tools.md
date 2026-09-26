@@ -97,6 +97,8 @@ What happens when that toolset runs: ADK spawns the server script as a subproces
 
 This is the most valuable property of the flavor. **The MCP server can be written in any language**, run on any machine, own any state — database connections, API credentials, caches. The agent doesn't care. It speaks the protocol; the tools show up.
 
+Most servers you will connect were written by someone else. You never see their code. Their README gives you a config snippet — the same one you would paste into Claude Code or Cursor — and it contains no tools at all. It names a program to start. The official Fetch server's snippet is `{"command": "python", "args": ["-m", "mcp_server_fetch"]}`; those two fields go straight into `StdioServerParameters`, and the tool list arrives from the server's `list_tools` answer. Your own server differs only in `args`: a path to your file instead of a published package. A snippet with a `"url"` instead of a `"command"` points at a server already running elsewhere; in ADK that is `StreamableHTTPConnectionParams(url=...)` in place of the stdio parameters.
+
 Two practical notes:
 
 **Close the toolset when you're done.** The stdio subprocess lives until you close it. Long-running agents should manage the lifecycle explicitly; short-lived notebook demos should call `await toolset.close()` at the end.
